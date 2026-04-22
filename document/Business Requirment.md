@@ -2,7 +2,8 @@
 
 **Tên dự án:** Ứng dụng Gửi Email Lên Lịch Độ Trễ Thấp (Low-Latency Scheduled Email Client)  
 **Nền tảng công nghệ:** JDK 25, JavaFX, Jakarta Mail  
-**Phiên bản:** 1.0  
+**Nền tảng triển khai:** Windows
+**Phiên bản:** 1.0
 **Ngày lập:** 22/04/2026
 
 ## 1. PROJECT OVERVIEW

@@ -1,4 +1,4 @@
-package nlu.fit.soft.gr5.precisionMail.util;
+package nlu.fit.soft.gr5.precisionMail.demo;
 
 import jakarta.mail.Authenticator;
 import jakarta.mail.PasswordAuthentication;

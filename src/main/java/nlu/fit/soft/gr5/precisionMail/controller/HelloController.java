@@ -1,7 +1,8 @@
-package nlu.fit.soft.gr5.precisionMail;
+package nlu.fit.soft.gr5.precisionMail.controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import nlu.fit.soft.gr5.precisionMail.service.impl.EmailServiceImpl;
 
 public class HelloController {
     @FXML
@@ -9,6 +10,6 @@ public class HelloController {
 
     @FXML
     protected void onHelloButtonClick() {
-        welcomeText.setText("Welcome to JavaFX Application!");
+
     }
 }

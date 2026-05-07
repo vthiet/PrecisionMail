@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+
+<MenuBar>
+    <menus>
+        <Menu text="_File" />
+        <Menu text="_Edit" />
+        <Menu text="_View" />
+        <Menu text="_Insert" />
+        <Menu text="F_ormat" />
+        <Menu text="_Options" />
+        <Menu text="_Tools" />
+        <Menu text="_Help" />
+    </menus>
+</MenuBar>

@@ -2,15 +2,20 @@
 
 <?import javafx.scene.control.*?>
 
-<MenuBar>
+<MenuBar xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
+         fx:controller="nlu.fit.soft.gr5.precisionMail.controller.MenuBarController">
     <menus>
-        <Menu text="_File" />
-        <Menu text="_Edit" />
-        <Menu text="_View" />
-        <Menu text="_Insert" />
-        <Menu text="F_ormat" />
-        <Menu text="_Options" />
-        <Menu text="_Tools" />
-        <Menu text="_Help" />
+        <Menu text="_File">
+            <items>
+                <MenuItem text="Soạn thư mới" onAction="#onNewMailClick"/>
+            </items>
+        </Menu>
+        <Menu text="_Edit"/>
+        <Menu text="_View"/>
+        <Menu text="_Insert"/>
+        <Menu text="F_ormat"/>
+        <Menu text="_Options"/>
+        <Menu text="_Tools"/>
+        <Menu text="_Help"/>
     </menus>
 </MenuBar>

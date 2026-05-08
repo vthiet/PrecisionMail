@@ -90,7 +90,6 @@
 
                 <MenuButton fx:id="accountMenuButton"
                             text="Chọn một tài khoản để gửi"
-                            onShowing="#handleLoadAccounts"
                             HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"
                             mnemonicParsing="true">
                     <items>

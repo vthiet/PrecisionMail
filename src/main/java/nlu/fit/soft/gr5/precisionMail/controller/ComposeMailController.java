@@ -1,7 +1,6 @@
 package nlu.fit.soft.gr5.precisionMail.controller;
 
 import jakarta.mail.MessagingException;
-import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -62,27 +61,26 @@ public class ComposeMailController {
         ProgressIndicator loadingIndicator = new ProgressIndicator();
         loadingIndicator.setPrefSize(15, 15);
 
-        loadAccountService.runningProperty().addListener(
-                (obs, oldValue, running) -> {
-
-                    if (running) {
-                        accountMenuButton.setGraphic(loadingIndicator);
-                    } else {
-                        accountMenuButton.setGraphic(null);
-                    }
-                });
+        loadAccountService.runningProperty().addListener((obs, oldValue, running) -> {
+            if (running) {
+                accountMenuButton.setGraphic(loadingIndicator);
+            } else {
+                accountMenuButton.setGraphic(null);
+            }
+        });
 
         loadAccountService.setOnSucceeded(e -> {
             updateMenu(loadAccountService.getValue());
         });
 
         loadAccountService.setOnFailed(e -> {
-
-            accountMenuButton.setText("Tai tai khoan that bai.");
-
+            accountMenuButton.setText("Tải tài khoản thất bại.");
             loadAccountService.getException().printStackTrace();
         });
+
+        loadAccountService.start();
     }
+
 
     @FXML
     public void toggleCc(ActionEvent actionEvent) {
@@ -100,10 +98,6 @@ public class ComposeMailController {
         String content = contentArea.getText();
 
         emailService.send(to, subject, content);
-    }
-
-    public void handleLoadAccounts(Event event) {
-        if (!loadAccountService.isRunning()) loadAccountService.restart();
     }
 
     private void updateMenu(List<Account> accounts) {

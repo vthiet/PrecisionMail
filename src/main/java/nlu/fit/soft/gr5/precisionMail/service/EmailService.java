@@ -13,4 +13,6 @@ public interface EmailService {
               List<String> bcc,
               String subject,
               String content) throws MessagingException;
+
+    List<String> findAllEmailAddress();
 }

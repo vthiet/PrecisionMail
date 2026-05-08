@@ -7,7 +7,37 @@
     <menus>
         <Menu text="_File">
             <items>
-                <MenuItem text="Soạn thư mới" onAction="#onNewMailClick"/>
+                <Menu text="_New" accelerator="Shortcut+S">
+                    <items>
+                        <MenuItem text="Message" onAction="#onNewMailClick"/>
+                        <SeparatorMenuItem/>
+                        <MenuItem text="Address Book Contact..." onAction="#onNewMailClick"/>
+                    </items>
+                </Menu>
+                <Menu text="Attac_h">
+                    <items>
+                        <MenuItem text="File(s)..." onAction="#onNewMailClick"/>
+                        <SeparatorMenuItem/>
+                        <MenuItem text="Web Page" onAction="#onNewMailClick"/>
+                    </items>
+                </Menu>
+
+                <SeparatorMenuItem/>
+
+                <MenuItem text="_Save"/>
+                <Menu text="Save _As">
+                    <items>
+                        <MenuItem text="File..."/>
+                        <SeparatorMenuItem/>
+                        <MenuItem text="Draft"/>
+                        <MenuItem text="Template"/>
+                    </items>
+                </Menu>
+
+                <SeparatorMenuItem/>
+                <MenuItem text="_Print" accelerator="Shortcut+P"/>
+                <SeparatorMenuItem/>
+                <MenuItem text="_Close" accelerator="Shortcut+W"/>
             </items>
         </Menu>
         <Menu text="_Edit"/>

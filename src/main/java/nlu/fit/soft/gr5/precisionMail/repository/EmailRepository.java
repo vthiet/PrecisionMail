@@ -6,9 +6,11 @@ import java.util.List;
 
 public interface EmailRepository {
 
-    public Email save(Email email);
+    Email save(Email email);
 
-    public Email findById(Long id);
+    Email findById(Long id);
 
-    public List<Email> findAllEmail();
+    List<Email> findAllEmail();
+
+    List<String> findAllEmailAddress();
 }

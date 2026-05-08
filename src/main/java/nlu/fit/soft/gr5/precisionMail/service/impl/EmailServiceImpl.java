@@ -4,6 +4,8 @@ import jakarta.mail.*;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
+import nlu.fit.soft.gr5.precisionMail.repository.EmailRepository;
+import nlu.fit.soft.gr5.precisionMail.repository.impl.EmailRepositoryImpl;
 import nlu.fit.soft.gr5.precisionMail.service.EmailService;
 import nlu.fit.soft.gr5.precisionMail.util.AppLoaderUtil;
 
@@ -13,6 +15,8 @@ import java.util.Properties;
 public class EmailServiceImpl implements EmailService {
     private static final String username = AppLoaderUtil.getProperty("mail.username");
     private static final String password = AppLoaderUtil.getProperty("mail.password");
+
+    private final EmailRepository emailRepository = new EmailRepositoryImpl();
 
     public EmailServiceImpl() { }
 
@@ -73,7 +77,12 @@ public class EmailServiceImpl implements EmailService {
         Transport.send(message);
     }
 
-    private InternetAddress[] parseAddresses(List<String> emails) throws AddressException {
+    @Override
+    public List<String> findAllEmailAddress() {
+        return emailRepository.findAllEmailAddress();
+    }
+
+    private InternetAddress[] parseAddresses(List<String> emails) {
         return emails.stream()
                 .map(email -> {
                     try {

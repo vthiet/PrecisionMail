@@ -4,8 +4,8 @@ import jakarta.mail.*;
 import jakarta.mail.internet.AddressException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
-import nlu.fit.soft.gr5.precisionMail.repository.EmailRepository;
-import nlu.fit.soft.gr5.precisionMail.repository.impl.EmailRepositoryImpl;
+import nlu.fit.soft.gr5.precisionMail.dao.EmailDao;
+import nlu.fit.soft.gr5.precisionMail.dao.impl.EmailDaoImpl;
 import nlu.fit.soft.gr5.precisionMail.service.EmailService;
 import nlu.fit.soft.gr5.precisionMail.util.AppLoaderUtil;
 
@@ -16,7 +16,7 @@ public class EmailServiceImpl implements EmailService {
     private static final String username = AppLoaderUtil.getProperty("mail.username");
     private static final String password = AppLoaderUtil.getProperty("mail.password");
 
-    private final EmailRepository emailRepository = new EmailRepositoryImpl();
+    private final EmailDao emailRepository = new EmailDaoImpl();
 
     public EmailServiceImpl() { }
 

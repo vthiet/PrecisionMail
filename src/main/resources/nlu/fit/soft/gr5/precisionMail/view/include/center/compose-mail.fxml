@@ -13,7 +13,9 @@
 
     <ToolBar>
         <items>
-            <Button onAction="#handleSendMail" styleClass="borderRadius">
+            <Button text="Send"
+                    onAction="#handleSendMail"
+                    styleClass="borderRadius">
                 <graphic>
                     <ImageView fitHeight="20.0" fitWidth="20.0" pickOnBounds="true" preserveRatio="true">
                         <image>
@@ -21,8 +23,8 @@
                         </image>
                     </ImageView>
                 </graphic>
-                <text>Send</text>
             </Button>
+
             <Button text="Encrypt" styleClass="borderRadius"/>
 
             <MenuButton text="Spelling" mnemonicParsing="true"

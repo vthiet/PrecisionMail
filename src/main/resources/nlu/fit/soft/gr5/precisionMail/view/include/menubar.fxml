@@ -7,6 +7,18 @@
     <menus>
         <Menu text="_File">
             <items>
+                <Menu text="Account">
+                    <items>
+                        <MenuItem text="thietvo02@gmail.com"/>
+
+                        <SeparatorMenuItem/>
+
+                        <MenuItem text="Add Account" onAction="#handleAddAccount"/>
+                    </items>
+                </Menu>
+
+                <SeparatorMenuItem/>
+
                 <Menu text="_New" accelerator="Shortcut+S">
                     <items>
                         <MenuItem text="Message" onAction="#onNewMailClick"/>

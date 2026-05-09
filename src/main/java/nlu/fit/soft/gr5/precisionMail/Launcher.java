@@ -4,9 +4,13 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import nlu.fit.soft.gr5.precisionMail.util.DbUtil;
 
 import java.io.IOException;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 public class Launcher extends Application {
 
@@ -22,7 +26,29 @@ public class Launcher extends Application {
         stage.show();
     }
 
-    static void main(String[] args) {
+    static void main(String[] args){
+        initDatabase();
         Application.launch(Launcher.class, args);
+    }
+
+    private static void initDatabase() {
+        String sql = """
+                create table if not exists accounts
+                (
+                    id integer primary key autoincrement,
+                    username text not null,
+                    password text not null,
+                    created_at text not null
+                );
+                """;
+
+        try (Connection connection = DbUtil.getConnect();
+             Statement st = connection.createStatement()) {
+
+            st.execute(sql);
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

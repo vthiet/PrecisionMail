@@ -15,4 +15,6 @@ module precisionMail {
     exports nlu.fit.soft.gr5.precisionMail.controller;
     exports nlu.fit.soft.gr5.precisionMail.controller.dialog;
     opens nlu.fit.soft.gr5.precisionMail.controller.dialog to javafx.fxml;
+    exports nlu.fit.soft.gr5.precisionMail.controller.fxml;
+    opens nlu.fit.soft.gr5.precisionMail.controller.fxml to javafx.fxml;
 }

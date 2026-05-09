@@ -1,4 +1,4 @@
-package nlu.fit.soft.gr5.precisionMail.controller;
+package nlu.fit.soft.gr5.precisionMail.controller.fxml;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -44,7 +44,7 @@ public class HistoryMailController {
                 if (empty || email == null) {
                     setText(null);
                 } else {
-                    setText(email.subject+ "\n" + email.getFrom());
+                    setText(email.subject + "\n" + email.getFrom());
                 }
             }
         });
@@ -57,7 +57,7 @@ public class HistoryMailController {
                         fromLabel.setText("From: " + email.getFrom());
                         toLabel.setText("To: " + String.join(", ", email.toLst));
 
-                        dateLabel.setText(email.sentAt!= null ? email.sentAt.toString() : "Unknown Date");
+                        dateLabel.setText(email.sentAt != null ? email.sentAt.toString() : "Unknown Date");
 
                         contentArea.setText(email.content);
                     }

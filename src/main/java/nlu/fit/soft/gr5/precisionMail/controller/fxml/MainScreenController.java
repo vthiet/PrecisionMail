@@ -1,4 +1,4 @@
-package nlu.fit.soft.gr5.precisionMail.controller;
+package nlu.fit.soft.gr5.precisionMail.controller.fxml;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;

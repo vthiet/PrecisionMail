@@ -15,7 +15,7 @@
       xmlns="http://javafx.com/javafx/25"
       xmlns:fx="http://javafx.com/fxml/1"
       stylesheets="@../../css/sidebar.css"
-      fx:controller="nlu.fit.soft.gr5.precisionMail.controller.SideBarController">
+      fx:controller="nlu.fit.soft.gr5.precisionMail.controller.fxml.SideBarController">
 
     <padding>
         <Insets top="16" bottom="16" left="12"/>

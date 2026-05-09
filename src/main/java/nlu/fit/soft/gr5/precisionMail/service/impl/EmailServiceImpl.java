@@ -12,17 +12,29 @@ import nlu.fit.soft.gr5.precisionMail.service.EmailService;
 import nlu.fit.soft.gr5.precisionMail.util.AppLoaderUtil;
 import nlu.fit.soft.gr5.precisionMail.util.EmailUtil;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
 
 public class EmailServiceImpl implements EmailService {
 
-    private final EmailDao emailRepository = new EmailDaoImpl();
+    private final EmailDao emailDao = new EmailDaoImpl();
 
     public EmailServiceImpl() { }
 
     @Override
-    public void send(Account account, Email email) throws MessagingException {
+    public void send(Account account, Email email) throws MessagingException, IOException {
         EmailUtil.send(account, email);
+        save(email);
+    }
+
+    @Override
+    public List<Email> findAll() throws IOException {
+        return emailDao.findAll();
+    }
+
+    @Override
+    public Email save(Email email) throws IOException {
+        return emailDao.save(email);
     }
 }

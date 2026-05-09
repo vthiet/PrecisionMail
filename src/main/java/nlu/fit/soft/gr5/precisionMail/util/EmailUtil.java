@@ -14,6 +14,8 @@ import java.util.stream.Collectors;
 
 public class EmailUtil {
 
+
+
     public static Set<String> emailFeature(String plainText){
         return Arrays.stream(plainText.split("[,;]"))
                 .map(String::trim)

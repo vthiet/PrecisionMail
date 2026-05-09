@@ -2,15 +2,14 @@ package nlu.fit.soft.gr5.precisionMail.dao;
 
 import nlu.fit.soft.gr5.precisionMail.model.Email;
 
+import java.io.IOException;
 import java.util.List;
 
 public interface EmailDao {
 
-    Email save(Email email);
+    Email save(Email email) throws IOException;
 
-    Email findById(Long id);
+    List<Email> findAll() throws IOException;
 
-    List<Email> findAllEmail();
-
-    List<String> findAllEmailAddress();
+    List<String> findAllEmailAddress() throws IOException;
 }

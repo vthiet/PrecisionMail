@@ -14,10 +14,11 @@ public class Email {
     public Set<String> bcc;
     public String subject;
     public String content;
-    public List<File> attachments;
+    public List<String> attachments;
     public LocalDateTime sentAt;
 
-    public Email() { }
+    public Email() {
+    }
 
     public Email(String from,
                  Set<String> toLst,
@@ -25,9 +26,9 @@ public class Email {
                  Set<String> bccLst,
                  String subject,
                  String content,
-                 List<File> attachments,
+                 List<String> attachments,
                  LocalDateTime sentAt
-    ){
+    ) {
         this.from = from;
         this.toLst = toLst;
         this.cc = ccLst;
@@ -36,5 +37,9 @@ public class Email {
         this.content = content;
         this.attachments = attachments;
         this.sentAt = sentAt;
+    }
+
+    public String getFrom() {
+        return this.from;
     }
 }

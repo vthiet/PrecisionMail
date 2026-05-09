@@ -6,22 +6,32 @@
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
 
-<?import java.lang.String?>
 <VBox styleClass="compose-left-sidebar"
       prefWidth="200"
       minWidth="180"
       xmlns="http://javafx.com/javafx/25"
       xmlns:fx="http://javafx.com/fxml/1"
-      stylesheets="@../../css/sidebar.css">
+      stylesheets="@../../css/sidebar.css"
+      fx:controller="nlu.fit.soft.gr5.precisionMail.controller.SideBarController">
 
     <padding>
         <Insets top="16" bottom="16" left="12"/>
     </padding>
 
-    <Button text="＋  Soạn thư mới"
+    <Button onAction="#onNewMailClick"
+            text="Soạn thư mới"
             maxWidth="Infinity"
+            graphicTextGap="10"
             styleClass="compose-button">
+        <graphic>
+            <ImageView fitHeight="20.0" fitWidth="20.0" pickOnBounds="true" preserveRatio="true">
+                <Image url="@../../icons/add.png"/>
+            </ImageView>
+        </graphic>
+
         <VBox.margin>
             <Insets bottom="16" right="12"/>
         </VBox.margin>
@@ -40,16 +50,6 @@
         </VBox.margin>
     </Label>
 
-    <Button fx:id="btnInbox"
-            text="📥  Hộp thư đến"
-            maxWidth="Infinity"
-            styleClass="sidebar-nav-item"/>
-
-    <Button fx:id="btnStarred"
-            text="⭐  Quan trọng"
-            maxWidth="Infinity"
-            styleClass="sidebar-nav-item"/>
-
     <Button fx:id="btnDrafts"
             text="📝  Thư nháp"
             maxWidth="Infinity"
@@ -58,7 +58,8 @@
     <Button fx:id="btnSent"
             text="📤  Đã gửi"
             maxWidth="Infinity"
-            styleClass="sidebar-nav-item"/>
+            styleClass="sidebar-nav-item"
+            onAction="#handleSentMailBtn"/>
 
     <Separator>
         <VBox.margin>
@@ -95,10 +96,4 @@
             text="⚙️  Cài đặt"
             maxWidth="Infinity"
             styleClass="sidebar-footer-item"/>
-
-    <Button fx:id="btnShortcuts"
-            text="⌨️  Phím tắt"
-            maxWidth="Infinity"
-            styleClass="sidebar-footer-item"/>
-
 </VBox>

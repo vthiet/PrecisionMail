@@ -1,0 +1,11 @@
+[ {
+  "id" : null,
+  "from" : "thietvo02@gmail.com",
+  "toLst" : [ "thietvo02@gmail.com" ],
+  "cc" : [ ],
+  "bcc" : [ ],
+  "subject" : "asdf",
+  "content" : "asdfasdf",
+  "attachments" : null,
+  "sentAt" : [ 2026, 5, 9, 22, 49, 15, 551687239 ]
+} ]

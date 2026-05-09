@@ -11,6 +11,7 @@ import nlu.fit.soft.gr5.precisionMail.service.LoadAccountService;
 import nlu.fit.soft.gr5.precisionMail.service.impl.EmailServiceImpl;
 import nlu.fit.soft.gr5.precisionMail.util.EmailUtil;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -97,7 +98,7 @@ public class ComposeMailController {
         bccBtn.setVisible(false);
     }
 
-    public void handleSendMail(ActionEvent actionEvent) throws MessagingException {
+    public void handleSendMail(ActionEvent actionEvent) throws MessagingException, IOException {
         Account account = currentAccount;
 
         if (currentAccount == null) {
@@ -121,6 +122,7 @@ public class ComposeMailController {
     }
 
     private void updateMenu(List<Account> accounts) {
+        boolean first = true;
         accountMenuButton.getItems().clear();
 
         for (Account account : accounts) {
@@ -133,15 +135,22 @@ public class ComposeMailController {
             });
 
             accountMenuButton.getItems().add(item);
+
+            if (first) {
+                item.setSelected(true);
+                currentAccount = account;
+                accountMenuButton.setText(account.getUsername());
+                first = false;
+            }
         }
 
         accountMenuButton.getItems().add(new SeparatorMenuItem());
         accountMenuButton.getItems().add(new MenuItem("Customize From Address..."));
     }
 
-    private void clearTextInput(TextInputControl... inputLst){
+    private void clearTextInput(TextInputControl... inputLst) {
         if (inputLst != null) {
-            for (var input : inputLst){
+            for (var input : inputLst) {
                 input.clear();
             }
         }

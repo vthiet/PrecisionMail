@@ -2,7 +2,6 @@ package nlu.fit.soft.gr5.precisionMail.controller.dialog;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
@@ -52,6 +51,5 @@ public class AddAccountDialogController {
         String regex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
         return email.matches(regex);
     }
-
 
 }

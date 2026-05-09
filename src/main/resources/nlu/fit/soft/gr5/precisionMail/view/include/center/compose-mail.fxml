@@ -117,11 +117,8 @@
             <TextField fx:id="bccField" GridPane.columnIndex="1" GridPane.rowIndex="3" visible="false" managed="false"
                        prefHeight="25.0"/>
 
-            <Label fx:id="subjectLabel" GridPane.columnIndex="0" GridPane.rowIndex="4">
-
-                <text>Subject</text>
-            </Label>
-            <TextField GridPane.columnIndex="1" GridPane.rowIndex="4" prefHeight="25.0"/>
+            <Label fx:id="subjectLabel" text="Subject" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+            <TextField  fx:id="subjectField" GridPane.columnIndex="1" GridPane.rowIndex="4" prefHeight="25.0"/>
         </children>
 
         <padding>

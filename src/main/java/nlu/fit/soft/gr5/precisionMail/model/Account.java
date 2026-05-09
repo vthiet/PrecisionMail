@@ -8,6 +8,8 @@ public class Account {
     private String password;
     private LocalDateTime createdAt;
 
+    public Account() { }
+
     public Account(String username, String password, LocalDateTime createdAt){
         this.username = username;
         this.password = password;

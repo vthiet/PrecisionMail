@@ -2,22 +2,20 @@ package nlu.fit.soft.gr5.precisionMail.controller;
 
 import jakarta.mail.MessagingException;
 import javafx.event.ActionEvent;
-import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
+import nlu.fit.soft.gr5.precisionMail.model.Email;
 import nlu.fit.soft.gr5.precisionMail.service.EmailService;
 import nlu.fit.soft.gr5.precisionMail.service.LoadAccountService;
 import nlu.fit.soft.gr5.precisionMail.service.impl.EmailServiceImpl;
+import nlu.fit.soft.gr5.precisionMail.util.EmailUtil;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 public class ComposeMailController {
-
-    private final EmailService emailService = new EmailServiceImpl();
-    private final LoadAccountService loadAccountService = new LoadAccountService();
-    private ToggleGroup accountGroup = new ToggleGroup();
-
     @FXML
     public Label ccLabel;
     @FXML
@@ -40,6 +38,14 @@ public class ComposeMailController {
     public Label subjectLabel;
     @FXML
     public MenuButton accountMenuButton;
+    @FXML
+    public TextField subjectField;
+
+    private final EmailService emailService = new EmailServiceImpl();
+    private final LoadAccountService loadAccountService = new LoadAccountService();
+    private final ToggleGroup accountGroup = new ToggleGroup();
+
+    private Account currentAccount = null;
 
     @FXML
     public void initialize() {
@@ -81,7 +87,6 @@ public class ComposeMailController {
         loadAccountService.start();
     }
 
-
     @FXML
     public void toggleCc(ActionEvent actionEvent) {
         ccBtn.setVisible(false);
@@ -93,11 +98,26 @@ public class ComposeMailController {
     }
 
     public void handleSendMail(ActionEvent actionEvent) throws MessagingException {
-        String to = toField.getText();
-        String subject = subjectLabel.getText();
+        Account account = currentAccount;
+
+        if (currentAccount == null) {
+            System.err.println("Please select account.");
+            return;
+        }
+
+        Set<String> toLst = EmailUtil.emailFeature(toField.getText());
+        Set<String> ccLst = EmailUtil.emailFeature(ccField.getText());
+        Set<String> bccLst = EmailUtil.emailFeature(bccField.getText());
+        String subject = subjectField.getText();
         String content = contentArea.getText();
 
-        emailService.send(to, subject, content);
+        // Handle
+        Email email = new Email(account.getUsername(),
+                toLst, ccLst, bccLst, subject, content, null, LocalDateTime.now());
+
+        emailService.send(account, email);
+
+        clearTextInput(toField, ccField, bccField, subjectField, contentArea);
     }
 
     private void updateMenu(List<Account> accounts) {
@@ -108,6 +128,7 @@ public class ComposeMailController {
             item.setToggleGroup(accountGroup);
 
             item.setOnAction(e -> {
+                currentAccount = account;
                 accountMenuButton.setText(account.getUsername());
             });
 
@@ -116,5 +137,13 @@ public class ComposeMailController {
 
         accountMenuButton.getItems().add(new SeparatorMenuItem());
         accountMenuButton.getItems().add(new MenuItem("Customize From Address..."));
+    }
+
+    private void clearTextInput(TextInputControl... inputLst){
+        if (inputLst != null) {
+            for (var input : inputLst){
+                input.clear();
+            }
+        }
     }
 }

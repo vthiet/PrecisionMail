@@ -40,3 +40,7 @@ build/
 
 ### Config ###
 application.properties
+
+
+### SQLite ###
+precisionmail.db

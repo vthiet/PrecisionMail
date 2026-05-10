@@ -1,20 +1,20 @@
 package nlu.fit.soft.gr5.precisionMail.util;
 
 import jakarta.mail.*;
-import jakarta.mail.internet.AddressException;
-import jakarta.mail.internet.InternetAddress;
-import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.*;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public class EmailUtil {
-    private static final String EMAIL_REGEX =
-            "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
+    private static final String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
 
     public static boolean isValidEmail(String email) {
         return email != null && email.matches(EMAIL_REGEX);
@@ -55,7 +55,7 @@ public class EmailUtil {
         });
     }
 
-    public static void send(Account account, Email email) throws MessagingException {
+    public static void send(Account account, Email email) throws MessagingException, IOException {
         Set<String> toList = email.toLst;
         Set<String> ccList = email.cc;
         Set<String> bccList = email.bcc;
@@ -75,9 +75,33 @@ public class EmailUtil {
             message.setRecipients(Message.RecipientType.BCC, parseAddresses(bccList));
         }
 
+        message.setFrom(new InternetAddress(account.getUsername()));
         message.setSubject(email.subject);
-        message.setText(email.content);
-//        message.setContent();
+
+        Multipart multipart = new MimeMultipart();
+        MimeBodyPart textPart = new MimeBodyPart();
+        textPart.setText(email.content); // setContent()
+        multipart.addBodyPart(textPart);
+
+        if (email.attachments != null) {
+            for (String attachFilePath : email.attachments) {
+                File file = new File(attachFilePath);
+
+                if (!file.exists()) {
+                    continue;
+                }
+
+                MimeBodyPart attachmentPart = new MimeBodyPart();
+                attachmentPart.attachFile(file);
+                // Tên file tiếng Việt
+                attachmentPart.setFileName(MimeUtility.encodeText(file.getName()));
+
+                multipart.addBodyPart(attachmentPart);
+            }
+        }
+
+        message.setContent(multipart);
+        message.setSentDate(new Date());
 
         Transport.send(message);
     }

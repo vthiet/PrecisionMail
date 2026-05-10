@@ -24,8 +24,14 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void send(Account account, Email email) throws MessagingException, IOException {
-        EmailUtil.send(account, email);
-        save(email);
+        new Thread(() -> {
+            try {
+                EmailUtil.send(account, email);
+                save(email);
+            } catch (MessagingException | IOException e) {
+                throw new RuntimeException(e);
+            }
+        }).start();
     }
 
     @Override

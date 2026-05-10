@@ -2,9 +2,13 @@ package nlu.fit.soft.gr5.precisionMail.controller.fxml;
 
 import jakarta.mail.MessagingException;
 import javafx.beans.binding.Bindings;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
 import nlu.fit.soft.gr5.precisionMail.service.EmailService;
@@ -12,6 +16,7 @@ import nlu.fit.soft.gr5.precisionMail.service.LoadAccountService;
 import nlu.fit.soft.gr5.precisionMail.service.impl.EmailServiceImpl;
 import nlu.fit.soft.gr5.precisionMail.util.EmailUtil;
 
+import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -44,6 +49,12 @@ public class ComposeMailController {
     public TextField subjectField;
     @FXML
     public Button sendBtn;
+    @FXML
+    public VBox attachmentContainer;
+    @FXML
+    public ListView<File> attachmentListView;
+    @FXML
+    public Label attachmentCountLabel;
 
     private final EmailService emailService = new EmailServiceImpl();
     private final LoadAccountService loadAccountService = new LoadAccountService();
@@ -51,6 +62,7 @@ public class ComposeMailController {
 
 
     private Account currentAccount = null;
+    private final ObservableList<File> attachments = FXCollections.observableArrayList();
 
     @FXML
     public void initialize() {
@@ -68,6 +80,11 @@ public class ComposeMailController {
 
         bccLabel.visibleProperty().bind(bccBtn.visibleProperty().not());
         bccField.visibleProperty().bind(bccBtn.visibleProperty().not());
+
+        attachmentContainer.visibleProperty().bind(Bindings.isNotEmpty(attachments));
+        attachmentContainer.managedProperty().bind(attachmentContainer.visibleProperty());
+
+        attachmentListView.setItems(attachments);
 
         sendBtn.disableProperty().bind(
                 Bindings.createBooleanBinding(() -> {
@@ -170,5 +187,14 @@ public class ComposeMailController {
                 input.clear();
             }
         }
+    }
+
+    public void handleAttachFiles(ActionEvent actionEvent) {
+        FileChooser chooser = new FileChooser();
+        List<File> files = chooser.showOpenMultipleDialog(
+                attachmentContainer.getScene().getWindow()
+        );
+
+        if (files != null) attachments.addAll(files);
     }
 }

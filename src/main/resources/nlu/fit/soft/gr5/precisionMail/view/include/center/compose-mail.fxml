@@ -68,7 +68,7 @@
             <MenuButton text="Attach" mnemonicParsing="true"
                         styleClass="borderRadius">
                 <items>
-                    <MenuItem text="_File(s)..."/>
+                    <MenuItem text="_File(s)..." onAction="#handleAttachFiles"/>
                     <MenuItem text="_Web Page..."/>
 
                     <SeparatorMenuItem/>

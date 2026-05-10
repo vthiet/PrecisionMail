@@ -8,14 +8,19 @@ import nlu.fit.soft.gr5.precisionMail.model.Account;
 import nlu.fit.soft.gr5.precisionMail.service.AccountService;
 import nlu.fit.soft.gr5.precisionMail.service.impl.AccountServiceImpl;
 import nlu.fit.soft.gr5.precisionMail.util.AlertUtil;
+import nlu.fit.soft.gr5.precisionMail.util.LogHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AddAccountDialogController {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AddAccountDialogController.class);
+
     @FXML
     public TextField usernameField;
     @FXML
     public TextField passwordField;
-    private Stage stage;
 
+    private Stage stage;
     private final AccountService accountService = new AccountServiceImpl();
 
     public void setStage(Stage stage) {
@@ -30,26 +35,44 @@ public class AddAccountDialogController {
         String username = usernameField.getText();
         String password = passwordField.getText();
 
+        LOGGER.info("Add-account submitted for username={}.", LogHelper.maskEmail(username));
+
         if (username.isBlank() || password.isBlank()) {
+            LOGGER.warn("Add-account validation failed because username/password is blank.");
             AlertUtil.showError("Validation Error", "Email and Password cannot be empty.");
             return;
         }
 
-        if (!isValidEmail(username)){
+        if (!isValidEmail(username)) {
+            LOGGER.warn(
+                    "Add-account validation failed because email format is invalid. username={}.",
+                    LogHelper.maskEmail(username)
+            );
             AlertUtil.showError("Validation Error", "Email invalid.");
+            return;
         }
 
-        Account account = accountService.save(username, password);
+        try {
+            Account account = accountService.save(username, password);
 
-        if (account.getId() != null){
-            AlertUtil.showInfo("Success", "Account added successfully.");
-            stage.close();
+            if (account.getId() != null) {
+                LOGGER.info("Add-account completed successfully for username={}.", LogHelper.maskEmail(username));
+                AlertUtil.showInfo("Success", "Account added successfully.");
+                stage.close();
+                return;
+            }
+        } catch (RuntimeException ex) {
+            LOGGER.error("Add-account failed for username={}.", LogHelper.maskEmail(username), ex);
+            AlertUtil.showError("Save Error", "Cannot save account. Please check the local database and try again.");
+            return;
         }
+
+        LOGGER.warn("Add-account finished without generated id for username={}.", LogHelper.maskEmail(username));
+        AlertUtil.showError("Save Error", "Cannot save account.");
     }
 
     private boolean isValidEmail(String email) {
         String regex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
         return email.matches(regex);
     }
-
 }

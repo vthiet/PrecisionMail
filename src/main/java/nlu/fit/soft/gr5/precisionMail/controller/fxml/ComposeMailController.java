@@ -7,7 +7,21 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.RadioMenuItem;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputControl;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -23,6 +37,9 @@ import nlu.fit.soft.gr5.precisionMail.service.impl.ScheduledEmailServiceImpl;
 import nlu.fit.soft.gr5.precisionMail.util.AlertUtil;
 import nlu.fit.soft.gr5.precisionMail.util.AttachmentValidator;
 import nlu.fit.soft.gr5.precisionMail.util.EmailUtil;
+import nlu.fit.soft.gr5.precisionMail.util.LogHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,8 +48,11 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ComposeMailController {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ComposeMailController.class);
+
     @FXML
     public Label ccLabel;
     @FXML
@@ -74,15 +94,13 @@ public class ComposeMailController {
     @FXML
     public Button scheduleBtn;
 
-
     private final EmailService emailService = new EmailServiceImpl();
     private final LoadAccountService loadAccountService = new LoadAccountService();
     private final ScheduledEmailServiceImpl scheduledEmailService = new ScheduledEmailServiceImpl();
-
     private final ToggleGroup accountGroup = new ToggleGroup();
+    private final ObservableList<File> attachments = FXCollections.observableArrayList();
 
     private Account currentAccount = null;
-    private final ObservableList<File> attachments = FXCollections.observableArrayList();
 
     @FXML
     public void initialize() {
@@ -126,46 +144,39 @@ public class ComposeMailController {
                 if (empty || file == null) {
                     setText(null);
                     setGraphic(null);
-                } else {
-                    // Create HBox with file name and delete button
-                    HBox hbox = new HBox(10);
-                    hbox.setPadding(new Insets(5));
-                    hbox.setStyle("-fx-alignment: CENTER_LEFT;");
-
-                    Label fileLabel = new Label(file.getName());
-                    fileLabel.setStyle("-fx-text-fill: #333333;");
-
-                    Pane spacer = new Pane();
-                    HBox.setHgrow(spacer, Priority.ALWAYS);
-
-                    Button deleteBtn = new Button("×");
-                    deleteBtn.setPrefSize(25, 25);
-                    deleteBtn.setStyle("-fx-font-size: 16; -fx-padding: 0; -fx-text-fill: #d9534f;");
-                    deleteBtn.setOnAction(e -> deleteAttachment(file));
-
-                    hbox.getChildren().addAll(fileLabel, spacer, deleteBtn);
-                    setGraphic(hbox);
+                    return;
                 }
+
+                HBox hbox = new HBox(10);
+                hbox.setPadding(new Insets(5));
+                hbox.setStyle("-fx-alignment: CENTER_LEFT;");
+
+                Label fileLabel = new Label(file.getName());
+                fileLabel.setStyle("-fx-text-fill: #333333;");
+
+                Pane spacer = new Pane();
+                HBox.setHgrow(spacer, Priority.ALWAYS);
+
+                Button deleteBtn = new Button("x");
+                deleteBtn.setPrefSize(25, 25);
+                deleteBtn.setStyle("-fx-font-size: 16; -fx-padding: 0; -fx-text-fill: #d9534f;");
+                deleteBtn.setOnAction(e -> deleteAttachment(file));
+
+                hbox.getChildren().addAll(fileLabel, spacer, deleteBtn);
+                setGraphic(hbox);
             }
         });
 
         attachmentCountLabel.textProperty().bind(
-                Bindings.size(attachments)
-                        .asString("%d Attachment(s)")
+                Bindings.size(attachments).asString("%d Attachment(s)")
         );
 
         attachmentSizeLabel.textProperty().bind(
                 Bindings.createStringBinding(() -> {
-
-                    long total = attachments.stream()
-                            .mapToLong(File::length)
-                            .sum();
-
+                    long total = attachments.stream().mapToLong(File::length).sum();
                     return formatSize(total);
-
                 }, attachments)
         );
-
 
         sendBtn.disableProperty().bind(
                 Bindings.createBooleanBinding(() -> {
@@ -191,12 +202,13 @@ public class ComposeMailController {
         });
 
         loadAccountService.setOnSucceeded(e -> {
+            LOGGER.info("Account menu loaded successfully.");
             updateMenu(loadAccountService.getValue());
         });
 
         loadAccountService.setOnFailed(e -> {
-            accountMenuButton.setText("Tải tài khoản thất bại.");
-            loadAccountService.getException().printStackTrace();
+            accountMenuButton.setText("Load account failed.");
+            LOGGER.error("Account menu loading failed.", loadAccountService.getException());
         });
 
         loadAccountService.start();
@@ -213,38 +225,38 @@ public class ComposeMailController {
     }
 
     public void handleSendMail(ActionEvent actionEvent) throws MessagingException, IOException {
-        Account account = currentAccount;
-
         if (currentAccount == null) {
-            AlertUtil.showError("Lỗi", "Vui lòng chọn tài khoản để gửi email.");
+            LOGGER.warn("Send email rejected because no active account is selected.");
+            AlertUtil.showError("Error", "Please select an account before sending email.");
             return;
         }
 
-        Set<String> toLst = EmailUtil.emailFeature(toField.getText());
-        Set<String> ccLst = EmailUtil.emailFeature(ccField.getText());
-        Set<String> bccLst = EmailUtil.emailFeature(bccField.getText());
-        String subject = subjectField.getText();
-        String content = contentArea.getText();
-
-        // Convert File objects to absolute paths
-        List<String> attachmentPaths = null;
-        if (!attachments.isEmpty()) {
-            attachmentPaths = attachments.stream()
-                    .map(File::getAbsolutePath)
-                    .collect(java.util.stream.Collectors.toList());
+        Email email = buildEmail(currentAccount);
+        if (!hasAnyRecipient(email)) {
+            LOGGER.warn("Send email rejected because recipient list is empty.");
+            AlertUtil.showError("Error", "Please enter at least one valid recipient.");
+            return;
         }
 
-        // Create and send email
-        Email email = new Email(account.getUsername(),
-                toLst, ccLst, bccLst, subject, content, attachmentPaths, LocalDateTime.now());
+        AttachmentValidator.ValidationResult attachmentValidation =
+                AttachmentValidator.validateAttachmentList(attachments);
+        if (!attachmentValidation.isValid) {
+            LOGGER.warn("Send email rejected because attachments are invalid. reason={}", attachmentValidation.errorMessage);
+            AlertUtil.showError("Error", attachmentValidation.errorMessage);
+            return;
+        }
 
-        emailService.send(account, email);
+        emailService.send(currentAccount, email);
 
-        // Clear form after successful send
-        clearTextInput(toField, ccField, bccField, subjectField, contentArea);
-        attachments.clear();
+        LOGGER.info(
+                "Email handoff to async sender completed. sender={}, recipients={}, attachments={}.",
+                LogHelper.maskEmail(currentAccount.getUsername()),
+                LogHelper.recipientCount(email),
+                LogHelper.attachmentCount(email)
+        );
 
-        AlertUtil.showInfo("Thành công", "Email đã được gửi!");
+        clearComposeForm();
+        AlertUtil.showInfo("Processing", "Email send request was submitted to the background worker.");
     }
 
     private void updateMenu(List<Account> accounts) {
@@ -254,10 +266,10 @@ public class ComposeMailController {
         for (Account account : accounts) {
             RadioMenuItem item = new RadioMenuItem(account.getUsername());
             item.setToggleGroup(accountGroup);
-
             item.setOnAction(e -> {
                 currentAccount = account;
                 accountMenuButton.setText(account.getUsername());
+                LOGGER.info("Active account changed to username={}.", LogHelper.maskEmail(account.getUsername()));
             });
 
             accountMenuButton.getItems().add(item);
@@ -266,6 +278,7 @@ public class ComposeMailController {
                 item.setSelected(true);
                 currentAccount = account;
                 accountMenuButton.setText(account.getUsername());
+                LOGGER.info("Default active account set to username={}.", LogHelper.maskEmail(account.getUsername()));
                 first = false;
             }
         }
@@ -275,10 +288,12 @@ public class ComposeMailController {
     }
 
     private void clearTextInput(TextInputControl... inputLst) {
-        if (inputLst != null) {
-            for (var input : inputLst) {
-                input.clear();
-            }
+        if (inputLst == null) {
+            return;
+        }
+
+        for (var input : inputLst) {
+            input.clear();
         }
     }
 
@@ -289,25 +304,27 @@ public class ComposeMailController {
         );
 
         if (selectedFiles == null || selectedFiles.isEmpty()) {
+            LOGGER.debug("Attachment selection cancelled by user.");
             return;
         }
 
-        // Validate and add files one by one
         for (File file : selectedFiles) {
             AttachmentValidator.ValidationResult validation =
                     AttachmentValidator.validateFileAddition(file, attachments);
 
             if (validation.isValid) {
                 attachments.add(file);
+                LOGGER.info("Attachment accepted. name={}, size={} bytes.", file.getName(), file.length());
             } else {
-                // Show error alert for failed file
-                AlertUtil.showError("Không thể thêm file", validation.errorMessage);
+                LOGGER.warn("Attachment rejected. name={}, reason={}", file.getName(), validation.errorMessage);
+                AlertUtil.showError("Cannot add attachment", validation.errorMessage);
             }
         }
     }
 
     public void deleteAttachment(File file) {
         attachments.remove(file);
+        LOGGER.info("Attachment removed. name={}", file.getName());
     }
 
     private String formatSize(long bytes) {
@@ -316,47 +333,93 @@ public class ComposeMailController {
     }
 
     public void handleScheduleSendMail(ActionEvent actionEvent) {
-        LocalDate date = scheduleDatePicker.getValue();
-
-        Integer hour = hourBox.getValue();
-        Integer minute = minuteBox.getValue();
-
-        LocalDateTime scheduledAt = LocalDateTime.of(date, LocalTime.of(hour, minute));
-
-
-        Account account = currentAccount;
-
         if (currentAccount == null) {
-            AlertUtil.showError("Lỗi", "Vui lòng chọn tài khoản để gửi email.");
+            LOGGER.warn("Schedule email rejected because no active account is selected.");
+            AlertUtil.showError("Error", "Please select an account before scheduling email.");
             return;
         }
 
+        LocalDate date = scheduleDatePicker.getValue();
+        Integer hour = hourBox.getValue();
+        Integer minute = minuteBox.getValue();
+
+        if (date == null || hour == null || minute == null) {
+            LOGGER.warn("Schedule email rejected because schedule time is incomplete.");
+            AlertUtil.showError("Error", "Please choose a complete schedule time.");
+            return;
+        }
+
+        LocalDateTime scheduledAt = LocalDateTime.of(date, LocalTime.of(hour, minute));
+        Email email = buildEmail(currentAccount);
+        if (!hasAnyRecipient(email)) {
+            LOGGER.warn("Schedule email rejected because recipient list is empty.");
+            AlertUtil.showError("Error", "Please enter at least one valid recipient.");
+            return;
+        }
+
+        AttachmentValidator.ValidationResult attachmentValidation =
+                AttachmentValidator.validateAttachmentList(attachments);
+        if (!attachmentValidation.isValid) {
+            LOGGER.warn("Schedule email rejected because attachments are invalid. reason={}", attachmentValidation.errorMessage);
+            AlertUtil.showError("Error", attachmentValidation.errorMessage);
+            return;
+        }
+
+        ScheduledEmail scheduledEmail = new ScheduledEmail(currentAccount, email, scheduledAt);
+
+        try {
+            scheduledEmailService.schedule(scheduledEmail);
+        } catch (IllegalArgumentException ex) {
+            LOGGER.warn(
+                    "Schedule request rejected. sender={}, reason={}",
+                    LogHelper.maskEmail(currentAccount.getUsername()),
+                    ex.getMessage()
+            );
+            AlertUtil.showError("Error", "Scheduled time must be in the future.");
+            return;
+        }
+
+        LOGGER.info(
+                "Schedule request accepted. sender={}, scheduledAt={}, recipients={}, attachments={}.",
+                LogHelper.maskEmail(currentAccount.getUsername()),
+                scheduledAt,
+                LogHelper.recipientCount(email),
+                LogHelper.attachmentCount(email)
+        );
+
+        clearComposeForm();
+        AlertUtil.showInfo("Success", "Email was scheduled successfully.");
+    }
+
+    private Email buildEmail(Account account) {
         Set<String> toLst = EmailUtil.emailFeature(toField.getText());
         Set<String> ccLst = EmailUtil.emailFeature(ccField.getText());
         Set<String> bccLst = EmailUtil.emailFeature(bccField.getText());
         String subject = subjectField.getText();
         String content = contentArea.getText();
 
-        // Convert File objects to absolute paths
-        List<String> attachmentPaths = null;
-        if (!attachments.isEmpty()) {
-            attachmentPaths = attachments.stream()
-                    .map(File::getAbsolutePath)
-                    .collect(java.util.stream.Collectors.toList());
-        }
+        List<String> attachmentPaths = attachments.isEmpty()
+                ? null
+                : attachments.stream().map(File::getAbsolutePath).collect(Collectors.toList());
 
-        // Create and send email
-        Email email = new Email(account.getUsername(),
-                toLst, ccLst, bccLst, subject, content, attachmentPaths, LocalDateTime.now());
+        return new Email(
+                account.getUsername(),
+                toLst,
+                ccLst,
+                bccLst,
+                subject,
+                content,
+                attachmentPaths,
+                LocalDateTime.now()
+        );
+    }
 
-        ScheduledEmail scheduledEmail = new ScheduledEmail(account, email, scheduledAt);
-
-        scheduledEmailService.schedule(scheduledEmail);
-
-        // Clear form after successful send
+    private void clearComposeForm() {
         clearTextInput(toField, ccField, bccField, subjectField, contentArea);
         attachments.clear();
+    }
 
-        AlertUtil.showInfo("Thành công", "Email đã được gửi!");
+    private boolean hasAnyRecipient(Email email) {
+        return LogHelper.recipientCount(email) > 0;
     }
 }

@@ -4,6 +4,8 @@ import jakarta.mail.*;
 import jakarta.mail.internet.*;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,6 +16,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class EmailUtil {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EmailUtil.class);
     private static final String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
 
     public static boolean isValidEmail(String email) {
@@ -47,6 +50,8 @@ public class EmailUtil {
         props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.smtp.host", "smtp.gmail.com");
         props.put("mail.smtp.port", "587");
+
+        LOGGER.debug("Creating SMTP session for sender={}.", LogHelper.maskEmail(account.getUsername()));
 
         return Session.getInstance(props, new Authenticator() {
             protected PasswordAuthentication getPasswordAuthentication() {
@@ -88,6 +93,7 @@ public class EmailUtil {
                 File file = new File(attachFilePath);
 
                 if (!file.exists()) {
+                    LOGGER.warn("Attachment skipped because file does not exist. path={}", attachFilePath);
                     continue;
                 }
 
@@ -104,5 +110,6 @@ public class EmailUtil {
         message.setSentDate(new Date());
 
         Transport.send(message);
+        LOGGER.debug("SMTP transport completed successfully for sender={}.", LogHelper.maskEmail(account.getUsername()));
     }
 }

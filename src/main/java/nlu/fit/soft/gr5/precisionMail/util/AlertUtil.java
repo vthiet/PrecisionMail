@@ -1,10 +1,14 @@
 package nlu.fit.soft.gr5.precisionMail.util;
 
 import javafx.scene.control.Alert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AlertUtil {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AlertUtil.class);
 
     public static void showError(String title, String message) {
+        LOGGER.warn("Showing error alert. title={}, message={}", title, message);
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(title);
         alert.setHeaderText(null);
@@ -13,6 +17,7 @@ public class AlertUtil {
     }
 
     public static void showInfo(String title, String message) {
+        LOGGER.info("Showing info alert. title={}, message={}", title, message);
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);
         alert.setHeaderText(null);

@@ -1,23 +1,30 @@
 package nlu.fit.soft.gr5.precisionMail.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.*;
 
 public class DbUtil {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DbUtil.class);
 
     private final static String URL = "jdbc:sqlite:precisionmail.db";
 
     public static Connection getConnect() throws SQLException {
         try {
-            return DriverManager.getConnection(URL);
+            Connection connection = DriverManager.getConnection(URL);
+            LOGGER.debug("Opened SQLite connection to {}.", URL);
+            return connection;
         } catch (SQLException e) {
-            System.err.println("Connection failed");
-            e.printStackTrace();
-            throw new SQLException();
+            LOGGER.error("Failed to open SQLite connection to {}.", URL, e);
+            throw e;
         }
     }
 
     static void main() throws SQLException {
         Connection conn = getConnect();
-        if (conn != null) System.out.println("Ket noi thanh cong");
+        if (conn != null) {
+            LOGGER.info("Database connection test completed successfully.");
+        }
     }
 }

@@ -1,10 +1,14 @@
 package nlu.fit.soft.gr5.precisionMail.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
 public class AppLoaderUtil {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AppLoaderUtil.class);
     private static Properties appConfig;
 
     static {
@@ -18,14 +22,11 @@ public class AppLoaderUtil {
                 throw new RuntimeException("Cannot find application.properties in classpath");
             }
 
-            System.out.println(
-                    AppLoaderUtil.class.getClassLoader()
-                            .getResource("application.properties")
-            );
+            LOGGER.info("application.properties loaded from classpath.");
             appConfig.load(is);
-
         } catch (IOException ex) {
-            throw new RuntimeException("Failed toLst load application.properties", ex);
+            LOGGER.error("Failed to load application.properties.", ex);
+            throw new RuntimeException("Failed to load application.properties", ex);
         }
     }
 
@@ -33,7 +34,7 @@ public class AppLoaderUtil {
         return appConfig.getProperty(key);
     }
 
-    public Properties getAppConfig(){
-        return  appConfig;
+    public Properties getAppConfig() {
+        return appConfig;
     }
 }

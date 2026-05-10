@@ -7,11 +7,22 @@ import nlu.fit.soft.gr5.precisionMail.model.Account;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
 import nlu.fit.soft.gr5.precisionMail.service.EmailService;
 import nlu.fit.soft.gr5.precisionMail.util.EmailUtil;
+import nlu.fit.soft.gr5.precisionMail.util.LogHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class EmailServiceImpl implements EmailService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EmailServiceImpl.class);
+    private static final ExecutorService EMAIL_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
+        Thread thread = new Thread(r, "email-send-worker");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     private final EmailDao emailDao = new EmailDaoImpl();
 
@@ -19,14 +30,33 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void send(Account account, Email email) throws MessagingException, IOException {
-        new Thread(() -> {
+        LOGGER.info(
+                "Email send requested. sender={}, recipients={}, attachments={}.",
+                LogHelper.maskEmail(account.getUsername()),
+                LogHelper.recipientCount(email),
+                LogHelper.attachmentCount(email)
+        );
+
+        EMAIL_EXECUTOR.submit(() -> {
             try {
                 EmailUtil.send(account, email);
                 save(email);
-            } catch (MessagingException | IOException e) {
-                throw new RuntimeException(e);
+                LOGGER.info(
+                        "Email sent successfully. sender={}, recipients={}, attachments={}.",
+                        LogHelper.maskEmail(account.getUsername()),
+                        LogHelper.recipientCount(email),
+                        LogHelper.attachmentCount(email)
+                );
+            } catch (MessagingException | IOException | RuntimeException e) {
+                LOGGER.error(
+                        "Email send failed. sender={}, recipients={}, attachments={}.",
+                        LogHelper.maskEmail(account.getUsername()),
+                        LogHelper.recipientCount(email),
+                        LogHelper.attachmentCount(email),
+                        e
+                );
             }
-        }).start();
+        });
     }
 
     @Override

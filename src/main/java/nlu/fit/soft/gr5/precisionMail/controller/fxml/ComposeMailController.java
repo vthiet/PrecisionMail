@@ -6,7 +6,11 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
@@ -14,6 +18,8 @@ import nlu.fit.soft.gr5.precisionMail.model.Email;
 import nlu.fit.soft.gr5.precisionMail.service.EmailService;
 import nlu.fit.soft.gr5.precisionMail.service.LoadAccountService;
 import nlu.fit.soft.gr5.precisionMail.service.impl.EmailServiceImpl;
+import nlu.fit.soft.gr5.precisionMail.util.AlertUtil;
+import nlu.fit.soft.gr5.precisionMail.util.AttachmentValidator;
 import nlu.fit.soft.gr5.precisionMail.util.EmailUtil;
 
 import java.io.File;
@@ -86,6 +92,37 @@ public class ComposeMailController {
 
         attachmentListView.setItems(attachments);
 
+        attachmentListView.setCellFactory(list -> new ListCell<>() {
+            @Override
+            protected void updateItem(File file, boolean empty) {
+                super.updateItem(file, empty);
+
+                if (empty || file == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    // Create HBox with file name and delete button
+                    HBox hbox = new HBox(10);
+                    hbox.setPadding(new Insets(5));
+                    hbox.setStyle("-fx-alignment: CENTER_LEFT;");
+                    
+                    Label fileLabel = new Label(file.getName());
+                    fileLabel.setStyle("-fx-text-fill: #333333;");
+                    
+                    Pane spacer = new Pane();
+                    HBox.setHgrow(spacer, Priority.ALWAYS);
+                    
+                    Button deleteBtn = new Button("×");
+                    deleteBtn.setPrefSize(25, 25);
+                    deleteBtn.setStyle("-fx-font-size: 16; -fx-padding: 0; -fx-text-fill: #d9534f;");
+                    deleteBtn.setOnAction(e -> deleteAttachment(file));
+                    
+                    hbox.getChildren().addAll(fileLabel, spacer, deleteBtn);
+                    setGraphic(hbox);
+                }
+            }
+        });
+
         attachmentCountLabel.textProperty().bind(
                 Bindings.size(attachments)
                         .asString("%d Attachment(s)")
@@ -102,6 +139,7 @@ public class ComposeMailController {
 
                 }, attachments)
         );
+
 
         sendBtn.disableProperty().bind(
                 Bindings.createBooleanBinding(() -> {
@@ -152,7 +190,7 @@ public class ComposeMailController {
         Account account = currentAccount;
 
         if (currentAccount == null) {
-            System.err.println("Please select account.");
+            AlertUtil.showError("Lỗi", "Vui lòng chọn tài khoản để gửi email.");
             return;
         }
 
@@ -162,13 +200,25 @@ public class ComposeMailController {
         String subject = subjectField.getText();
         String content = contentArea.getText();
 
-        // Handle
+        // Convert File objects to absolute paths
+        List<String> attachmentPaths = null;
+        if (!attachments.isEmpty()) {
+            attachmentPaths = attachments.stream()
+                    .map(File::getAbsolutePath)
+                    .collect(java.util.stream.Collectors.toList());
+        }
+
+        // Create and send email
         Email email = new Email(account.getUsername(),
-                toLst, ccLst, bccLst, subject, content, null, LocalDateTime.now());
+                toLst, ccLst, bccLst, subject, content, attachmentPaths, LocalDateTime.now());
 
         emailService.send(account, email);
 
+        // Clear form after successful send
         clearTextInput(toField, ccField, bccField, subjectField, contentArea);
+        attachments.clear();
+        
+        AlertUtil.showInfo("Thành công", "Email đã được gửi!");
     }
 
     private void updateMenu(List<Account> accounts) {
@@ -208,11 +258,30 @@ public class ComposeMailController {
 
     public void handleAttachFiles(ActionEvent actionEvent) {
         FileChooser chooser = new FileChooser();
-        List<File> files = chooser.showOpenMultipleDialog(
+        List<File> selectedFiles = chooser.showOpenMultipleDialog(
                 attachmentContainer.getScene().getWindow()
         );
 
-        if (files != null) attachments.addAll(files);
+        if (selectedFiles == null || selectedFiles.isEmpty()) {
+            return;
+        }
+
+        // Validate and add files one by one
+        for (File file : selectedFiles) {
+            AttachmentValidator.ValidationResult validation = 
+                AttachmentValidator.validateFileAddition(file, attachments);
+            
+            if (validation.isValid) {
+                attachments.add(file);
+            } else {
+                // Show error alert for failed file
+                AlertUtil.showError("Không thể thêm file", validation.errorMessage);
+            }
+        }
+    }
+
+    public void deleteAttachment(File file) {
+        attachments.remove(file);
     }
 
     private String formatSize(long bytes) {

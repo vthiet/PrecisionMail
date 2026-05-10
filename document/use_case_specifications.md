@@ -177,25 +177,96 @@ sequenceDiagram
 - **Non-Functional Requirement:** Dung lượng tệp được tính toán nhanh, không load toàn bộ tệp vào RAM khi kiểm tra size.
 
 **2. Sequence Diagram**
+
+**Phần 1: Thêm tệp đính kèm**
 ```mermaid
 sequenceDiagram
     actor User
     participant UI
+    participant FileChooser
     participant AttachmentValidator
     
     User->>UI: Nhập văn bản (To, Subject, Content)
-    User->>UI: Chọn tệp đính kèm (File A)
-    UI->>AttachmentValidator: validate(File A, CurrentFilesList)
+    User->>UI: Click "Attach" > "_File(s)..."
+    UI->>FileChooser: Hiện hộp thoại chọn file
+    User->>FileChooser: Chọn 1 hoặc nhiều file
+    FileChooser-->>UI: Trả về List<File>
     
-    alt Số lượng > 10 HOẶC Tổng Size > 25MB
-        AttachmentValidator-->>UI: Return False (Kèm lý do)
-        UI-->>User: Pop-up cảnh báo dung lượng/số lượng
-    else Hợp lệ
-        AttachmentValidator-->>UI: Return True
-        UI->>UI: Cập nhật danh sách đính kèm
-        UI-->>User: Hiển thị File A trên UI
+    loop Kiểm tra từng file
+        UI->>AttachmentValidator: validateFileAddition(File, CurrentList)
+        
+        alt Định dạng nguy hiểm hoặc quá size
+            AttachmentValidator-->>UI: ValidationResult (Error)
+            UI-->>User: Hiển thị Pop-up cảnh báo lỗi
+        else Hợp lệ
+            AttachmentValidator-->>UI: ValidationResult (Success)
+            UI->>UI: attachments.add(File)
+            UI->>UI: Cập nhật ListView
+            UI->>UI: Cập nhật Label (Số file, Tổng size)
+            UI-->>User: Hiển thị file trên UI
+        end
     end
 ```
+
+**Phần 2: Xóa tệp đính kèm (Alternative Flow)**
+```mermaid
+sequenceDiagram
+    actor User
+    participant UI
+    participant ListView
+    
+    User->>UI: Xem danh sách attachment
+    User->>ListView: Click nút "×" trên file
+    ListView->>UI: Gọi deleteAttachment(File)
+    UI->>UI: attachments.remove(File)
+    UI->>ListView: Cập nhật ListView
+    UI->>UI: Cập nhật Label (Số file, Tổng size)
+    UI-->>User: Ẩn file khỏi danh sách
+```
+
+**Phần 3: Gửi email với attachment**
+```mermaid
+sequenceDiagram
+    actor User
+    participant UI
+    participant ComposeMailController
+    participant EmailService
+    participant EmailUtil
+    participant GoogleSMTP
+    
+    User->>UI: Click "Send"
+    UI->>ComposeMailController: handleSendMail()
+    ComposeMailController->>ComposeMailController: Lấy thông tin (To, CC, BCC, Subject, Content)
+    ComposeMailController->>ComposeMailController: Chuyển List<File> → List<String> (Paths)
+    ComposeMailController->>EmailService: send(Account, Email)
+    
+    Note over EmailService: Email chứa attachmentPaths
+    
+    EmailService->>EmailUtil: send(Account, Email) - Async Thread
+    EmailUtil->>EmailUtil: tạo MimeMessage
+    EmailUtil->>EmailUtil: Thêm text content vào multipart
+    
+    loop Với mỗi attachment path
+        EmailUtil->>EmailUtil: file = new File(attachPath)
+        EmailUtil->>EmailUtil: Thêm MimeBodyPart vào multipart
+    end
+    
+    EmailUtil->>GoogleSMTP: Transport.send(message)
+    
+    alt Gửi thành công
+        GoogleSMTP-->>EmailUtil: 250 OK
+        EmailUtil->>EmailService: Lưu vào DB
+        EmailService-->>ComposeMailController: Success
+        ComposeMailController->>UI: clear() & attachments.clear()
+        UI-->>User: Thông báo thành công, làm sạch form
+    else Gửi thất bại
+        GoogleSMTP-->>EmailUtil: Exception
+        EmailUtil-->>ComposeMailController: Exception
+        ComposeMailController-->>UI: Exception
+        UI-->>User: Hiển thị Pop-up lỗi
+    end
+```
+
 
 ---
 

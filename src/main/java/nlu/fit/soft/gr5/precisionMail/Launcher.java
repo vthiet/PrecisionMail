@@ -37,27 +37,25 @@ public class Launcher extends Application {
         LOGGER.info("Application started successfully.");
     }
 
-    static void main(String[] args){
+    public static void main(String[] args){
         LOGGER.info("Application bootstrap started.");
         initDatabase();
         Application.launch(Launcher.class, args);
     }
 
     private static void initDatabase() {
-        String sql = """
-                create table if not exists accounts
-                (
-                    id integer primary key autoincrement,
-                    username text not null,
-                    password text not null,
-                    created_at text not null
-                );
-                """;
-
         try (Connection connection = DbUtil.getConnect();
              Statement st = connection.createStatement()) {
-
-            st.execute(sql);
+            st.execute("""
+                    create table if not exists accounts
+                    (
+                        id integer primary key autoincrement,
+                        email text not null unique,
+                        encrypt_app_password text not null,
+                        created_at text not null,
+                        updated_at text not null
+                    );
+                    """);
             LOGGER.info("Database initialization completed successfully.");
 
         } catch (SQLException e) {

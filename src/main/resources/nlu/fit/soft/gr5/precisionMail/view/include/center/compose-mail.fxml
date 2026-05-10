@@ -65,6 +65,15 @@
 
             <Pane HBox.hgrow="ALWAYS"/>
 
+            <HBox alignment="CENTER_LEFT" spacing="8">
+                <Label text="Send at:"/>
+                <DatePicker fx:id="scheduleDatePicker"/>
+                <ComboBox fx:id="hourBox" prefWidth="70"/>
+                <Label text=":"/>
+                <ComboBox fx:id="minuteBox" prefWidth="70"/>
+                <Button fx:id="scheduleBtn" text="Schedule send" onAction="#handleScheduleSendMail"/>
+            </HBox>
+
             <MenuButton text="Attach" mnemonicParsing="true"
                         styleClass="borderRadius">
                 <items>

@@ -15,16 +15,20 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
+import nlu.fit.soft.gr5.precisionMail.model.ScheduledEmail;
 import nlu.fit.soft.gr5.precisionMail.service.EmailService;
 import nlu.fit.soft.gr5.precisionMail.service.LoadAccountService;
 import nlu.fit.soft.gr5.precisionMail.service.impl.EmailServiceImpl;
+import nlu.fit.soft.gr5.precisionMail.service.impl.ScheduledEmailServiceImpl;
 import nlu.fit.soft.gr5.precisionMail.util.AlertUtil;
 import nlu.fit.soft.gr5.precisionMail.util.AttachmentValidator;
 import nlu.fit.soft.gr5.precisionMail.util.EmailUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
 
@@ -61,11 +65,21 @@ public class ComposeMailController {
     public ListView<File> attachmentListView;
     @FXML
     public Label attachmentCountLabel;
+    @FXML
+    public DatePicker scheduleDatePicker;
+    @FXML
+    public ComboBox<Integer> hourBox;
+    @FXML
+    public ComboBox<Integer> minuteBox;
+    @FXML
+    public Button scheduleBtn;
+
 
     private final EmailService emailService = new EmailServiceImpl();
     private final LoadAccountService loadAccountService = new LoadAccountService();
-    private final ToggleGroup accountGroup = new ToggleGroup();
+    private final ScheduledEmailServiceImpl scheduledEmailService = new ScheduledEmailServiceImpl();
 
+    private final ToggleGroup accountGroup = new ToggleGroup();
 
     private Account currentAccount = null;
     private final ObservableList<File> attachments = FXCollections.observableArrayList();
@@ -92,6 +106,18 @@ public class ComposeMailController {
 
         attachmentListView.setItems(attachments);
 
+        for (int i = 0; i < 24; i++) {
+            hourBox.getItems().add(i);
+        }
+
+        for (int i = 0; i < 60; i++) {
+            minuteBox.getItems().add(i);
+        }
+
+        hourBox.setValue(LocalTime.now().getHour());
+        minuteBox.setValue(LocalTime.now().getMinute());
+        scheduleDatePicker.setValue(LocalDate.now());
+
         attachmentListView.setCellFactory(list -> new ListCell<>() {
             @Override
             protected void updateItem(File file, boolean empty) {
@@ -105,18 +131,18 @@ public class ComposeMailController {
                     HBox hbox = new HBox(10);
                     hbox.setPadding(new Insets(5));
                     hbox.setStyle("-fx-alignment: CENTER_LEFT;");
-                    
+
                     Label fileLabel = new Label(file.getName());
                     fileLabel.setStyle("-fx-text-fill: #333333;");
-                    
+
                     Pane spacer = new Pane();
                     HBox.setHgrow(spacer, Priority.ALWAYS);
-                    
+
                     Button deleteBtn = new Button("×");
                     deleteBtn.setPrefSize(25, 25);
                     deleteBtn.setStyle("-fx-font-size: 16; -fx-padding: 0; -fx-text-fill: #d9534f;");
                     deleteBtn.setOnAction(e -> deleteAttachment(file));
-                    
+
                     hbox.getChildren().addAll(fileLabel, spacer, deleteBtn);
                     setGraphic(hbox);
                 }
@@ -217,7 +243,7 @@ public class ComposeMailController {
         // Clear form after successful send
         clearTextInput(toField, ccField, bccField, subjectField, contentArea);
         attachments.clear();
-        
+
         AlertUtil.showInfo("Thành công", "Email đã được gửi!");
     }
 
@@ -268,9 +294,9 @@ public class ComposeMailController {
 
         // Validate and add files one by one
         for (File file : selectedFiles) {
-            AttachmentValidator.ValidationResult validation = 
-                AttachmentValidator.validateFileAddition(file, attachments);
-            
+            AttachmentValidator.ValidationResult validation =
+                    AttachmentValidator.validateFileAddition(file, attachments);
+
             if (validation.isValid) {
                 attachments.add(file);
             } else {
@@ -287,5 +313,50 @@ public class ComposeMailController {
     private String formatSize(long bytes) {
         double mb = bytes / 1024.0 / 1024.0;
         return String.format("%.1f MB", mb);
+    }
+
+    public void handleScheduleSendMail(ActionEvent actionEvent) {
+        LocalDate date = scheduleDatePicker.getValue();
+
+        Integer hour = hourBox.getValue();
+        Integer minute = minuteBox.getValue();
+
+        LocalDateTime scheduledAt = LocalDateTime.of(date, LocalTime.of(hour, minute));
+
+
+        Account account = currentAccount;
+
+        if (currentAccount == null) {
+            AlertUtil.showError("Lỗi", "Vui lòng chọn tài khoản để gửi email.");
+            return;
+        }
+
+        Set<String> toLst = EmailUtil.emailFeature(toField.getText());
+        Set<String> ccLst = EmailUtil.emailFeature(ccField.getText());
+        Set<String> bccLst = EmailUtil.emailFeature(bccField.getText());
+        String subject = subjectField.getText();
+        String content = contentArea.getText();
+
+        // Convert File objects to absolute paths
+        List<String> attachmentPaths = null;
+        if (!attachments.isEmpty()) {
+            attachmentPaths = attachments.stream()
+                    .map(File::getAbsolutePath)
+                    .collect(java.util.stream.Collectors.toList());
+        }
+
+        // Create and send email
+        Email email = new Email(account.getUsername(),
+                toLst, ccLst, bccLst, subject, content, attachmentPaths, LocalDateTime.now());
+
+        ScheduledEmail scheduledEmail = new ScheduledEmail(account, email, scheduledAt);
+
+        scheduledEmailService.schedule(scheduledEmail);
+
+        // Clear form after successful send
+        clearTextInput(toField, ccField, bccField, subjectField, contentArea);
+        attachments.clear();
+
+        AlertUtil.showInfo("Thành công", "Email đã được gửi!");
     }
 }

@@ -13,10 +13,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class EmailUtil {
+    private static final String EMAIL_REGEX =
+            "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
 
+    public static boolean isValidEmail(String email) {
+        return email != null && email.matches(EMAIL_REGEX);
+    }
 
-
-    public static Set<String> emailFeature(String plainText){
+    public static Set<String> emailFeature(String plainText) {
         return Arrays.stream(plainText.split("[,;]"))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
@@ -59,15 +63,15 @@ public class EmailUtil {
         Session session = getSession(account);
         MimeMessage message = new MimeMessage(session);
 
-        if (toList != null && !toList.isEmpty()){
+        if (toList != null && !toList.isEmpty()) {
             message.setRecipients(Message.RecipientType.TO, parseAddresses(toList));
         }
 
-        if (ccList != null && !ccList.isEmpty()){
+        if (ccList != null && !ccList.isEmpty()) {
             message.setRecipients(Message.RecipientType.CC, parseAddresses(ccList));
         }
 
-        if (bccList != null && !bccList.isEmpty()){
+        if (bccList != null && !bccList.isEmpty()) {
             message.setRecipients(Message.RecipientType.BCC, parseAddresses(bccList));
         }
 

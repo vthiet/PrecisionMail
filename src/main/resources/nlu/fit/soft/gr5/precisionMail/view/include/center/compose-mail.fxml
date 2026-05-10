@@ -13,7 +13,8 @@
 
     <ToolBar>
         <items>
-            <Button text="Send"
+            <Button fx:id="sendBtn"
+                    text="Send"
                     onAction="#handleSendMail"
                     styleClass="borderRadius">
                 <graphic>

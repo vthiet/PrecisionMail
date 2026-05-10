@@ -1,6 +1,7 @@
 package nlu.fit.soft.gr5.precisionMail.controller.fxml;
 
 import jakarta.mail.MessagingException;
+import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -41,10 +42,13 @@ public class ComposeMailController {
     public MenuButton accountMenuButton;
     @FXML
     public TextField subjectField;
+    @FXML
+    public Button sendBtn;
 
     private final EmailService emailService = new EmailServiceImpl();
     private final LoadAccountService loadAccountService = new LoadAccountService();
     private final ToggleGroup accountGroup = new ToggleGroup();
+
 
     private Account currentAccount = null;
 
@@ -64,6 +68,18 @@ public class ComposeMailController {
 
         bccLabel.visibleProperty().bind(bccBtn.visibleProperty().not());
         bccField.visibleProperty().bind(bccBtn.visibleProperty().not());
+
+        sendBtn.disableProperty().bind(
+                Bindings.createBooleanBinding(() -> {
+                            boolean toValid = EmailUtil.isValidEmail(toField.getText());
+                            boolean ccValid = EmailUtil.isValidEmail(ccField.getText());
+                            boolean bccValid = EmailUtil.isValidEmail(bccField.getText());
+                            return !(toValid || ccValid || bccValid);
+                        },
+                        toField.textProperty(),
+                        ccField.textProperty(),
+                        bccField.textProperty())
+        );
 
         ProgressIndicator loadingIndicator = new ProgressIndicator();
         loadingIndicator.setPrefSize(15, 15);

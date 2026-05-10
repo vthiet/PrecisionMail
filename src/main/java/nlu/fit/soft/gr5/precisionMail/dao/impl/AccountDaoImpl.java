@@ -20,11 +20,15 @@ public class AccountDaoImpl implements AccountDao {
 
         String sql = """
                 INSERT INTO accounts(
-                    username,
-                    password,
-                    created_at
+                    email,
+                    encrypt_app_password,
+                    created_at,
+                    updated_at
                 )
-                VALUES (?, ?, ?)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(email) DO UPDATE SET
+                    encrypt_app_password = excluded.encrypt_app_password,
+                    updated_at = excluded.updated_at
                 """;
 
         try (
@@ -36,10 +40,12 @@ public class AccountDaoImpl implements AccountDao {
                                 Statement.RETURN_GENERATED_KEYS
                         )
         ) {
+            String now = LocalDateTime.now().toString();
 
             preparedStatement.setString(1, account.getUsername());
             preparedStatement.setString(2, account.getPassword());
-            preparedStatement.setString(3, LocalDateTime.now().toString());
+            preparedStatement.setString(3, now);
+            preparedStatement.setString(4, now);
 
             preparedStatement.executeUpdate();
 
@@ -48,6 +54,19 @@ public class AccountDaoImpl implements AccountDao {
 
                 if (rs.next()) {
                     account.setId(rs.getLong(1));
+                }
+            }
+
+            if (account.getId() == null) {
+                try (PreparedStatement selectStatement = conn.prepareStatement(
+                        "select id from accounts where email = ?"
+                )) {
+                    selectStatement.setString(1, account.getUsername());
+                    try (ResultSet rs = selectStatement.executeQuery()) {
+                        if (rs.next()) {
+                            account.setId(rs.getLong("id"));
+                        }
+                    }
                 }
             }
 
@@ -70,18 +89,20 @@ public class AccountDaoImpl implements AccountDao {
 
     @Override
     public List<Account> findAll() {
-        String sql = "select * from accounts";
+        String sql = "select id, email, encrypt_app_password, created_at from accounts order by created_at asc";
 
         try (Connection connection = DbUtil.getConnect();
              PreparedStatement preparedStatement = connection.prepareStatement(sql);
              ResultSet rs = preparedStatement.executeQuery();) {
             List<Account> result = new ArrayList<>();
             while (rs.next()) {
-                result.add(new Account(
-                        rs.getString("username"),
-                        rs.getString("password"),
+                Account account = new Account(
+                        rs.getString("email"),
+                        rs.getString("encrypt_app_password"),
                         LocalDateTime.parse(rs.getString("created_at"))
-                ));
+                );
+                account.setId(rs.getLong("id"));
+                result.add(account);
             }
 
             LOGGER.info("Loaded {} account(s) from database.", result.size());

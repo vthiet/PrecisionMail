@@ -20,8 +20,8 @@
 
     <VBox spacing="4">
         <Label text="App Password"/>
-        <TextField fx:id="passwordField"
-                   promptText="asdf asdf asdf asdf"/>
+        <PasswordField fx:id="passwordField"
+                       promptText="asdf asdf asdf asdf"/>
     </VBox>
 
     <HBox spacing="10" alignment="CENTER_RIGHT">

@@ -5,6 +5,17 @@
 > **QUY TẮC DỰ ÁN (PROJECT CONVENTION):**
 > Các Sequence Diagram trong tài liệu này đóng vai trò hướng dẫn triển khai. Tuy nhiên, trong quá trình thực thi, nếu source code thực tế có sự thay đổi về luồng (Flow), tên Component, hay Class (để tối ưu hoặc phù hợp với framework), **Sequence Diagram phải được cập nhật lại ngay lập tức** để đảm bảo tài liệu luôn đồng bộ với mã nguồn thực tế.
 
+## 0. Ghi chú đồng bộ triển khai hiện tại
+
+Các điểm dưới đây phản ánh implementation hiện tại trong source code và được dùng để diễn giải lại các use case/sequence diagram gốc:
+
+- `UC01` và `UC02` hiện không còn lưu account bằng file cấu hình dùng chung. Ứng dụng dùng SQLite (`precisionmail.db`, bảng `accounts`) để lưu account. App Password được mã hóa AES trước khi persist và được giải mã ở tầng service trước khi nạp vào menu chọn account.
+- `UC01` hỗ trợ hành vi upsert theo email: nếu account đã tồn tại thì hệ thống cập nhật App Password mới thay vì tạo bản ghi trùng.
+- `UC02` hiện được triển khai theo mô hình: tải danh sách account trên background thread, sau đó người dùng chuyển account ngay trên `MenuButton` của màn hình soạn thư. Việc giải mã diễn ra khi nạp danh sách account, không phải tại thời điểm click chọn từng item.
+- `UC03` hiện vẫn lưu lịch sử email đã gửi vào file JSON cục bộ (`emails.json`) thông qua `EmailDaoImpl`, chưa lưu vào bảng `emails` trong SQLite như một số sơ đồ/phác thảo cũ ngụ ý.
+- `UC04` đã được triển khai trong màn hình soạn thư bằng nút `Import List`. File `.txt`/`.csv` được đọc trên background thread, regex trích xuất email hợp lệ, lọc trùng, rồi điền vào ô đang dùng: ưu tiên `BCC` nếu ô đó đang được focus, ngược lại điền vào `To`.
+- `UC05` hiện dùng `ScheduledExecutorService` để chờ đến thời điểm gửi, khóa các trường chính trên UI trong lúc chờ và cho phép người dùng bấm lại nút `Schedule send` để hủy lệnh trước giờ gửi. Implementation hiện tại chưa có cơ chế pre-connect SMTP ngay trước trigger time như sequence diagram gốc; kết nối SMTP vẫn được thiết lập khi job thực thi.
+
 ## 1. Use Case Tổng (Overall Use Case Diagram)
 
 Dưới đây là biểu đồ Use Case tổng thể của hệ thống, thể hiện các tương tác chính của người dùng với ứng dụng.

@@ -11,23 +11,61 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class EmailUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmailUtil.class);
     private static final String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
+    private static final Pattern EMAIL_EXTRACT_PATTERN =
+            Pattern.compile("[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+");
 
     public static boolean isValidEmail(String email) {
         return email != null && email.matches(EMAIL_REGEX);
     }
 
     public static Set<String> emailFeature(String plainText) {
+        if (plainText == null || plainText.isBlank()) {
+            return Set.of();
+        }
+
         return Arrays.stream(plainText.split("[,;]"))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
-                .collect(Collectors.toSet());
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    public static boolean containsOnlyValidEmails(String plainText) {
+        Set<String> emails = emailFeature(plainText);
+        if (emails.isEmpty()) {
+            return true;
+        }
+
+        return emails.stream().allMatch(EmailUtil::isValidEmail);
+    }
+
+    public static boolean hasAnyValidEmail(String plainText) {
+        return emailFeature(plainText).stream().anyMatch(EmailUtil::isValidEmail);
+    }
+
+    public static Set<String> extractEmails(String rawText) {
+        if (rawText == null || rawText.isBlank()) {
+            return Set.of();
+        }
+
+        LinkedHashSet<String> emails = new LinkedHashSet<>();
+        Matcher matcher = EMAIL_EXTRACT_PATTERN.matcher(rawText);
+        while (matcher.find()) {
+            String email = matcher.group().trim();
+            if (isValidEmail(email)) {
+                emails.add(email);
+            }
+        }
+        return emails;
     }
 
     public static InternetAddress[] parseAddresses(Set<String> emails) {

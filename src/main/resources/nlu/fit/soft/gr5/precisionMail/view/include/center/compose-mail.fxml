@@ -61,7 +61,7 @@
                 <text>Save</text>
             </MenuButton>
 
-            <Button text="Contacts" styleClass="borderRadius"/>
+            <Button fx:id="importRecipientsBtn" text="Import List" onAction="#handleImportRecipients" styleClass="borderRadius"/>
 
             <Pane HBox.hgrow="ALWAYS"/>
 

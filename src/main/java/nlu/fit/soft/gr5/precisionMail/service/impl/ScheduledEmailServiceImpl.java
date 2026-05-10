@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -28,6 +29,10 @@ public class ScheduledEmailServiceImpl implements ScheduledEmailService {
 
     @Override
     public void schedule(ScheduledEmail scheduledEmail) {
+        scheduleJob(scheduledEmail);
+    }
+
+    public ScheduledFuture<?> scheduleJob(ScheduledEmail scheduledEmail) {
         long delay = Duration.between(LocalDateTime.now(), scheduledEmail.scheduledAt).toMillis();
 
         if (delay < 0) {
@@ -47,7 +52,7 @@ public class ScheduledEmailServiceImpl implements ScheduledEmailService {
                 LogHelper.attachmentCount(scheduledEmail.email)
         );
 
-        scheduler.schedule(() -> {
+        return scheduler.schedule(() -> {
             try {
                 LOGGER.info(
                         "Scheduled email dispatch started. sender={}, scheduledAt={}.",

@@ -2,10 +2,12 @@ package nlu.fit.soft.gr5.precisionMail.controller.dialog;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
 import nlu.fit.soft.gr5.precisionMail.service.AccountService;
+import nlu.fit.soft.gr5.precisionMail.service.AccountRefreshService;
 import nlu.fit.soft.gr5.precisionMail.service.impl.AccountServiceImpl;
 import nlu.fit.soft.gr5.precisionMail.util.AlertUtil;
 import nlu.fit.soft.gr5.precisionMail.util.LogHelper;
@@ -18,7 +20,7 @@ public class AddAccountDialogController {
     @FXML
     public TextField usernameField;
     @FXML
-    public TextField passwordField;
+    public PasswordField passwordField;
 
     private Stage stage;
     private final AccountService accountService = new AccountServiceImpl();
@@ -32,8 +34,8 @@ public class AddAccountDialogController {
     }
 
     public void handleSave(ActionEvent actionEvent) {
-        String username = usernameField.getText();
-        String password = passwordField.getText();
+        String username = usernameField.getText() == null ? "" : usernameField.getText().trim();
+        String password = passwordField.getText() == null ? "" : passwordField.getText().replace(" ", "").trim();
 
         LOGGER.info("Add-account submitted for username={}.", LogHelper.maskEmail(username));
 
@@ -52,11 +54,18 @@ public class AddAccountDialogController {
             return;
         }
 
+        if (password.length() < 16) {
+            LOGGER.warn("Add-account validation failed because app password length is too short.");
+            AlertUtil.showError("Validation Error", "Google App Password must have at least 16 characters.");
+            return;
+        }
+
         try {
             Account account = accountService.save(username, password);
 
             if (account.getId() != null) {
                 LOGGER.info("Add-account completed successfully for username={}.", LogHelper.maskEmail(username));
+                AccountRefreshService.publishAccountsChanged();
                 AlertUtil.showInfo("Success", "Account added successfully.");
                 stage.close();
                 return;

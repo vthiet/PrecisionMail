@@ -19,7 +19,6 @@ public class LoadAccountService  extends Service<List<Account>> {
             @Override
             protected List<Account> call() throws Exception {
                 LOGGER.debug("Background account loading started.");
-                Thread.sleep(1500);
                 List<Account> accounts = accountService.findAll();
                 LOGGER.debug("Background account loading completed. accountCount={}", accounts.size());
                 return accounts;

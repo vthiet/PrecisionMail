@@ -887,3 +887,26 @@ Caused by: org.sqlite.SQLiteException: [SQLITE_ERROR] SQL error or missing datab
 2026-05-10 17:32:46.695 [INFO] [JavaFX Application Thread] n.f.s.g.p.c.f.ComposeMailController - Email handoff to async sender completed. sender=n***@gmail.com, recipients=1, attachments=0.
 2026-05-10 17:32:46.702 [DEBUG] [email-send-worker] n.f.s.g.precisionMail.util.EmailUtil - Creating SMTP session for sender=n***@gmail.com.
 2026-05-10 17:32:46.703 [INFO] [JavaFX Application Thread] n.f.s.g.precisionMail.util.AlertUtil - Showing info alert. title=Processing, message=Email send request was submitted to the background worker.
+2026-05-10 17:51:13.315 [INFO] [main] n.f.soft.gr5.precisionMail.Launcher - Application bootstrap started.
+2026-05-10 17:51:13.575 [DEBUG] [main] n.f.s.gr5.precisionMail.util.DbUtil - Opened SQLite connection to jdbc:sqlite:precisionmail.db.
+2026-05-10 17:51:13.579 [INFO] [main] n.f.soft.gr5.precisionMail.Launcher - Database initialization completed successfully.
+2026-05-10 17:51:14.171 [INFO] [JavaFX Application Thread] n.f.soft.gr5.precisionMail.Launcher - Application started successfully.
+2026-05-10 17:51:17.062 [INFO] [JavaFX Application Thread] n.f.s.g.p.c.fxml.SideBarController - Sidebar requested navigation to compose-mail view.
+2026-05-10 17:51:17.063 [INFO] [JavaFX Application Thread] n.f.s.g.p.service.NavigationService - Navigation requested to center/compose-mail.fxml.
+2026-05-10 17:51:17.238 [DEBUG] [Thread-4] n.f.s.g.p.service.LoadAccountService - Background account loading started.
+2026-05-10 17:51:17.238 [DEBUG] [Thread-4] n.f.s.g.p.s.impl.AccountServiceImpl - Account list load requested.
+2026-05-10 17:51:17.238 [DEBUG] [Thread-4] n.f.s.gr5.precisionMail.util.DbUtil - Opened SQLite connection to jdbc:sqlite:precisionmail.db.
+2026-05-10 17:51:17.244 [INFO] [JavaFX Application Thread] n.f.s.g.p.c.f.MainScreenController - Center view changed to center/compose-mail.fxml.
+2026-05-10 17:51:17.246 [INFO] [Thread-4] n.f.s.g.p.dao.impl.AccountDaoImpl - Loaded 1 account(s) from database.
+2026-05-10 17:51:17.272 [INFO] [Thread-4] n.f.s.g.p.util.AppLoaderUtil - application.properties loaded from classpath.
+2026-05-10 17:51:17.274 [DEBUG] [Thread-4] n.f.s.g.p.service.LoadAccountService - Background account loading completed. accountCount=1
+2026-05-10 17:51:17.504 [INFO] [JavaFX Application Thread] n.f.s.g.p.c.f.ComposeMailController - Account menu loaded successfully.
+2026-05-10 17:51:17.506 [INFO] [JavaFX Application Thread] n.f.s.g.p.c.f.ComposeMailController - Default active account set to username=n***@gmail.com.
+2026-05-10 17:51:27.329 [INFO] [JavaFX Application Thread] n.f.s.g.p.c.f.ComposeMailController - Attachment accepted. name=PrecisionMail_UseCase_Clean.drawio, size=9694 bytes.
+2026-05-10 17:52:06.975 [INFO] [JavaFX Application Thread] n.f.s.g.p.s.impl.EmailServiceImpl - Email send requested. sender=n***@gmail.com, recipients=1, attachments=1.
+2026-05-10 17:52:06.976 [INFO] [JavaFX Application Thread] n.f.s.g.p.c.f.ComposeMailController - Email handoff to async sender completed. sender=n***@gmail.com, recipients=1, attachments=1.
+2026-05-10 17:52:06.977 [DEBUG] [email-send-worker] n.f.s.g.precisionMail.util.EmailUtil - Creating SMTP session for sender=n***@gmail.com.
+2026-05-10 17:52:06.979 [INFO] [JavaFX Application Thread] n.f.s.g.precisionMail.util.AlertUtil - Showing info alert. title=Processing, message=Email send request was submitted to the background worker.
+2026-05-10 17:52:14.272 [DEBUG] [email-send-worker] n.f.s.g.precisionMail.util.EmailUtil - SMTP transport completed successfully for sender=n***@gmail.com.
+2026-05-10 17:52:14.323 [INFO] [email-send-worker] n.f.s.g.p.dao.impl.EmailDaoImpl - Email history saved to emails.json. Current total records=5.
+2026-05-10 17:52:14.323 [INFO] [email-send-worker] n.f.s.g.p.s.impl.EmailServiceImpl - Email sent successfully. sender=n***@gmail.com, recipients=1, attachments=1.

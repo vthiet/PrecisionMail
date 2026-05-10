@@ -123,7 +123,7 @@ public class EmailUtil {
 
         Multipart multipart = new MimeMultipart();
         MimeBodyPart textPart = new MimeBodyPart();
-        textPart.setText(email.content); // setContent()
+        textPart.setText(email.content);
         multipart.addBodyPart(textPart);
 
         if (email.attachments != null) {

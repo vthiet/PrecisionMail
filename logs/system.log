@@ -1,0 +1,96 @@
+2026-05-10 16:43:34.928 [INFO] [JavaFX Application Thread] n.f.soft.gr5.precisionMail.Launcher - Application started successfully.
+2026-05-10 16:43:48.360 [INFO] [JavaFX Application Thread] n.f.s.g.p.c.d.AddAccountDialogController - Add-account submitted for username=n***@gmail.com.
+2026-05-10 16:43:48.361 [INFO] [JavaFX Application Thread] n.f.s.g.p.s.impl.AccountServiceImpl - Account save requested for username=n***@gmail.com.
+2026-05-10 16:43:48.565 [DEBUG] [JavaFX Application Thread] n.f.s.gr5.precisionMail.util.DbUtil - Opened SQLite connection to jdbc:sqlite:precisionmail.db.
+2026-05-10 16:43:48.574 [INFO] [JavaFX Application Thread] n.f.s.g.p.dao.impl.AccountDaoImpl - Account persisted successfully for username=n***@gmail.com.
+2026-05-10 16:43:48.574 [INFO] [JavaFX Application Thread] n.f.s.g.p.c.d.AddAccountDialogController - Add-account completed successfully for username=n***@gmail.com.
+2026-05-10 16:43:48.575 [INFO] [JavaFX Application Thread] n.f.s.g.precisionMail.util.AlertUtil - Showing info alert. title=Success, message=Account added successfully.
+2026-05-10 16:43:51.221 [INFO] [JavaFX Application Thread] n.f.s.g.p.c.fxml.MenuBarController - Add-account dialog closed.
+2026-05-10 16:54:55.793 [INFO] [JavaFX Application Thread] n.f.soft.gr5.precisionMail.Launcher - Application started successfully.
+2026-05-10 16:54:57.093 [INFO] [JavaFX Application Thread] n.f.s.g.p.c.fxml.SideBarController - Sidebar requested navigation to compose-mail view.
+2026-05-10 16:54:57.093 [INFO] [JavaFX Application Thread] n.f.s.g.p.service.NavigationService - Navigation requested to center/compose-mail.fxml.
+2026-05-10 16:54:57.095 [ERROR] [JavaFX Application Thread] n.f.soft.gr5.precisionMail.Launcher - Unhandled runtime exception on thread=JavaFX Application Thread
+java.lang.RuntimeException: java.lang.reflect.InvocationTargetException
+	at javafx.fxml@25.0.3/javafx.fxml.FXMLLoader$MethodHandler.invoke(FXMLLoader.java:1850)
+	at javafx.fxml@25.0.3/javafx.fxml.FXMLLoader$ControllerMethodEventHandler.handle(FXMLLoader.java:1718)
+	at javafx.base@25.0.3/com.sun.javafx.event.CompositeEventHandler.dispatchBubblingEvent(CompositeEventHandler.java:86)
+	at javafx.base@25.0.3/com.sun.javafx.event.EventHandlerManager.dispatchBubblingEvent(EventHandlerManager.java:232)
+	at javafx.base@25.0.3/com.sun.javafx.event.EventHandlerManager.dispatchBubblingEvent(EventHandlerManager.java:189)
+	at javafx.base@25.0.3/com.sun.javafx.event.CompositeEventDispatcher.dispatchBubblingEvent(CompositeEventDispatcher.java:59)
+	at javafx.base@25.0.3/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:58)
+	at javafx.base@25.0.3/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base@25.0.3/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base@25.0.3/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base@25.0.3/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base@25.0.3/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base@25.0.3/com.sun.javafx.event.EventUtil.fireEventImpl(EventUtil.java:74)
+	at javafx.base@25.0.3/com.sun.javafx.event.EventUtil.fireEvent(EventUtil.java:49)
+	at javafx.base@25.0.3/javafx.event.Event.fireEvent(Event.java:199)
+	at javafx.graphics@25.0.3/javafx.scene.Node.fireEvent(Node.java:9067)
+	at javafx.controls@25.0.3/javafx.scene.control.Button.fire(Button.java:203)
+	at javafx.controls@25.0.3/com.sun.javafx.scene.control.behavior.ButtonBehavior.mouseReleased(ButtonBehavior.java:207)
+	at javafx.controls@25.0.3/com.sun.javafx.scene.control.inputmap.InputMap.handle(InputMap.java:274)
+	at javafx.base@25.0.3/com.sun.javafx.event.CompositeEventHandler$NormalEventHandlerRecord.handleBubblingEvent(CompositeEventHandler.java:247)
+	at javafx.base@25.0.3/com.sun.javafx.event.CompositeEventHandler.dispatchBubblingEvent(CompositeEventHandler.java:80)
+	at javafx.base@25.0.3/com.sun.javafx.event.EventHandlerManager.dispatchBubblingEvent(EventHandlerManager.java:232)
+	at javafx.base@25.0.3/com.sun.javafx.event.EventHandlerManager.dispatchBubblingEvent(EventHandlerManager.java:189)
+	at javafx.base@25.0.3/com.sun.javafx.event.CompositeEventDispatcher.dispatchBubblingEvent(CompositeEventDispatcher.java:59)
+	at javafx.base@25.0.3/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:58)
+	at javafx.base@25.0.3/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base@25.0.3/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base@25.0.3/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base@25.0.3/com.sun.javafx.event.BasicEventDispatcher.dispatchEvent(BasicEventDispatcher.java:56)
+	at javafx.base@25.0.3/com.sun.javafx.event.EventDispatchChainImpl.dispatchEvent(EventDispatchChainImpl.java:114)
+	at javafx.base@25.0.3/com.sun.javafx.event.EventUtil.fireEventImpl(EventUtil.java:74)
+	at javafx.base@25.0.3/com.sun.javafx.event.EventUtil.fireEvent(EventUtil.java:54)
+	at javafx.base@25.0.3/javafx.event.Event.fireEvent(Event.java:199)
+	at javafx.graphics@25.0.3/javafx.scene.Scene$MouseHandler.process(Scene.java:4061)
+	at javafx.graphics@25.0.3/javafx.scene.Scene.processMouseEvent(Scene.java:1947)
+	at javafx.graphics@25.0.3/javafx.scene.Scene$ScenePeerListener.mouseEvent(Scene.java:2784)
+	at javafx.graphics@25.0.3/com.sun.javafx.tk.quantum.GlassViewEventHandler$MouseEventNotification.get(GlassViewEventHandler.java:353)
+	at javafx.graphics@25.0.3/com.sun.javafx.tk.quantum.GlassViewEventHandler$MouseEventNotification.get(GlassViewEventHandler.java:255)
+	at javafx.graphics@25.0.3/com.sun.javafx.tk.quantum.QuantumToolkit.runWithoutRenderLock(QuantumToolkit.java:424)
+	at javafx.graphics@25.0.3/com.sun.javafx.tk.quantum.GlassViewEventHandler.handleMouseEvent(GlassViewEventHandler.java:387)
+	at javafx.graphics@25.0.3/com.sun.glass.ui.View.handleMouseEvent(View.java:573)
+	at javafx.graphics@25.0.3/com.sun.glass.ui.View.notifyMouse(View.java:975)
+	at javafx.graphics@25.0.3/com.sun.glass.ui.win.WinApplication._runLoop(Native Method)
+	at javafx.graphics@25.0.3/com.sun.glass.ui.win.WinApplication.lambda$runLoop$0(WinApplication.java:173)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+Caused by: java.lang.reflect.InvocationTargetException: null
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:119)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at com.sun.javafx.reflect.Trampoline.invoke(MethodUtil.java:65)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at javafx.base@25.0.3/com.sun.javafx.reflect.MethodUtil.invoke(MethodUtil.java:112)
+	at javafx.fxml@25.0.3/com.sun.javafx.fxml.MethodHelper.invoke(MethodHelper.java:78)
+	at javafx.fxml@25.0.3/javafx.fxml.FXMLLoader$MethodHandler.invoke(FXMLLoader.java:1845)
+	... 44 common frames omitted
+Caused by: java.lang.IllegalStateException: Location is not set.
+	at javafx.fxml@25.0.3/javafx.fxml.FXMLLoader.loadImpl(FXMLLoader.java:2526)
+	at javafx.fxml@25.0.3/javafx.fxml.FXMLLoader.load(FXMLLoader.java:2503)
+	at precisionMail/nlu.fit.soft.gr5.precisionMail.controller.fxml.MainScreenController.changeCenterView(MainScreenController.java:29)
+	at precisionMail/nlu.fit.soft.gr5.precisionMail.service.NavigationService.navigateTo(NavigationService.java:29)
+	at precisionMail/nlu.fit.soft.gr5.precisionMail.controller.fxml.SideBarController.onNewMailClick(SideBarController.java:18)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	... 51 common frames omitted
+2026-05-10 16:54:59.028 [INFO] [JavaFX Application Thread] n.f.s.g.p.c.fxml.SideBarController - Sidebar requested navigation to compose-mail view.
+2026-05-10 16:54:59.028 [INFO] [JavaFX Application Thread] n.f.s.g.p.service.NavigationService - Navigation requested to center/compose-mail.fxml.
+2026-05-10 16:54:59.258 [DEBUG] [Thread-4] n.f.s.g.p.service.LoadAccountService - Background account loading started.
+2026-05-10 16:54:59.264 [INFO] [JavaFX Application Thread] n.f.s.g.p.c.f.MainScreenController - Center view changed to center/compose-mail.fxml.
+2026-05-10 16:55:00.759 [DEBUG] [Thread-4] n.f.s.g.p.s.impl.AccountServiceImpl - Account list load requested.
+2026-05-10 16:55:01.131 [DEBUG] [Thread-4] n.f.s.gr5.precisionMail.util.DbUtil - Opened SQLite connection to jdbc:sqlite:precisionmail.db.
+2026-05-10 16:55:01.137 [INFO] [Thread-4] n.f.s.g.p.dao.impl.AccountDaoImpl - Loaded 2 account(s) from database.
+2026-05-10 16:55:01.137 [DEBUG] [Thread-4] n.f.s.g.p.service.LoadAccountService - Background account loading completed. accountCount=2
+2026-05-10 16:55:01.138 [INFO] [JavaFX Application Thread] n.f.s.g.p.c.f.ComposeMailController - Account menu loaded successfully.
+2026-05-10 16:55:01.139 [INFO] [JavaFX Application Thread] n.f.s.g.p.c.f.ComposeMailController - Default active account set to username=t***@gmail.com.
+2026-05-10 16:55:03.214 [INFO] [JavaFX Application Thread] n.f.s.g.p.c.f.ComposeMailController - Active account changed to username=n***@gmail.com.
+2026-05-10 16:55:58.346 [DEBUG] [JavaFX Application Thread] n.f.s.g.p.c.f.ComposeMailController - Attachment selection cancelled by user.
+2026-05-10 16:56:27.199 [DEBUG] [JavaFX Application Thread] n.f.s.g.p.c.f.ComposeMailController - Attachment selection cancelled by user.
+2026-05-10 16:56:30.861 [INFO] [JavaFX Application Thread] n.f.s.g.p.s.impl.EmailServiceImpl - Email send requested. sender=n***@gmail.com, recipients=1, attachments=0.
+2026-05-10 16:56:30.861 [INFO] [JavaFX Application Thread] n.f.s.g.p.c.f.ComposeMailController - Email handoff to async sender completed. sender=n***@gmail.com, recipients=1, attachments=0.
+2026-05-10 16:56:30.862 [DEBUG] [email-send-worker] n.f.s.g.precisionMail.util.EmailUtil - Creating SMTP session for sender=n***@gmail.com.
+2026-05-10 16:56:30.863 [INFO] [JavaFX Application Thread] n.f.s.g.precisionMail.util.AlertUtil - Showing info alert. title=Processing, message=Email send request was submitted to the background worker.
+2026-05-10 16:56:35.854 [DEBUG] [email-send-worker] n.f.s.g.precisionMail.util.EmailUtil - SMTP transport completed successfully for sender=n***@gmail.com.
+2026-05-10 16:56:35.923 [INFO] [email-send-worker] n.f.s.g.p.dao.impl.EmailDaoImpl - Email history saved to emails.json. Current total records=2.
+2026-05-10 16:56:35.923 [INFO] [email-send-worker] n.f.s.g.p.s.impl.EmailServiceImpl - Email sent successfully. sender=n***@gmail.com, recipients=1, attachments=0.

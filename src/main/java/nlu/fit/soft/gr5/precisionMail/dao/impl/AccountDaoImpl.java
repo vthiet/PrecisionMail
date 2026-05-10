@@ -3,6 +3,9 @@ package nlu.fit.soft.gr5.precisionMail.dao.impl;
 import nlu.fit.soft.gr5.precisionMail.dao.AccountDao;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
 import nlu.fit.soft.gr5.precisionMail.util.DbUtil;
+import nlu.fit.soft.gr5.precisionMail.util.LogHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -10,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AccountDaoImpl implements AccountDao {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AccountDaoImpl.class);
 
     @Override
     public Account save(Account account) {
@@ -47,7 +51,17 @@ public class AccountDaoImpl implements AccountDao {
                 }
             }
 
+            LOGGER.info(
+                    "Account persisted successfully for username={}.",
+                    LogHelper.maskEmail(account.getUsername())
+            );
+
         } catch (SQLException e) {
+            LOGGER.error(
+                    "Failed to persist account for username={}.",
+                    LogHelper.maskEmail(account.getUsername()),
+                    e
+            );
             throw new RuntimeException(e);
         }
 
@@ -70,8 +84,10 @@ public class AccountDaoImpl implements AccountDao {
                 ));
             }
 
+            LOGGER.info("Loaded {} account(s) from database.", result.size());
             return result;
         } catch (SQLException e) {
+            LOGGER.error("Failed to load accounts from database.", e);
             throw new RuntimeException(e);
         }
     }

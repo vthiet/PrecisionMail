@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
 import nlu.fit.soft.gr5.precisionMail.dao.EmailDao;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EmailDaoImpl implements EmailDao {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EmailDaoImpl.class);
     public String filePath = "emails.json";
 
     private final ObjectMapper mapper;
@@ -27,6 +30,7 @@ public class EmailDaoImpl implements EmailDao {
         emailLst.add(email);
 
         mapper.writerWithDefaultPrettyPrinter().writeValue(new File(filePath), emailLst);
+        LOGGER.info("Email history saved to {}. Current total records={}.", filePath, emailLst.size());
         return email;
     }
 
@@ -39,7 +43,7 @@ public class EmailDaoImpl implements EmailDao {
         try {
             return mapper.readValue(file, new TypeReference<List<Email>>() { });
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.error("Failed to read email history from {}.", filePath, e);
             return new ArrayList<>();
         }
 

@@ -8,11 +8,15 @@ import javafx.scene.control.TextArea;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
 import nlu.fit.soft.gr5.precisionMail.service.EmailService;
 import nlu.fit.soft.gr5.precisionMail.service.impl.EmailServiceImpl;
+import nlu.fit.soft.gr5.precisionMail.util.LogHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
 
 public class HistoryMailController {
+    private static final Logger LOGGER = LoggerFactory.getLogger(HistoryMailController.class);
 
     // 1. Added <Email> generic type to ListView
     @FXML
@@ -33,8 +37,10 @@ public class HistoryMailController {
 
     @FXML
     public void initialize() throws IOException {
+        LOGGER.info("History mail screen initialization started.");
         List<Email> emails = emailService.findAll();
         emailListView.getItems().addAll(emails);
+        LOGGER.info("History mail loaded successfully. recordCount={}", emails.size());
 
         emailListView.setCellFactory(param -> new ListCell<Email>() {
             @Override
@@ -53,6 +59,12 @@ public class HistoryMailController {
                 .selectedItemProperty()
                 .addListener((obs, oldVal, email) -> {
                     if (email != null) {
+                        LOGGER.info(
+                                "History mail item selected. sender={}, recipients={}, attachments={}.",
+                                LogHelper.maskEmail(email.getFrom()),
+                                LogHelper.recipientCount(email),
+                                LogHelper.attachmentCount(email)
+                        );
                         subjectLabel.setText(email.subject);
                         fromLabel.setText("From: " + email.getFrom());
                         toLabel.setText("To: " + String.join(", ", email.toLst));

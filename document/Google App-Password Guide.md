@@ -25,5 +25,8 @@ Tài khoản Google được sử dụng để gửi email **phải được b�
 
 ## Cấu hình vào dự án
 Sau khi lấy được mã xác thực, tiến hành cập nhật các thông số sau vào file cấu hình SMTP:
-- **Username:** `<địa chỉ email>`
-- **Password:** `<app password 16 ký tự vừa tạo (viết liền, không khoảng trắng)>`
+```properties
+# resource/application.properties
+mail.username=yourEmail
+mail.password=yourAppPassword
+```

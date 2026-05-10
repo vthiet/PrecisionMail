@@ -1,0 +1,65 @@
+.compose-left-sidebar {
+    -fx-background-color: #F6F8FC;
+    -fx-border-color: transparent #DADCE0 transparent transparent;
+    -fx-border-width: 0 1 0 0;
+}
+
+.compose-button {
+    -fx-background-color: #C2E7FF;
+    -fx-text-fill: #001D35;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+    -fx-padding: 12 20 12 16;
+    -fx-background-radius: 18;
+    -fx-cursor: hand;
+}
+
+.compose-button:hover {
+    -fx-background-color: #B3DEFF;
+}
+
+.sidebar-section-title {
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #80868B;
+    -fx-padding: 0 0 4 6;
+}
+
+.sidebar-nav-item {
+    -fx-background-color: transparent;
+    -fx-text-fill: #202124;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 9 16 9 14;
+    -fx-background-radius: 0 24 24 0;
+    -fx-cursor: hand;
+    -fx-font-size: 13px;
+}
+
+.sidebar-nav-item:hover {
+    -fx-background-color: #DADCE0;
+}
+
+.sidebar-nav-item-active {
+    -fx-background-color: #C2E7FF;
+    -fx-text-fill: #001D35;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 9 16 9 14;
+    -fx-background-radius: 0 24 24 0;
+    -fx-cursor: hand;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.sidebar-nav-item-active:hover {
+    -fx-background-color: #B3DEFF;
+}
+
+.sidebar-footer-item {
+    -fx-background-color: transparent;
+    -fx-text-fill: #5F6368;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 9 16 9 14;
+    -fx-background-radius: 0 24 24 0;
+    -fx-cursor: hand;
+    -fx-font-size: 13px;
+}

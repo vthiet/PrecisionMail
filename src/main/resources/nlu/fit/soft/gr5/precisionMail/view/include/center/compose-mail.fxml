@@ -2,28 +2,47 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-
 <?import javafx.geometry.Insets?>
-<VBox BorderPane.alignment="CENTER" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1">
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
+
+<VBox BorderPane.alignment="CENTER"
+      xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="nlu.fit.soft.gr5.precisionMail.controller.fxml.ComposeMailController"
+      stylesheets="@../../../css/compose-mail.css">
 
     <ToolBar>
         <items>
-            <Button text="Send" />
-            <Button text="Encrypt" />
+            <Button fx:id="sendBtn"
+                    text="Send"
+                    onAction="#handleSendMail"
+                    styleClass="borderRadius">
+                <graphic>
+                    <ImageView fitHeight="20.0" fitWidth="20.0" pickOnBounds="true" preserveRatio="true">
+                        <image>
+                            <Image url="@../../../icons/send.png"/>
+                        </image>
+                    </ImageView>
+                </graphic>
+            </Button>
 
-            <MenuButton text="Spelling" mnemonicParsing="true">
+            <Button text="Encrypt" styleClass="borderRadius"/>
+
+            <MenuButton text="Spelling" mnemonicParsing="true"
+                        styleClass="borderRadius">
                 <items>
                     <RadioMenuItem text="English (Antigua and Barbuda)"/>
                     <!--RadioMenuItem text="English (Australia)" toggleGroup="$spellingLanguageGroup" />-->
 
-                    <SeparatorMenuItem />
+                    <SeparatorMenuItem/>
 
                     <MenuItem text="_Add Dictionaries..."/>
                     <!--<MenuItem text="_Add Dictionaries..." onAction="#onAddDictionariesClick" />-->
                 </items>
             </MenuButton>
 
-            <MenuButton text="Save" mnemonicParsing="true">
+            <MenuButton mnemonicParsing="true"
+                        styleClass="borderRadius">
                 <items>
                     <RadioMenuItem text="_File..."/>
 
@@ -32,81 +51,112 @@
                     <RadioMenuItem text="_Draft"/>
                     <RadioMenuItem text="_Template"/>
                 </items>
+                <graphic>
+                    <ImageView fitHeight="20.0" fitWidth="20.0" pickOnBounds="true" preserveRatio="true">
+                        <image>
+                            <Image url="@../../../icons/save.png"/>
+                        </image>
+                    </ImageView>
+                </graphic>
+                <text>Save</text>
             </MenuButton>
 
-            <Button text="Contacts" />
+            <Button text="Contacts" styleClass="borderRadius"/>
 
-            <Pane HBox.hgrow="ALWAYS" />
+            <Pane HBox.hgrow="ALWAYS"/>
 
-            <Button text="Attach" />
+            <MenuButton text="Attach" mnemonicParsing="true"
+                        styleClass="borderRadius">
+                <items>
+                    <MenuItem text="_File(s)..." onAction="#handleAttachFiles"/>
+                    <MenuItem text="_Web Page..."/>
+
+                    <SeparatorMenuItem/>
+
+                    <RadioMenuItem text="Remind Me _Later"/>
+                </items>
+            </MenuButton>
         </items>
     </ToolBar>
 
     <GridPane hgap="10.0" vgap="5.0">
         <columnConstraints>
-            <ColumnConstraints halignment="RIGHT" minWidth="60.0" />
-            <ColumnConstraints hgrow="ALWAYS" minWidth="100.0" />
+            <ColumnConstraints halignment="RIGHT" minWidth="60.0"/>
+            <ColumnConstraints hgrow="ALWAYS" minWidth="100.0"/>
         </columnConstraints>
-        <rowConstraints>
-            <RowConstraints minHeight="28.0" vgrow="SOMETIMES" />
-            <RowConstraints minHeight="28.0" vgrow="SOMETIMES" />
-            <RowConstraints minHeight="28.0" vgrow="SOMETIMES" />
-        </rowConstraints>
+
         <children>
-            <Label text="From" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-            <HBox alignment="CENTER_LEFT" spacing="5.0" style="-fx-background-color: #f5f5f5;"
-                  GridPane.columnIndex="1" GridPane.rowIndex="0">
-                <MenuButton text="Thiet - thietvo02@gmail.com" HBox.hgrow="ALWAYS" maxWidth="Infinity" mnemonicParsing="true">
+            <Label text="From" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+
+            <HBox alignment="CENTER_LEFT" spacing="5.0" style="-fx-background-color: transparent;"
+                  GridPane.columnIndex="1" GridPane.rowIndex="0" fillHeight="false">
+
+                <MenuButton fx:id="accountMenuButton"
+                            text="Chọn một tài khoản để gửi"
+                            HBox.hgrow="ALWAYS" maxWidth="1.7976931348623157E308"
+                            mnemonicParsing="true">
                     <items>
-                        <RadioMenuItem text="thietvo02@gmail.com"/>
-
-                        <SeparatorMenuItem/>
-
-                        <MenuItem text="_Customize From Address..."/>
                     </items>
                 </MenuButton>
-                <Separator/>
-                <Button text="CC"/>
-                <Button text="BCC"/>
+
+                <Separator orientation="VERTICAL" maxHeight="25.0"/>
+
+                <Button fx:id="ccBtn" text="Cc" onAction="#toggleCc" prefHeight="25.0"/>
+                <Button fx:id="bccBtn" text="Bcc" onAction="#toggleBcc" prefHeight="25.0"/>
             </HBox>
 
-            <Label text="To" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-            <TextField GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <Label text="To" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+            <TextField fx:id="toField" GridPane.columnIndex="1" GridPane.rowIndex="1" prefHeight="25.0"/>
 
-            <Label text="Subject" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-            <TextField GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <Label fx:id="ccLabel" text="Cc" GridPane.columnIndex="0" GridPane.rowIndex="2" visible="false"
+                   managed="false"/>
+            <TextField fx:id="ccField" GridPane.columnIndex="1" GridPane.rowIndex="2" visible="false" managed="false"
+                       prefHeight="25.0"/>
+
+            <Label fx:id="bccLabel" text="Bcc" GridPane.columnIndex="0" GridPane.rowIndex="3" visible="false"
+                   managed="false"/>
+            <TextField fx:id="bccField" GridPane.columnIndex="1" GridPane.rowIndex="3" visible="false" managed="false"
+                       prefHeight="25.0"/>
+
+            <Label fx:id="subjectLabel" text="Subject" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+            <TextField  fx:id="subjectField" GridPane.columnIndex="1" GridPane.rowIndex="4" prefHeight="25.0"/>
         </children>
+
         <padding>
-            <Insets bottom="5.0" left="10.0" right="10.0" top="5.0" />
+            <Insets bottom="5.0" left="10.0" right="10.0" top="5.0"/>
         </padding>
     </GridPane>
 
-    <ToolBar>
-        <items>
-            <ComboBox promptText="Paragraph" />
-            <ComboBox promptText="Variable Width" />
-            <Separator orientation="VERTICAL" />
-            <ToggleButton text="B" style="-fx-font-weight: bold;" />
-            <ToggleButton text="I" style="-fx-font-style: italic;" />
-            <ToggleButton text="U" style="-fx-underline: true;" />
-        </items>
-    </ToolBar>
+    <!--    <ToolBar>-->
+    <!--        <items>-->
+    <!--            <ComboBox promptText="Paragraph"/>-->
+    <!--            <ComboBox promptText="Variable Width"/>-->
+    <!--            <Separator orientation="VERTICAL"/>-->
+    <!--            <ToggleButton text="B" style="-fx-font-weight: bold;"/>-->
+    <!--            <ToggleButton text="I" style="-fx-font-style: italic;"/>-->
+    <!--            <ToggleButton text="U" style="-fx-underline: true;"/>-->
+    <!--        </items>-->
+    <!--    </ToolBar>-->
 
-    <TextArea promptText="Write your email here..." VBox.vgrow="ALWAYS" />
+    <TextArea fx:id="contentArea" VBox.vgrow="ALWAYS">
+        <promptText>Write your email here...</promptText>
+    </TextArea>
 
     <VBox BorderPane.alignment="CENTER">
 
-        <VBox fx:id="attachmentContainer" visible="false" managed="false" style="-fx-border-color: #d3d3d3; -fx-border-width: 1 0 0 0;">
+        <VBox fx:id="attachmentContainer" visible="false" managed="false"
+              style="-fx-border-color: #d3d3d3; -fx-border-width: 1 0 0 0;">
 
             <HBox alignment="CENTER_LEFT" spacing="5.0" style="-fx-background-color: #f5f5f5;">
                 <padding>
-                    <Insets bottom="5.0" left="10.0" right="10.0" top="5.0" />
+                    <Insets bottom="5.0" left="10.0" right="10.0" top="5.0"/>
                 </padding>
-                <ToggleButton text="v" prefHeight="20.0" prefWidth="25.0" />
-                <Label fx:id="attachmentCountLabel" text="1 Attachment" textFill="#555555" />
-                <Label fx:id="attachmentSizeLabel" text="1.7 MB" style="-fx-background-color: #7b849c; -fx-text-fill: white; -fx-background-radius: 10;" >
+                <ToggleButton text="v" prefHeight="20.0" prefWidth="25.0"/>
+                <Label fx:id="attachmentCountLabel" text="1 Attachment" textFill="#555555"/>
+                <Label fx:id="attachmentSizeLabel" text="1.7 MB"
+                       style="-fx-background-color: #7b849c; -fx-text-fill: white; -fx-background-radius: 10;">
                     <padding>
-                        <Insets left="5.0" right="5.0" />
+                        <Insets left="5.0" right="5.0"/>
                     </padding>
                 </Label>
             </HBox>
@@ -116,9 +166,9 @@
 
         <HBox alignment="CENTER_RIGHT" style="-fx-border-color: #d3d3d3; -fx-border-width: 1 0 0 0;">
             <padding>
-                <Insets bottom="2.0" left="10.0" right="10.0" top="2.0" />
+                <Insets bottom="2.0" left="10.0" right="10.0" top="2.0"/>
             </padding>
-            <Label text="English (United States)" textFill="#666666" />
+            <Label text="English (United States)" textFill="#666666"/>
         </HBox>
 
     </VBox>

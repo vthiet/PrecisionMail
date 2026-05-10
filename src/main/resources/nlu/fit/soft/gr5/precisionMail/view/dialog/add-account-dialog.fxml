@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.geometry.Insets?>
+<VBox spacing="12"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="nlu.fit.soft.gr5.precisionMail.controller.dialog.AddAccountDialogController">
+
+    <padding>
+        <Insets top="16" right="16" bottom="16" left="16"/>
+    </padding>
+
+    <VBox spacing="4">
+        <Label text="Email"/>
+        <TextField fx:id="usernameField"
+                   promptText="example@gmail.com"/>
+    </VBox>
+
+    <VBox spacing="4">
+        <Label text="App Password"/>
+        <TextField fx:id="passwordField"
+                   promptText="asdf asdf asdf asdf"/>
+    </VBox>
+
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Cancel" onAction="#handleCancel"/>
+        <Button text="Save" onAction="#handleSave"/>
+    </HBox>
+</VBox>

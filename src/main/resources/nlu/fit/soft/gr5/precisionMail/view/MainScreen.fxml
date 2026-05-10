@@ -2,18 +2,21 @@
 
 <?import javafx.scene.layout.*?>
 
-<BorderPane prefHeight="620.0" prefWidth="980.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
+            prefHeight="620.0" prefWidth="980.0"
+            fx:controller="nlu.fit.soft.gr5.precisionMail.controller.fxml.MainScreenController"
+            fx:id="mainBorderPane">
 
     <top>
-        <fx:include source="include/menubar.fxml"/>
+        <fx:include source="include/menubar.fxml" fx:id="menubar"/>
     </top>
 
     <left>
-        <fx:include source="include/sidebar.fxml"/>
+        <fx:include source="include/sidebar.fxml" fx:id="sidebar"/>
     </left>
 
     <center>
-        <fx:include source="include/center/compose-mail.fxml"/>
+        <fx:include source="include/center/blank-test.fxml" fx:id="composeMail"/>
     </center>
 
     <right/>

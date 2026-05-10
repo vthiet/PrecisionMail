@@ -1,0 +1,6 @@
+.borderRadius {
+    -fx-background-color: transparent;
+    -fx-border-color: grey;
+    -fx-border-width: 1px;
+    -fx-border-radius: 15px
+}

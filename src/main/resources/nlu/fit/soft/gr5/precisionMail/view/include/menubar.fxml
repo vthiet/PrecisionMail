@@ -2,15 +2,61 @@
 
 <?import javafx.scene.control.*?>
 
-<MenuBar>
+<MenuBar xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
+         fx:controller="nlu.fit.soft.gr5.precisionMail.controller.fxml.MenuBarController">
     <menus>
-        <Menu text="_File" />
-        <Menu text="_Edit" />
-        <Menu text="_View" />
-        <Menu text="_Insert" />
-        <Menu text="F_ormat" />
-        <Menu text="_Options" />
-        <Menu text="_Tools" />
-        <Menu text="_Help" />
+        <Menu text="_File">
+            <items>
+                <Menu text="Account">
+                    <items>
+
+                        <SeparatorMenuItem/>
+
+                        <MenuItem text="Add Account" onAction="#handleAddAccount"/>
+                    </items>
+                </Menu>
+
+                <SeparatorMenuItem/>
+
+                <Menu text="_New" accelerator="Shortcut+S">
+                    <items>
+                        <MenuItem text="Message" onAction="#onNewMailClick"/>
+                        <SeparatorMenuItem/>
+                        <MenuItem text="Address Book Contact..." onAction="#onNewMailClick"/>
+                    </items>
+                </Menu>
+                <Menu text="Attac_h">
+                    <items>
+                        <MenuItem text="File(s)..." onAction="#onNewMailClick"/>
+                        <SeparatorMenuItem/>
+                        <MenuItem text="Web Page" onAction="#onNewMailClick"/>
+                    </items>
+                </Menu>
+
+                <SeparatorMenuItem/>
+
+                <MenuItem text="_Save"/>
+                <Menu text="Save _As">
+                    <items>
+                        <MenuItem text="File..."/>
+                        <SeparatorMenuItem/>
+                        <MenuItem text="Draft"/>
+                        <MenuItem text="Template"/>
+                    </items>
+                </Menu>
+
+                <SeparatorMenuItem/>
+                <MenuItem text="_Print" accelerator="Shortcut+P"/>
+                <SeparatorMenuItem/>
+                <MenuItem text="_Close" accelerator="Shortcut+W"/>
+            </items>
+        </Menu>
+        <Menu text="_Edit"/>
+        <Menu text="_View"/>
+        <Menu text="_Insert"/>
+        <Menu text="F_ormat"/>
+        <Menu text="_Options"/>
+        <Menu text="_Tools"/>
+        <Menu text="_Help"/>
     </menus>
 </MenuBar>

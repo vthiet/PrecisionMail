@@ -1,6 +1,10 @@
 # System Use Cases & Specifications
 **Dự án:** Ứng dụng Gửi Email Lên Lịch Độ Trễ Thấp (Low-Latency Scheduled Email Client)
 
+> [!IMPORTANT]
+> **QUY TẮC DỰ ÁN (PROJECT CONVENTION):**
+> Các Sequence Diagram trong tài liệu này đóng vai trò hướng dẫn triển khai. Tuy nhiên, trong quá trình thực thi, nếu source code thực tế có sự thay đổi về luồng (Flow), tên Component, hay Class (để tối ưu hoặc phù hợp với framework), **Sequence Diagram phải được cập nhật lại ngay lập tức** để đảm bảo tài liệu luôn đồng bộ với mã nguồn thực tế.
+
 ## 1. Use Case Tổng (Overall Use Case Diagram)
 
 Dưới đây là biểu đồ Use Case tổng thể của hệ thống, thể hiện các tương tác chính của người dùng với ứng dụng.
@@ -48,18 +52,18 @@ flowchart LR
 - **Post-Condition:** Thông tin tài khoản được mã hóa và lưu trữ an toàn dưới dạng file. Tài khoản được thêm vào danh sách sẵn sàng sử dụng.
 - **Basic Flow:**
   1. Người dùng nhập Email và Google App Password.
-  2. Người dùng chỉ định đường dẫn lưu file thông tin trên máy tính.
-  3. Người dùng bấm xác nhận.
-  4. Hệ thống kiểm tra tính hợp lệ của định dạng Email và độ dài Password.
-  5. Hệ thống mã hóa thông tin.
-  6. Hệ thống lưu tệp thông tin xuống đường dẫn đã chọn.
-  7. Hệ thống thông báo thành công và thêm tài khoản vào danh sách.
+  2. Người dùng bấm xác nhận.
+  3. Hệ thống kiểm tra tính hợp lệ của định dạng Email và độ dài Password.
+  4. Hệ thống mã hóa mật khẩu bằng khóa AES (lấy từ `application.properties`).
+  5. Hệ thống đọc tệp cấu hình tài khoản dùng chung (nếu chưa có sẽ tạo mới).
+  6. Hệ thống thêm/cập nhật thông tin vào tệp cấu hình và lưu lại.
+  7. Hệ thống thông báo thành công và cập nhật danh sách tài khoản hiển thị.
 - **Alternative Flow:**
-  - *File đã tồn tại:* Ở bước 6, nếu tại đường dẫn đã có file thông tin, hệ thống hỏi người dùng có muốn ghi đè hoặc thêm vào danh sách hiện tại không.
+  - *Tài khoản đã tồn tại:* Ở bước 6, nếu tài khoản đã tồn tại trong cấu hình, hệ thống sẽ ghi đè cập nhật App Password mới.
 - **Exception Flow:**
-  - *Thiếu quyền ghi:* Nếu hệ thống không có quyền ghi file tại đường dẫn, hiển thị lỗi "Access Denied" và yêu cầu chọn thư mục khác.
+  - *Lỗi truy xuất file:* Nếu hệ thống không thể đọc/ghi tệp cấu hình, hiển thị lỗi và yêu cầu cấp quyền.
 - **Business Rules:** (FR1.1) Chỉ yêu cầu nhập App Password, không hỗ trợ mật khẩu thường. (FR1.5) Chỉ xác thực SMTP, không quan tâm IMAP/POP3.
-- **Non-Functional Requirement:** (NFR1) Dữ liệu lưu xuống file phải được mã hóa chuẩn (ví dụ: AES) để đảm bảo bảo mật.
+- **Non-Functional Requirement:** (NFR1) Dữ liệu lưu xuống file phải được mã hóa chuẩn (ví dụ: AES) để đảm bảo bảo mật. Khóa AES lưu trong `application.properties`.
 
 **2. Sequence Diagram**
 ```mermaid
@@ -70,22 +74,24 @@ sequenceDiagram
     participant CryptoUtils
     participant FileIO
     
-    User->>UI: Nhập Email, App Password, Path
+    User->>UI: Nhập Email, App Password
     User->>UI: Click "Lưu tài khoản"
-    UI->>AuthController: validate(email, pass, path)
+    UI->>AuthController: validate(email, pass)
     
     alt Validation Failed
         AuthController-->>UI: Lỗi định dạng/Thiếu thông tin
         UI-->>User: Hiển thị lỗi
     else Validation Passed
-        AuthController->>CryptoUtils: encrypt(App Password)
+        AuthController->>CryptoUtils: encrypt(App Password, secretKey)
         CryptoUtils-->>AuthController: Encrypted Password
-        AuthController->>FileIO: saveToFile(email, encryptedPass, path)
+        AuthController->>FileIO: readConfig()
+        FileIO-->>AuthController: Current Config
+        AuthController->>FileIO: writeConfig(updatedConfig)
         
-        alt Có lỗi File IO (Quyền truy cập)
+        alt Có lỗi File IO
             FileIO-->>AuthController: IOException
-            AuthController-->>UI: Hiển thị lỗi Access Denied
-            UI-->>User: Cảnh báo chọn thư mục khác
+            AuthController-->>UI: Hiển thị lỗi truy xuất
+            UI-->>User: Cảnh báo lỗi cấu hình
         else Thành công
             FileIO-->>AuthController: Success
             AuthController-->>UI: Tài khoản được thêm
@@ -166,29 +172,101 @@ sequenceDiagram
   - Người dùng xóa tệp đã đính kèm khỏi danh sách.
 - **Exception Flow:**
   - Nếu tổng dung lượng > 25MB hoặc số file > 10, hệ thống từ chối file đó và hiển thị Pop-up cảnh báo ngay lập tức.
+  - Nếu tệp tải lên có định dạng thực thi nguy hiểm (`.exe`, `.bat`, `.cmd`, `.vbs`), hệ thống từ chối và hiển thị cảnh báo vi phạm bảo mật.
 - **Business Rules:** (FR2.1) Nội dung chỉ là Plain Text. (FR2.3) Tối đa 10 tệp, tổng dung lượng <= 25MB.
 - **Non-Functional Requirement:** Dung lượng tệp được tính toán nhanh, không load toàn bộ tệp vào RAM khi kiểm tra size.
 
 **2. Sequence Diagram**
+
+**Phần 1: Thêm tệp đính kèm**
 ```mermaid
 sequenceDiagram
     actor User
     participant UI
+    participant FileChooser
     participant AttachmentValidator
     
     User->>UI: Nhập văn bản (To, Subject, Content)
-    User->>UI: Chọn tệp đính kèm (File A)
-    UI->>AttachmentValidator: validate(File A, CurrentFilesList)
+    User->>UI: Click "Attach" > "_File(s)..."
+    UI->>FileChooser: Hiện hộp thoại chọn file
+    User->>FileChooser: Chọn 1 hoặc nhiều file
+    FileChooser-->>UI: Trả về List<File>
     
-    alt Số lượng > 10 HOẶC Tổng Size > 25MB
-        AttachmentValidator-->>UI: Return False (Kèm lý do)
-        UI-->>User: Pop-up cảnh báo dung lượng/số lượng
-    else Hợp lệ
-        AttachmentValidator-->>UI: Return True
-        UI->>UI: Cập nhật danh sách đính kèm
-        UI-->>User: Hiển thị File A trên UI
+    loop Kiểm tra từng file
+        UI->>AttachmentValidator: validateFileAddition(File, CurrentList)
+        
+        alt Định dạng nguy hiểm hoặc quá size
+            AttachmentValidator-->>UI: ValidationResult (Error)
+            UI-->>User: Hiển thị Pop-up cảnh báo lỗi
+        else Hợp lệ
+            AttachmentValidator-->>UI: ValidationResult (Success)
+            UI->>UI: attachments.add(File)
+            UI->>UI: Cập nhật ListView
+            UI->>UI: Cập nhật Label (Số file, Tổng size)
+            UI-->>User: Hiển thị file trên UI
+        end
     end
 ```
+
+**Phần 2: Xóa tệp đính kèm (Alternative Flow)**
+```mermaid
+sequenceDiagram
+    actor User
+    participant UI
+    participant ListView
+    
+    User->>UI: Xem danh sách attachment
+    User->>ListView: Click nút "×" trên file
+    ListView->>UI: Gọi deleteAttachment(File)
+    UI->>UI: attachments.remove(File)
+    UI->>ListView: Cập nhật ListView
+    UI->>UI: Cập nhật Label (Số file, Tổng size)
+    UI-->>User: Ẩn file khỏi danh sách
+```
+
+**Phần 3: Gửi email với attachment**
+```mermaid
+sequenceDiagram
+    actor User
+    participant UI
+    participant ComposeMailController
+    participant EmailService
+    participant EmailUtil
+    participant GoogleSMTP
+    
+    User->>UI: Click "Send"
+    UI->>ComposeMailController: handleSendMail()
+    ComposeMailController->>ComposeMailController: Lấy thông tin (To, CC, BCC, Subject, Content)
+    ComposeMailController->>ComposeMailController: Chuyển List<File> → List<String> (Paths)
+    ComposeMailController->>EmailService: send(Account, Email)
+    
+    Note over EmailService: Email chứa attachmentPaths
+    
+    EmailService->>EmailUtil: send(Account, Email) - Async Thread
+    EmailUtil->>EmailUtil: tạo MimeMessage
+    EmailUtil->>EmailUtil: Thêm text content vào multipart
+    
+    loop Với mỗi attachment path
+        EmailUtil->>EmailUtil: file = new File(attachPath)
+        EmailUtil->>EmailUtil: Thêm MimeBodyPart vào multipart
+    end
+    
+    EmailUtil->>GoogleSMTP: Transport.send(message)
+    
+    alt Gửi thành công
+        GoogleSMTP-->>EmailUtil: 250 OK
+        EmailUtil->>EmailService: Lưu vào DB
+        EmailService-->>ComposeMailController: Success
+        ComposeMailController->>UI: clear() & attachments.clear()
+        UI-->>User: Thông báo thành công, làm sạch form
+    else Gửi thất bại
+        GoogleSMTP-->>EmailUtil: Exception
+        EmailUtil-->>ComposeMailController: Exception
+        ComposeMailController-->>UI: Exception
+        UI-->>User: Hiển thị Pop-up lỗi
+    end
+```
+
 
 ---
 
@@ -205,7 +283,7 @@ sequenceDiagram
 - **Basic Flow:**
   1. Người dùng chọn file (.txt hoặc .csv) từ máy tính.
   2. Hệ thống phân tích (parse) nội dung file trên Background Thread.
-  3. Trích xuất tất cả các chuỗi có định dạng email hợp lệ.
+  3. Quét từng dòng dữ liệu: Giả định 1 dòng là 1 email, hoặc dùng Regex tự động trích xuất chuỗi có định dạng email hợp lệ.
   4. Lọc trùng lặp.
   5. Điền kết quả vào trường văn bản tương ứng trên giao diện.
 - **Alternative Flow:**
@@ -251,11 +329,11 @@ sequenceDiagram
 - **Pre-Condition:** Nội dung email hợp lệ (Có người nhận, tiêu đề), tài khoản active đang sẵn sàng, kết nối mạng bình thường.
 - **Post-Condition:** Email được gửi đi thành công với độ trễ thấp nhất tại đúng thời điểm đã định.
 - **Basic Flow:**
-  1. Người dùng chọn ngày, giờ chính xác và ấn "Chuẩn bị gửi".
+  1. Người dùng chọn ngày, giờ chính xác (tối đa 2 giờ tới) và ấn "Chuẩn bị gửi".
   2. Hệ thống khóa các nút thao tác trên UI, hiển thị đếm ngược (Waiting).
-  3. Hệ thống tạo kết nối (Session) tới Google SMTP Server ngay lập tức và xác thực (Pre-connect).
-  4. Hệ thống duy trì kết nối (Keep-alive) nếu cần.
-  5. Khi giờ hệ thống khớp với giờ đã lên lịch, hệ thống đẩy MimeMessage (payload) đi ngay lập tức.
+  3. Tác vụ được đưa vào trạng thái "Sleep" (Ngủ) để tránh mở kết nối quá sớm gây timeout.
+  4. Khi thời gian hiện tại gần sát với thời gian lên lịch (chênh lệch mili-giây), hệ thống "thức dậy" và tạo ngay một kết nối (Session/Transport) tới Google SMTP Server.
+  5. Khi giờ hệ thống khớp hoàn toàn với giờ lên lịch, hệ thống đẩy MimeMessage (payload) đi ngay lập tức.
   6. Nhận phản hồi thành công, đóng kết nối, mở khóa UI và báo thành công.
 - **Alternative Flow:**
   - Người dùng bấm "Hủy lệnh" trước khi đến giờ. Kết nối bị đóng, giao diện mở khóa.
@@ -278,7 +356,11 @@ sequenceDiagram
     UI->>UI: Khóa UI, Hiện đếm ngược
     UI->>Scheduler: scheduleJob(emailData, triggerTime)
     
-    Scheduler->>SMTPTransport: Pre-connect (Tạo Session)
+    loop Sleep until near triggerTime
+        Scheduler->>Scheduler: Sleep (Chờ)
+    end
+
+    Scheduler->>SMTPTransport: Pre-connect (Tạo Session gần sát giờ)
     SMTPTransport->>GoogleServer: Connect & Authenticate
     
     alt Kết nối ban đầu lỗi (Sai Pass, No Internet)
@@ -288,10 +370,6 @@ sequenceDiagram
         UI-->>User: Báo lỗi & Mở khóa UI
     else Pre-connect thành công
         GoogleServer-->>SMTPTransport: Connected
-        
-        loop Đợi đến triggerTime
-            Scheduler->>Scheduler: Tick (Kiểm tra thời gian)
-        end
         
         Scheduler->>SMTPTransport: Kích hoạt!
         SMTPTransport->>GoogleServer: Send Message Payload

@@ -1,23 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.layout.VBox?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
 
-<VBox styleClass="compose-left-sidebar" prefWidth="200" minWidth="180"
-      style="-fx-background-color: #F6F8FC; -fx-border-color: transparent #DADCE0 transparent transparent; -fx-border-width: 0 1 0 0;"
-      xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1">
+<VBox styleClass="compose-left-sidebar"
+      prefWidth="200"
+      minWidth="180"
+      xmlns="http://javafx.com/javafx/25"
+      xmlns:fx="http://javafx.com/fxml/1"
+      stylesheets="@../../css/sidebar.css"
+      fx:controller="nlu.fit.soft.gr5.precisionMail.controller.fxml.SideBarController">
+
     <padding>
-        <Insets top="16" right="0" bottom="16" left="12"/>
+        <Insets top="16" bottom="16" left="12"/>
     </padding>
 
-    <Button text="＋  Soạn thư mới" maxWidth="Infinity"
-            style="-fx-background-color: #C2E7FF; -fx-text-fill: #001D35; -fx-font-weight: bold;
-                           -fx-font-size: 13px; -fx-padding: 12 20 12 16; -fx-background-radius: 18;
-                           -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.14), 4, 0, 0, 2);">
+    <Button onAction="#onNewMailClick"
+            text="Soạn thư mới"
+            maxWidth="Infinity"
+            graphicTextGap="10"
+            styleClass="compose-button">
+        <graphic>
+            <ImageView fitHeight="20.0" fitWidth="20.0" pickOnBounds="true" preserveRatio="true">
+                <Image url="@../../icons/add.png"/>
+            </ImageView>
+        </graphic>
+
         <VBox.margin>
             <Insets bottom="16" right="12"/>
         </VBox.margin>
@@ -30,49 +44,22 @@
     </Separator>
 
     <Label text="HỘP THƯ"
-           style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #80868B; -fx-padding: 0 0 4 6;">
+           styleClass="sidebar-section-title">
         <VBox.margin>
             <Insets bottom="2"/>
         </VBox.margin>
     </Label>
 
-    <Button fx:id="btnInbox" text="📥  Hộp thư đến" maxWidth="Infinity"
+    <Button fx:id="btnDrafts"
+            text="📝  Thư nháp"
+            maxWidth="Infinity"
+            styleClass="sidebar-nav-item-active"/>
+
+    <Button fx:id="btnSent"
+            text="📤  Đã gửi"
+            maxWidth="Infinity"
             styleClass="sidebar-nav-item"
-            disable="true"
-            style="-fx-background-color: transparent; -fx-text-fill: #202124; -fx-alignment: CENTER_LEFT;
-                           -fx-padding: 9 16 9 14; -fx-background-radius: 0 24 24 0; -fx-cursor: hand; -fx-font-size: 13px;">
-        <VBox.margin>
-            <Insets right="0"/>
-        </VBox.margin>
-    </Button>
-
-    <Button fx:id="btnStarred" text="⭐  Quan trọng" maxWidth="Infinity"
-            disable="true"
-            style="-fx-background-color: transparent; -fx-text-fill: #202124; -fx-alignment: CENTER_LEFT;
-                           -fx-padding: 9 16 9 14; -fx-background-radius: 0 24 24 0; -fx-cursor: hand; -fx-font-size: 13px;">
-        <VBox.margin>
-            <Insets right="0"/>
-        </VBox.margin>
-    </Button>
-
-    <Button fx:id="btnDrafts" text="📝  Thư nháp" maxWidth="Infinity"
-            disable="true"
-            style="-fx-background-color: #C2E7FF; -fx-text-fill: #001D35; -fx-alignment: CENTER_LEFT;
-                           -fx-padding: 9 16 9 14; -fx-background-radius: 0 24 24 0; -fx-cursor: hand;
-                           -fx-font-size: 13px; -fx-font-weight: bold;">
-        <VBox.margin>
-            <Insets right="0"/>
-        </VBox.margin>
-    </Button>
-
-    <Button fx:id="btnSent" text="📤  Đã gửi" maxWidth="Infinity"
-            disable="true"
-            style="-fx-background-color: transparent; -fx-text-fill: #202124; -fx-alignment: CENTER_LEFT;
-                           -fx-padding: 9 16 9 14; -fx-background-radius: 0 24 24 0; -fx-cursor: hand; -fx-font-size: 13px;">
-        <VBox.margin>
-            <Insets right="0"/>
-        </VBox.margin>
-    </Button>
+            onAction="#handleSentMailBtn"/>
 
     <Separator>
         <VBox.margin>
@@ -81,29 +68,21 @@
     </Separator>
 
     <Label text="KHÁC"
-           style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #80868B; -fx-padding: 0 0 4 6;">
+           styleClass="sidebar-section-title">
         <VBox.margin>
             <Insets bottom="2"/>
         </VBox.margin>
     </Label>
 
-    <Button fx:id="btnSpam" text="⚠️  Thư rác" maxWidth="Infinity"
-            disable="true"
-            style="-fx-background-color: transparent; -fx-text-fill: #202124; -fx-alignment: CENTER_LEFT;
-                           -fx-padding: 9 16 9 14; -fx-background-radius: 0 24 24 0; -fx-cursor: hand; -fx-font-size: 13px;">
-        <VBox.margin>
-            <Insets right="0"/>
-        </VBox.margin>
-    </Button>
+    <Button fx:id="btnSpam"
+            text="⚠️  Thư rác"
+            maxWidth="Infinity"
+            styleClass="sidebar-nav-item"/>
 
-    <Button fx:id="btnTrash" text="🗑️  Thùng rác" maxWidth="Infinity"
-            disable="true"
-            style="-fx-background-color: transparent; -fx-text-fill: #202124; -fx-alignment: CENTER_LEFT;
-                           -fx-padding: 9 16 9 14; -fx-background-radius: 0 24 24 0; -fx-cursor: hand; -fx-font-size: 13px;">
-        <VBox.margin>
-            <Insets right="0"/>
-        </VBox.margin>
-    </Button>
+    <Button fx:id="btnTrash"
+            text="🗑️  Thùng rác"
+            maxWidth="Infinity"
+            styleClass="sidebar-nav-item"/>
 
     <Pane VBox.vgrow="ALWAYS"/>
 
@@ -113,22 +92,8 @@
         </VBox.margin>
     </Separator>
 
-    <Button fx:id="btnSettings" text="⚙️  Cài đặt" maxWidth="Infinity"
-            disable="true"
-            style="-fx-background-color: transparent; -fx-text-fill: #5F6368; -fx-alignment: CENTER_LEFT;
-                           -fx-padding: 9 16 9 14; -fx-background-radius: 0 24 24 0; -fx-cursor: hand; -fx-font-size: 13px;">
-        <VBox.margin>
-            <Insets right="0"/>
-        </VBox.margin>
-    </Button>
-
-    <Button fx:id="btnShortcuts" text="⌨️  Phím tắt" maxWidth="Infinity"
-            disable="true"
-            style="-fx-background-color: transparent; -fx-text-fill: #5F6368; -fx-alignment: CENTER_LEFT;
-                           -fx-padding: 9 16 9 14; -fx-background-radius: 0 24 24 0; -fx-cursor: hand; -fx-font-size: 13px;">
-        <VBox.margin>
-            <Insets right="0"/>
-        </VBox.margin>
-    </Button>
-
+    <Button fx:id="btnSettings"
+            text="⚙️  Cài đặt"
+            maxWidth="Infinity"
+            styleClass="sidebar-footer-item"/>
 </VBox>

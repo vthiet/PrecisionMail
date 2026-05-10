@@ -25,7 +25,7 @@ public class AppLoaderUtil {
             appConfig.load(is);
 
         } catch (IOException ex) {
-            throw new RuntimeException("Failed to load application.properties", ex);
+            throw new RuntimeException("Failed toLst load application.properties", ex);
         }
     }
 

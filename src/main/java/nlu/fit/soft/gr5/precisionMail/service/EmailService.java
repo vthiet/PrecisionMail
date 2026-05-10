@@ -1,16 +1,18 @@
 package nlu.fit.soft.gr5.precisionMail.service;
 
 import jakarta.mail.MessagingException;
+import jakarta.mail.internet.AddressException;
+import nlu.fit.soft.gr5.precisionMail.model.Account;
+import nlu.fit.soft.gr5.precisionMail.model.Email;
 
+import java.io.IOException;
 import java.util.List;
 
 public interface EmailService {
 
-    void send(String to, String subject, String content) throws MessagingException;
+    void send(Account account, Email email) throws MessagingException, IOException;
 
-    void send(List<String> to,
-              List<String> cc,
-              List<String> bcc,
-              String subject,
-              String content) throws MessagingException;
+    List<Email> findAll() throws IOException;
+
+    Email save(Email email) throws IOException;
 }

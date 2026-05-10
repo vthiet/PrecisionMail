@@ -86,6 +86,23 @@ public class ComposeMailController {
 
         attachmentListView.setItems(attachments);
 
+        attachmentCountLabel.textProperty().bind(
+                Bindings.size(attachments)
+                        .asString("%d Attachment(s)")
+        );
+
+        attachmentSizeLabel.textProperty().bind(
+                Bindings.createStringBinding(() -> {
+
+                    long total = attachments.stream()
+                            .mapToLong(File::length)
+                            .sum();
+
+                    return formatSize(total);
+
+                }, attachments)
+        );
+
         sendBtn.disableProperty().bind(
                 Bindings.createBooleanBinding(() -> {
                             boolean toValid = EmailUtil.isValidEmail(toField.getText());
@@ -196,5 +213,10 @@ public class ComposeMailController {
         );
 
         if (files != null) attachments.addAll(files);
+    }
+
+    private String formatSize(long bytes) {
+        double mb = bytes / 1024.0 / 1024.0;
+        return String.format("%.1f MB", mb);
     }
 }

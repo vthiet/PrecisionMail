@@ -4,7 +4,7 @@
 <br>
 **Tiêu chuẩn áp dụng:** IEEE Std 830-1998 / IEEE Std 29148-2018\
 <br>
-**Trạng thái:** Sẵn sàng Triển khai (Production-Ready)
+**Trạng thái:** Đã đồng bộ theo triển khai hiện tại
 
 ## 1\. Giới thiệu và Hạ tầng ghi Log (Introduction & Architecture)
 
@@ -65,38 +65,22 @@ Tệp tin cấu hình này được đóng gói trong thư mục `src/main/resou
 * **Hệ điều hành Windows/Linux:** `${user.home}/.precisionmail/logs/`
   \**(Ví dụ Linux: `/home/<username>/.precisionmail/logs/system.log`; ví dụ Windows: `C:\Users\<Username>\.precisionmail\logs\system.log`)*
 
-## 3\. Ma trận ghi nhận Log chi tiết (Logging Matrix)
+## 3\. Ma trận ghi nhận Log theo triển khai hiện tại (Logging Matrix)
 
-Dưới đây là ma trận đặc tả chi tiết: **Khi nào ghi log**, **Ghi ở lớp/module nào**, **Sử dụng cấp độ log nào** và **Ghi những thông tin cụ thể gì** cho từng Use Case.
+Dưới đây là ma trận hiện trạng của mã nguồn. Các message có thể chứa tham số động `{}` và được Logback render theo pattern chuẩn trong `logback.xml`.
 
-| Mã Use Case  | Ngữ cảnh ghi Log (When)                   | Lớp thực thi (Where)         | Cấp độ Log (Level) | Nội dung thông điệp chuẩn hóa (What)                                                                                                                 |
-| :----------: | :---------------------------------------: | :--------------------------: | :----------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------: |
-| **Hệ thống** | Khởi chạy ứng dụng thành công             | `Launcher.java` / `App.java` | **INFO**           | "Application started successfully on JVM \[21\] and OS \[Windows/Linux\]."                                                                           |
-| **Hệ thống** | Tắt ứng dụng an toàn                      | `Launcher.java`              | **INFO**           | "Shutdown hook triggered. Releasing resources, shutting down scheduler and threads cleanly."                                                         |
-| **Hệ thống** | Gặp lỗi treo máy đột ngột / Tràn bộ nhớ   | `UncaughtExceptionHandler`   | **ERROR**          | "Fatal error detected in thread \[Thread\_Name\]. System state captured. Exception: \[Stacktrace\]"                                                  |
-| **UC-01**    | Bắt đầu kiểm tra kết nối                  | `EmailService.java`          | **INFO**           | "Initiating test connection handshake to SMTP Host: \[host\], Port: \[port\], Protocol: \[SSL/TLS\]."                                                |
-| **UC-01**    | Kết nối Mail Server thành công            | `EmailService.java`          | **INFO**           | "Handshake successful. SMTP Server responded: \[Response\_Code\_Message\] for masked sender \[us\*\*\*@domain.com\]."                                |
-| **UC-01**    | Sai tài khoản/mật khẩu ứng dụng           | `EmailService.java`          | **WARN**           | "Authentication failed for mail user: \[us\*\*\*@domain.com\]. Code \[535\]. Reason: Invalid credentials."                                           |
-| **UC-01**    | Mất mạng hoặc Timeout kết nối             | `EmailService.java`          | **WARN**           | "Connection timeout to Mail Server \[host:port\] after \[10\] seconds. Network is unreachable."                                                      |
-| **UC-01**    | Lưu thông số cấu hình thành công          | `ConfigController.java`      | **INFO**           | "Configuration successfully encrypted using AES-256 and written to local database."                                                                  |
-| **UC-01**    | Lỗi ghi Database SQLite/H2                | `ConfigController.java`      | **ERROR**          | "Failed to write configuration to SQLite database. Exception: \[SQLException\_Stacktrace\]"                                                          |
-| **UC-02**    | Người dùng bấm nút "Gửi ngay"             | `ComposeController.java`     | **INFO**           | "User triggered 'Send Now' command. Initializing message compilation."                                                                               |
-| **UC-02**    | Người dùng đính kèm file                  | `ComposeController.java`     | **DEBUG**          | "File selected: \[filename\], Size: \[size\] bytes. Total aggregated attachment size: \[total\_size\] bytes."                                        |
-| **UC-02**    | File đính kèm vượt quá                    | `ComposeController.java`     | **WARN**           | "Attachment rejected. Reason: Aggregated size exceeds maximum threshold limit of 25MB."                                                              |
-| **UC-02**    | Truyền tải email thành công               | `EmailService.java`          | **INFO**           | "Email transmitted successfully. Sender: \[sen\*\*\*@domain.com\], Subject Length: \[X\], Attachments count: \[Y\], SMTP Code: \[250\]."             |
-| **UC-02**    | Lỗi từ chối từ Mail Server                | `EmailService.java`          | **ERROR**          | "SMTP Server rejected the mail transmission. Error Code: \[Code\]. Reason: \[SMTP\_ErrorMessage\]"                                                   |
-| **UC-03**    | Lên lịch gửi thành công                   | `ScheduleController.java`    | **INFO**           | "Scheduled task created. Task ID: \[X\], Scheduled Target Time: \[T\_target\]. Database status set to PENDING."                                      |
-| **UC-03**    | Lịch gửi không hợp lệ                     | `ScheduleController.java`    | **WARN**           | "Scheduling rejected. Reason: Target time \[T\_target\] is within the past or under the 1-minute minimum lock interval."                             |
-| **UC-03**    | Bộ định thời quét và kích hoạt gửi        | `SchedulerEngine.java`       | **INFO**           | "Scheduler triggered task execution. Task ID: \[X\]. Spawning virtual thread."                                                                       |
-| **UC-03**    | Phát hiện có tác vụ bị trễ hạn khi mở app | `BootstrapProcess.java`      | **WARN**           | "Startup sweep detected missed scheduled email tasks. Task ID: \[X\], Original target \[T\_target\]. Processing recovery policy: \[Skip/Send\_Now\]" |
-| **UC-03**    | Gửi lại tự động khi mất mạng              | `SchedulerEngine.java`       | **WARN**           | "Connection failed for scheduled Task ID: \[X\]. Retrying task execution. Attempt \[Y/3\] in 300 seconds."                                           |
-| **UC-04**    | Người dùng mở tab hàng đợi                | `QueueController.java`       | **DEBUG**          | "User requested queue list. Fetched \[X\] records with status \[PENDING\] from database."                                                            |
-| **UC-04**    | Người dùng hủy lịch gửi thành công        | `QueueController.java`       | **INFO**           | "User manually cancelled scheduled email. Task ID: \[X\]. State transitioned from PENDING to CANCELLED."                                             |
-| **UC-04**    | Vi phạm quy tắc khóa thời gian giây       | `QueueController.java`       | **WARN**           | "Cancellation denied for Task ID: \[X\]. Reason: Delta time \[Delta\_T\] is under the 60-second execution lock threshold."                           |
-| **UC-05**    | Người dùng tra cứu lịch sử                | `HistoryController.java`     | **INFO**           | "History query executed. Filter criteria: \[Keyword length: X, Date range: T\_start to T\_end\]. Rows returned: \[Y\] in \[Z\] ms."                  |
-| **UC-05**    | Người dùng xuất báo cáo CSV               | `HistoryController.java`     | **INFO**           | "Export history report initiated. Output path: \[destination\_path\]. Total rows converted: \[X\]."                                                  |
-| **UC-06**    | Người dùng xem Log hệ thống               | `LogController.java`         | **DEBUG**          | "Log monitoring UI initialized. Streaming last \[1000\] lines from file `system.log`."                                                              |
-| **UC-06**    | File log hiển thị quá lớn                 | `LogMonitoringService.java`  | **WARN**           | "Log file size \[size\] MB exceeds safe load threshold of 10MB. Loading truncated view (last 1000 lines) to prevent OutOfMemoryError."               |
+| Mã Use Case  | Ngữ cảnh ghi Log (When)                            | Lớp thực thi (Where)                              | Cấp độ Log | Nội dung/nhóm thông điệp thực tế |
+| :----------: | :------------------------------------------------: | :-----------------------------------------------: | :--------: | :------------------------------- |
+| **Hệ thống** | Khởi chạy ứng dụng, bootstrap, lỗi không bắt được   | `Launcher.java`                                   | INFO/ERROR/WARN | `Application bootstrap started.`, `Application started successfully.`, `Unhandled runtime exception on thread={}`, `Application close rejected because an email send is still active.` |
+| **Hệ thống** | Khởi tạo và migration CSDL                         | `DatabaseInitializer.java`, `DbUtil.java`         | INFO/DEBUG/ERROR | `Database initialization completed successfully.`, `Migrated accounts table to current schema.`, `Opened SQLite connection to {}.`, `Failed to open SQLite connection to {}.` |
+| **Điều hướng UI** | Chuyển view, mở dialog cấu hình tài khoản      | `NavigationService.java`, `MainScreenController.java`, `MenuBarController.java`, `SideBarController.java` | INFO/ERROR | `Navigation requested to {}.`, `Center view changed to {}.`, `Failed to change center view to {}.` |
+| **UC-01**    | Kiểm tra, lưu, tải cấu hình tài khoản mail          | `AddAccountDialogController.java`, `AccountServiceImpl.java`, `AccountDaoImpl.java`, `EmailUtil.java` | INFO/WARN/ERROR/DEBUG | `Mail-server test requested for username={}.`, `Mail-server test completed successfully for username={}.`, `Mail-server authentication failed for username={}.`, `Account configuration save requested for username={}.`, `Loaded {} account(s) from database.` |
+| **UC-02**    | Soạn và gửi email ngay, kiểm tra người nhận/tệp đính kèm | `ComposeController.java`, `EmailServiceImpl.java`, `EmailDaoImpl.java`, `EmailUtil.java` | INFO/WARN/ERROR/DEBUG | `Send email rejected because recipient list is empty.`, `Attachment accepted. size={} bytes, totalAttachments={}.`, `Attachment rejected by client-side validation.`, `Email send requested. sender={}, recipients={}, attachments={}.`, `Email sent successfully. sender={}, recipients={}, attachments={}.` |
+| **UC-03**    | Lên lịch gửi, bootstrap scheduler, retry khi gửi lỗi | `ComposeController.java`, `ScheduledEmailServiceImpl.java`, `ScheduledEmailDaoImpl.java` | INFO/WARN/ERROR | `Schedule email rejected because scheduled time is less than 60 seconds ahead.`, `Scheduled email created. taskId={}, sender={}, scheduledAt={}, recipients={}, attachments={}.`, `Scheduler bootstrap completed. pendingRecordCount={}.`, `Scheduled email network failure; retry registered. taskId={}, retryCount={}/{}.`, `Scheduled email send failed permanently. taskId={}.` |
+| **UC-04**    | Xem, hủy, cập nhật hàng đợi gửi                     | `QueueController.java`, `QueueServiceImpl.java`, `ScheduledEmailServiceImpl.java` | INFO/WARN/ERROR | `Queue task cancellation failed. taskId={}.`, `Queue task update failed. taskId={}.`, `Queue loading failed.`, `Scheduled email cancelled. taskId={}.`, `Scheduled email rescheduled. taskId={}, newScheduledAt={}.` |
+| **UC-05**    | Tra cứu lịch sử, xem chi tiết, xuất CSV             | `HistoryMailController.java`, `HistoryServiceImpl.java`, `EmailDaoImpl.java` | INFO/ERROR/WARN | `User queried history. Filter params: [Keyword Length: {}, Range: {} to {}]. Results returned: [{}] rows. Duration: [{}] ms`, `History CSV export failed.`, `History query failed.`, `History detail query failed. id={}.` |
+| **UC-06**    | Mở màn hình log, đọc/lọc log, watch realtime, mở thư mục, xuất ZIP | `LogController.java`, `LogMonitoringServiceImpl.java` | DEBUG/WARN/ERROR | `Log monitoring UI initialized. Streaming last [{}] lines from file [{}].`, `Failed to read active log file.`, `Failed to filter active log file.`, `Failed to open log directory [{}].`, `Log export failed.`, `Could not start active log watcher.`, `Log file size [{}] MB exceeds safe load threshold of 10MB. Loading truncated view (last [{}] lines) to prevent OutOfMemoryError.` |
+| **Thông báo UI** | Hiển thị alert lỗi/thông tin                  | `AlertUtil.java`                                  | WARN/INFO | `Showing error alert. title={}.`, `Showing info alert. title={}.` |
 
 ## 4\. Cơ chế bảo mật thông tin nhạy cảm (Data Masking System)
 
@@ -104,8 +88,8 @@ Dưới đây là ma trận đặc tả chi tiết: **Khi nào ghi log**, **Ghi 
 
 ### 4.1 Quy tắc làm mờ dữ liệu (Masking Rules)
 
-1.  **Mật khẩu/Token:** Mọi cặp khóa-trị dạng `password=xxx`, `pass=xxx` hoặc chuỗi ký tự mật khẩu thô sẽ được tự động chuyển thành chuỗi `[PROTECTED_PASSWORD]`.
-2.  **Email khách hàng nhận thư:** Địa chỉ email khi hiển thị ra log phải làm mờ phần ký tự định danh chính để bảo vệ thông tin riêng tư cá nhân.
+1.  **Mật khẩu/Token:** Mọi cặp khóa-trị dạng `password=xxx`, `app password=xxx`, `appPassword=xxx`, `pass=xxx`, `token=xxx` hoặc `secret=xxx` với dấu phân cách `=` hoặc `:` sẽ được tự động chuyển thành chuỗi `[PROTECTED_PASSWORD]`.
+2.  **Email khách hàng nhận/gửi:** Địa chỉ email khi ghi file và khi hiển thị ra UI được làm mờ theo quy tắc giữ tối đa 1-3 ký tự đầu phần local-part và thay phần còn lại bằng `***`, ví dụ `recipient@example.com` thành `rec***@example.com`.
 
 ### 4.2 Lớp Java xử lý Masking thực tế (`SecurePatternLayout.java`)
 
@@ -138,4 +122,10 @@ Do hệ thống sử dụng Virtual Threads (JDK 21) để thực thi các nghi�
 
 ### 5.2 Xử lý Stacktrace thông minh
 
-Để tránh việc file log bị phình to đột biến bởi các Stacktrace lỗi dài vô tận của Java, trong tệp cấu hình `logback.xml` chúng ta áp dụng ký hiệu `%rEx` để thiết lập cơ chế giới hạn dòng lỗi. Chỉ in tối đa dòng lỗi tiêu biểu của Exception trừ khi gặp lỗi nghiêm trọng cấp độ FATAL liên quan đến hỏng tệp tin DB hoặc sập luồng hệ thống.
+Triển khai hiện tại dùng `%ex` trong pattern:
+
+```text
+[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%level] [%thread] [%class:%line] - %msg%n%ex
+```
+
+Cách này ghi đầy đủ stacktrace khi logger nhận `Throwable`, phù hợp với mục tiêu hỗ trợ chẩn đoán lỗi trên máy trạm. Giới hạn tăng trưởng file được kiểm soát bằng `SizeAndTimeBasedRollingPolicy` với `maxFileSize=10MB`, `maxHistory=30` và `totalSizeCap=200MB`, thay vì cắt ngắn stacktrace bằng `%rEx`.

@@ -18,89 +18,52 @@ Tài liệu này đặc tả chi tiết cách thức cấu hình và triển kha
 
 ## 2\. Cấu hình tệp tin Logback (logback.xml)
 
-Tệp tin cấu hình này được đóng gói trong thư mục `src/main/resources/logback.xml` của dự án Maven/Gradle. Nó thiết lập 3 luồng ghi log (Appenders): **Console** (dành cho môi trường phát triển), **RollingFile** (ghi tệp tin tự xoay vòng) và **Async** (bọc bất đồng bộ để tránh chặn I/O luồng chính).
+Tệp tin cấu hình này được đóng gói trong thư mục `src/main/resources/logback.xml` của dự án Maven. Nó thiết lập 2 appender chính: **RollingFile** (ghi tệp tin tự xoay vòng) và **Async** (bọc bất đồng bộ để tránh chặn I/O luồng chính).
 
 ``` xml
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration scan="true" scanPeriod="30 seconds">
+<configuration>
+    <property name="LOG_DIR" value="${user.home}/.precisionmail/logs"/>
+    <property name="LOG_FILE" value="${LOG_DIR}/system.log"/>
 
-    <!-- 1. Định nghĩa các biến môi trường thư mục Log tùy theo OS -->
-    <define name="LOG_DIR" class="com.emailsystem.logging.LogDirectoryDefiner"/>
-
-    <!-- 2. Định nghĩa cấu trúc định dạng dòng Log chuẩn IEEE -->
-    <property name="LOG_PATTERN"
-              value="[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%-5level] [%thread] [%logger{36}:%line] - %msg%n%rEx" />
-
-    <!-- 3. Appender 1: Ghi ra Console (Chỉ hiển thị khi phát triển hoặc chạy dev mode) -->
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>${LOG_PATTERN}</pattern>
-            <charset>UTF-8</charset>
-        </encoder>
-    </appender>
-
-    <!-- 4. Appender 2: Ghi ra tệp tin xoay vòng (Rolling File Appender) -->
-    <appender name="ROLLING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_DIR}/sys_app.log</file>
-
-        <!-- Quy tắc xoay vòng Log (Log Rotation Rules) -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE}</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <!-- Tên tệp tin nén sau khi xoay vòng -->
-            <fileNamePattern>${LOG_DIR}/archived/sys_app-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
-
-            <!-- Giới hạn dung lượng một tệp tin: S_file = 10 MB -->
+            <fileNamePattern>${LOG_DIR}/system.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
             <maxFileSize>10MB</maxFileSize>
-
-            <!-- Thời gian lưu trữ tối đa: 30 ngày -->
             <maxHistory>30</maxHistory>
-
-            <!-- Tổng dung lượng tối đa cho toàn bộ thư mục log: S_max_total = 200 MB -->
             <totalSizeCap>200MB</totalSizeCap>
         </rollingPolicy>
-
         <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
-            <!-- Tích hợp bộ lọc làm mờ thông tin nhạy cảm (Data Masking) -->
-            <layout class="com.emailsystem.logging.SecurePatternLayout">
-                <pattern>${LOG_PATTERN}</pattern>
+            <layout class="nlu.fit.soft.gr5.precisionMail.util.SecurePatternLayout">
+                <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%level] [%thread] [%class:%line] - %msg%n%ex</pattern>
             </layout>
-            <charset>UTF-8</charset>
         </encoder>
     </appender>
 
-    <!-- 5. Appender 3: Bọc ghi bất đồng bộ (Thread-safe Async Appender) -->
-    <!-- Đảm bảo Disk I/O không bao giờ block luồng chính JavaFX UI hoặc Virtual Threads -->
     <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="ROLLING_FILE" />
-        <queueSize>512</queueSize>
-        <!-- Không bỏ qua log mức TRACE/DEBUG/INFO khi hàng đợi đầy -->
+        <queueSize>2048</queueSize>
         <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
         <includeCallerData>true</includeCallerData>
+        <appender-ref ref="FILE"/>
     </appender>
 
-    <!-- 6. Thiết lập mức log mặc định cho toàn bộ ứng dụng -->
     <root level="INFO">
-        <appender-ref ref="CONSOLE" />
-        <appender-ref ref="ASYNC_FILE" />
+        <appender-ref ref="ASYNC_FILE"/>
     </root>
 
-    <!-- Chỉ bật mức DEBUG cho gói mã nguồn của dự án khi cần gỡ lỗi -->
-    <logger name="com.emailsystem" level="DEBUG" additivity="false">
-        <appender-ref ref="CONSOLE" />
-        <appender-ref ref="ASYNC_FILE" />
-    </logger>
-
+    <logger name="nlu.fit.soft.gr5.precisionMail" level="DEBUG"/>
 </configuration>
 
 ```
 
 ### 2.1 Đường dẫn lưu trữ vật lý tương thích Hệ điều hành
 
-Để xác định chính xác đường dẫn lưu trữ theo đúng quy định của hệ điều hành đích mà không bị cứng mã nguồn (hardcoded), lớp định nghĩa thư mục `LogDirectoryDefiner` sẽ tính toán động như sau:
+Đường dẫn lưu trữ đang được cấu hình thống nhất theo `user.home` để JavaFX, Logback và `LogMonitoringServiceImpl` cùng tham chiếu một vị trí:
 
-* **Hệ điều hành Windows:** `%APPDATA%/EmailSystem/logs/`
-  \**(Đường dẫn thực tế: `C:\\Users\<Username\>\\AppData\\Roaming\\EmailSystem\\logs`)*
-* **Hệ điều hành Linux:** `~/.config/emailsystem/logs/`
-  \**(Đường dẫn thực tế: `/home/\<Username\>/.config/emailsystem/logs/`)*
+* **Hệ điều hành Windows/Linux:** `${user.home}/.precisionmail/logs/`
+  \**(Ví dụ Linux: `/home/<username>/.precisionmail/logs/system.log`; ví dụ Windows: `C:\Users\<Username>\.precisionmail\logs\system.log`)*
 
 ## 3\. Ma trận ghi nhận Log chi tiết (Logging Matrix)
 
@@ -132,7 +95,7 @@ Dưới đây là ma trận đặc tả chi tiết: **Khi nào ghi log**, **Ghi 
 | **UC-04**    | Vi phạm quy tắc khóa thời gian giây       | `QueueController.java`       | **WARN**           | "Cancellation denied for Task ID: \[X\]. Reason: Delta time \[Delta\_T\] is under the 60-second execution lock threshold."                           |
 | **UC-05**    | Người dùng tra cứu lịch sử                | `HistoryController.java`     | **INFO**           | "History query executed. Filter criteria: \[Keyword length: X, Date range: T\_start to T\_end\]. Rows returned: \[Y\] in \[Z\] ms."                  |
 | **UC-05**    | Người dùng xuất báo cáo CSV               | `HistoryController.java`     | **INFO**           | "Export history report initiated. Output path: \[destination\_path\]. Total rows converted: \[X\]."                                                  |
-| **UC-06**    | Người dùng xem Log hệ thống               | `LogController.java`         | **DEBUG**          | "Log monitoring UI initialized. Streaming last \[1000\] lines from file `sys_app.log`."                                                              |
+| **UC-06**    | Người dùng xem Log hệ thống               | `LogController.java`         | **DEBUG**          | "Log monitoring UI initialized. Streaming last \[1000\] lines from file `system.log`."                                                              |
 | **UC-06**    | File log hiển thị quá lớn                 | `LogMonitoringService.java`  | **WARN**           | "Log file size \[size\] MB exceeds safe load threshold of 10MB. Loading truncated view (last 1000 lines) to prevent OutOfMemoryError."               |
 
 ## 4\. Cơ chế bảo mật thông tin nhạy cảm (Data Masking System)
@@ -146,48 +109,18 @@ Dưới đây là ma trận đặc tả chi tiết: **Khi nào ghi log**, **Ghi 
 
 ### 4.2 Lớp Java xử lý Masking thực tế (`SecurePatternLayout.java`)
 
-Các lập trình viên cần triển khai lớp Java dưới đây trong gói `com.emailsystem.logging` để xử lý chặn ký tự nhạy cảm:
+Lớp Java thực tế nằm trong gói `nlu.fit.soft.gr5.precisionMail.util` để xử lý chặn ký tự nhạy cảm:
 
 ``` java
-package com.emailsystem.logging;
+package nlu.fit.soft.gr5.precisionMail.util;
 
 import ch.qos.logback.classic.PatternLayout;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class SecurePatternLayout extends PatternLayout {
-
-    // Regex tìm kiếm các trường Password dạng JSON hoặc Key-Value
-    private static final String PASSWORD_REGEX = "(?i)(password|pass|secret|apppassword)\\s*[=:]\\s*\"?([^\\\",\\s]+)\"?";
-    private static final Pattern PASSWORD_PATTERN = Pattern.compile(PASSWORD_REGEX);
-
-    // Regex làm mờ Email người nhận/gửi
-    private static final String EMAIL_REGEX = "([a-zA-Z0-9_.\\-]{3})[a-zA-Z0-9_.\\-]*(@[a-zA-Z0-9.\\-]+)";
-    private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
-
     @Override
     public String doLayout(ILoggingEvent event) {
-        String originalMessage = super.doLayout(event);
-        return maskMessage(originalMessage);
-    }
-
-    private String maskMessage(String message) {
-        if (message == null) return null;
-
-        // 1. Áp dụng che giấu Mật khẩu ứng dụng
-        Matcher passwordMatcher = PASSWORD_PATTERN.matcher(message);
-        if (passwordMatcher.find()) {
-            message = passwordMatcher.replaceAll("$1=[PROTECTED_PASSWORD]");
-        }
-
-        // 2. Áp dụng che giấu Email (Giữ 3 ký tự đầu và tên miền)
-        Matcher emailMatcher = EMAIL_PATTERN.matcher(message);
-        if (emailMatcher.find()) {
-            message = emailMatcher.replaceAll("$1***$2");
-        }
-
-        return message;
+        return LogSanitizer.sanitize(super.doLayout(event));
     }
 }
 

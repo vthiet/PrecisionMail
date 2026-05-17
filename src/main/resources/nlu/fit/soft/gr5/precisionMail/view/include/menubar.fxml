@@ -56,7 +56,11 @@
         <Menu text="_Insert"/>
         <Menu text="F_ormat"/>
         <Menu text="_Options"/>
-        <Menu text="_Tools"/>
+        <Menu text="_Tools">
+            <items>
+                <MenuItem text="Log hệ thống" onAction="#handleSystemLogs"/>
+            </items>
+        </Menu>
         <Menu text="_Help"/>
     </menus>
 </MenuBar>

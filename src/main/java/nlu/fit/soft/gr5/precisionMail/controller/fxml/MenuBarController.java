@@ -41,4 +41,10 @@ public class MenuBarController {
             LOGGER.error("Failed to open add-account dialog.", e);
         }
     }
+
+    @FXML
+    public void handleSystemLogs(ActionEvent actionEvent) {
+        LOGGER.info("Navigate to system-log view requested from menu.");
+        NavigationService.getInstance().navigateTo("center/system-logs.fxml");
+    }
 }

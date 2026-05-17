@@ -20,6 +20,7 @@ public class SideBarController {
     private static final String COMPOSE_VIEW = "center/compose-mail.fxml";
     private static final String HISTORY_VIEW = "center/history-mail.fxml";
     private static final String QUEUE_VIEW = "center/queue-mail.fxml";
+    private static final String LOG_VIEW = "center/system-logs.fxml";
     private static final String COMPOSE_ACTIVE_STYLE = "compose-button-active";
     private static final String NAV_ACTIVE_STYLE = "sidebar-nav-item-active";
 
@@ -31,6 +32,8 @@ public class SideBarController {
     public Button btnSent;
     @FXML
     public Button btnQueue;
+    @FXML
+    public Button btnLogs;
 
     @FXML
     public void initialize() {
@@ -58,6 +61,12 @@ public class SideBarController {
     }
 
     @FXML
+    public void handleLogsBtn(ActionEvent actionEvent) {
+        LOGGER.info("Sidebar requested navigation to system-log view.");
+        NavigationService.getInstance().navigateTo(LOG_VIEW);
+    }
+
+    @FXML
     public void handleSettings(ActionEvent actionEvent) {
         try {
             FXMLLoader loader = new FXMLLoader(
@@ -81,6 +90,7 @@ public class SideBarController {
         setActive(composeButton, COMPOSE_ACTIVE_STYLE, COMPOSE_VIEW.equals(currentView));
         setActive(btnSent, NAV_ACTIVE_STYLE, HISTORY_VIEW.equals(currentView));
         setActive(btnQueue, NAV_ACTIVE_STYLE, QUEUE_VIEW.equals(currentView));
+        setActive(btnLogs, NAV_ACTIVE_STYLE, LOG_VIEW.equals(currentView));
         setActive(btnDrafts, NAV_ACTIVE_STYLE, false);
     }
 

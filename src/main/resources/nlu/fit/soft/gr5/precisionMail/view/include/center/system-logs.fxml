@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox spacing="10"
+      xmlns="http://javafx.com/javafx/25"
+      xmlns:fx="http://javafx.com/fxml/1"
+      stylesheets="@../../../css/log-monitor.css"
+      fx:controller="nlu.fit.soft.gr5.precisionMail.controller.fxml.LogController">
+    <padding>
+        <Insets top="12" right="12" bottom="12" left="12"/>
+    </padding>
+
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Label text="Log hệ thống"
+               style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+        <Pane HBox.hgrow="ALWAYS"/>
+        <Button text="Làm mới" onAction="#handleRefresh"/>
+    </HBox>
+
+    <ToolBar>
+        <items>
+            <ComboBox fx:id="levelComboBox" prefWidth="120"/>
+            <TextField fx:id="keywordField"
+                       promptText="Tìm theo lớp, thread hoặc nội dung lỗi"
+                       prefWidth="320"
+                       onAction="#handleFilterLogs"/>
+            <Button text="Lọc" onAction="#handleFilterLogs"/>
+            <Button text="Mở thư mục Log" onAction="#handleOpenLogFolder"/>
+            <Button text="Xuất file Log" onAction="#handleExportLog"/>
+        </items>
+    </ToolBar>
+
+    <TableView fx:id="logTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="timestampColumn" text="Thời gian" prefWidth="170"/>
+            <TableColumn fx:id="levelColumn" text="Level" prefWidth="80"/>
+            <TableColumn fx:id="threadColumn" text="Thread" prefWidth="180"/>
+            <TableColumn fx:id="sourceColumn" text="Class:Line" prefWidth="230"/>
+            <TableColumn fx:id="messageColumn" text="Message" prefWidth="460"/>
+        </columns>
+    </TableView>
+
+    <Label text="Chi tiết"/>
+    <TextArea fx:id="detailArea"
+              editable="false"
+              wrapText="false"
+              prefRowCount="5"
+              VBox.vgrow="NEVER"/>
+
+    <HBox alignment="CENTER_LEFT" spacing="8">
+        <Label fx:id="statusLabel" text="Đang tải log hệ thống..."/>
+        <Pane HBox.hgrow="ALWAYS"/>
+        <Label text="Realtime"/>
+    </HBox>
+</VBox>

@@ -3,16 +3,16 @@ package nlu.fit.soft.gr5.precisionMail;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.stage.Stage;
-import nlu.fit.soft.gr5.precisionMail.util.DbUtil;
+import nlu.fit.soft.gr5.precisionMail.infrastructure.async.AppExecutors;
+import nlu.fit.soft.gr5.precisionMail.infrastructure.db.DatabaseInitializer;
+import nlu.fit.soft.gr5.precisionMail.service.ApplicationStateService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
 
 public class Launcher extends Application {
     private static final Logger LOGGER = LoggerFactory.getLogger(Launcher.class);
@@ -31,36 +31,31 @@ public class Launcher extends Application {
         }
         FXMLLoader fxmlLoader = new FXMLLoader(urlResource);
         Scene scene = new Scene(fxmlLoader.load(), 1000, 700);
-        stage.setTitle("Hello!");
+        stage.setTitle("Precision Mail");
         stage.setScene(scene);
+        stage.setOnCloseRequest(event -> {
+            if (ApplicationStateService.hasActiveEmailSend()) {
+                event.consume();
+                LOGGER.warn("Application close rejected because an email send is still active.");
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Đang gửi email");
+                alert.setHeaderText(null);
+                alert.setContentText("Email đang được gửi. Vui lòng chờ quá trình gửi hoàn tất trước khi tắt ứng dụng.");
+                alert.showAndWait();
+            }
+        });
         stage.show();
         LOGGER.info("Application started successfully.");
     }
 
     public static void main(String[] args){
         LOGGER.info("Application bootstrap started.");
-        initDatabase();
+        DatabaseInitializer.initialize();
         Application.launch(Launcher.class, args);
     }
 
-    private static void initDatabase() {
-        try (Connection connection = DbUtil.getConnect();
-             Statement st = connection.createStatement()) {
-            st.execute("""
-                    create table if not exists accounts
-                    (
-                        id integer primary key autoincrement,
-                        email text not null unique,
-                        encrypt_app_password text not null,
-                        created_at text not null,
-                        updated_at text not null
-                    );
-                    """);
-            LOGGER.info("Database initialization completed successfully.");
-
-        } catch (SQLException e) {
-            LOGGER.error("Database initialization failed.", e);
-            throw new RuntimeException(e);
-        }
+    @Override
+    public void stop() {
+        AppExecutors.shutdown();
     }
 }

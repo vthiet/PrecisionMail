@@ -1,6 +1,7 @@
 module precisionMail {
     requires javafx.controls;
     requires javafx.fxml;
+    requires javafx.web;
     requires jakarta.mail;
     requires java.sql;
     requires com.fasterxml.jackson.databind;

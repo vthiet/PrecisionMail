@@ -6,6 +6,7 @@ public class Account {
     private Long id;
     private String username;
     private String password;
+    private MailServerConfig mailServerConfig;
     private LocalDateTime createdAt;
 
     public Account() { }
@@ -13,6 +14,7 @@ public class Account {
     public Account(String username, String password, LocalDateTime createdAt){
         this.username = username;
         this.password = password;
+        this.mailServerConfig = new MailServerConfig();
         this.createdAt = createdAt;
     }
 
@@ -26,6 +28,13 @@ public class Account {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public MailServerConfig getMailServerConfig() {
+        if (mailServerConfig == null) {
+            mailServerConfig = new MailServerConfig();
+        }
+        return mailServerConfig;
     }
 
     public void setId(long id) {
@@ -46,5 +55,9 @@ public class Account {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public void setMailServerConfig(MailServerConfig mailServerConfig) {
+        this.mailServerConfig = mailServerConfig;
     }
 }

@@ -8,7 +8,11 @@ public interface AccountService {
 
     Account save(String username, String password);
 
+    Account save(Account account);
+
     List<Account> findAll();
+
+    Account findPrimaryConfiguration();
 
     Account findByEmailAddress(String emailAddress);
 

@@ -2,6 +2,8 @@ package nlu.fit.soft.gr5.precisionMail.dao.impl;
 
 import nlu.fit.soft.gr5.precisionMail.dao.AccountDao;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
+import nlu.fit.soft.gr5.precisionMail.model.MailServerConfig;
+import nlu.fit.soft.gr5.precisionMail.model.SecurityMode;
 import nlu.fit.soft.gr5.precisionMail.util.DbUtil;
 import nlu.fit.soft.gr5.precisionMail.util.LogHelper;
 import org.slf4j.Logger;
@@ -22,12 +24,22 @@ public class AccountDaoImpl implements AccountDao {
                 INSERT INTO accounts(
                     email,
                     encrypt_app_password,
+                    smtp_host,
+                    smtp_port,
+                    imap_host,
+                    imap_port,
+                    security_mode,
                     created_at,
                     updated_at
                 )
-                VALUES (?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(email) DO UPDATE SET
                     encrypt_app_password = excluded.encrypt_app_password,
+                    smtp_host = excluded.smtp_host,
+                    smtp_port = excluded.smtp_port,
+                    imap_host = excluded.imap_host,
+                    imap_port = excluded.imap_port,
+                    security_mode = excluded.security_mode,
                     updated_at = excluded.updated_at
                 """;
 
@@ -44,8 +56,14 @@ public class AccountDaoImpl implements AccountDao {
 
             preparedStatement.setString(1, account.getUsername());
             preparedStatement.setString(2, account.getPassword());
-            preparedStatement.setString(3, now);
-            preparedStatement.setString(4, now);
+            MailServerConfig config = account.getMailServerConfig();
+            preparedStatement.setString(3, config.getSmtpHost());
+            preparedStatement.setInt(4, config.getSmtpPort());
+            preparedStatement.setString(5, config.getImapHost());
+            preparedStatement.setInt(6, config.getImapPort());
+            preparedStatement.setString(7, config.getSecurityMode().name());
+            preparedStatement.setString(8, now);
+            preparedStatement.setString(9, now);
 
             preparedStatement.executeUpdate();
 
@@ -89,7 +107,19 @@ public class AccountDaoImpl implements AccountDao {
 
     @Override
     public List<Account> findAll() {
-        String sql = "select id, email, encrypt_app_password, created_at from accounts order by created_at asc";
+        String sql = """
+                select id,
+                       email,
+                       encrypt_app_password,
+                       smtp_host,
+                       smtp_port,
+                       imap_host,
+                       imap_port,
+                       security_mode,
+                       created_at
+                from accounts
+                order by created_at asc
+                """;
 
         try (Connection connection = DbUtil.getConnect();
              PreparedStatement preparedStatement = connection.prepareStatement(sql);
@@ -102,6 +132,13 @@ public class AccountDaoImpl implements AccountDao {
                         LocalDateTime.parse(rs.getString("created_at"))
                 );
                 account.setId(rs.getLong("id"));
+                account.setMailServerConfig(new MailServerConfig(
+                        rs.getString("smtp_host"),
+                        rs.getInt("smtp_port"),
+                        rs.getString("imap_host"),
+                        rs.getInt("imap_port"),
+                        parseSecurityMode(rs.getString("security_mode"))
+                ));
                 result.add(account);
             }
 
@@ -110,6 +147,18 @@ public class AccountDaoImpl implements AccountDao {
         } catch (SQLException e) {
             LOGGER.error("Failed to load accounts from database.", e);
             throw new RuntimeException(e);
+        }
+    }
+
+    private SecurityMode parseSecurityMode(String value) {
+        if (value == null || value.isBlank()) {
+            return SecurityMode.TLS;
+        }
+        try {
+            return SecurityMode.valueOf(value.toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            LOGGER.warn("Unknown security mode in database: {}. Falling back to TLS.", value);
+            return SecurityMode.TLS;
         }
     }
 }

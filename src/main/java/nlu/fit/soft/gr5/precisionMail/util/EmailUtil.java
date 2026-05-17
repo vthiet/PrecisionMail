@@ -4,6 +4,8 @@ import jakarta.mail.*;
 import jakarta.mail.internet.*;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
+import nlu.fit.soft.gr5.precisionMail.model.MailServerConfig;
+import nlu.fit.soft.gr5.precisionMail.model.SecurityMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,10 +86,18 @@ public class EmailUtil {
 
     public static Session getSession(Account account) {
         Properties props = new Properties();
+        MailServerConfig config = account.getMailServerConfig();
         props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
-        props.put("mail.smtp.host", "smtp.gmail.com");
-        props.put("mail.smtp.port", "587");
+        props.put("mail.smtp.host", config.getSmtpHost());
+        props.put("mail.smtp.port", String.valueOf(config.getSmtpPort()));
+        props.put("mail.smtp.connectiontimeout", "10000");
+        props.put("mail.smtp.timeout", "10000");
+        props.put("mail.smtp.writetimeout", "10000");
+        if (config.getSecurityMode() == SecurityMode.SSL) {
+            props.put("mail.smtp.ssl.enable", "true");
+        } else {
+            props.put("mail.smtp.starttls.enable", "true");
+        }
 
         LOGGER.debug("Creating SMTP session for sender={}.", LogHelper.maskEmail(account.getUsername()));
 
@@ -96,6 +106,55 @@ public class EmailUtil {
                 return new PasswordAuthentication(account.getUsername(), account.getPassword());
             }
         });
+    }
+
+    public static void validateConnection(Account account) throws MessagingException {
+        MailServerConfig config = account.getMailServerConfig();
+        Properties props = new Properties();
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.host", config.getSmtpHost());
+        props.put("mail.smtp.port", String.valueOf(config.getSmtpPort()));
+        props.put("mail.smtp.connectiontimeout", "10000");
+        props.put("mail.smtp.timeout", "10000");
+        props.put("mail.smtp.writetimeout", "10000");
+
+        props.put("mail.imap.host", config.getImapHost());
+        props.put("mail.imap.port", String.valueOf(config.getImapPort()));
+        props.put("mail.imap.connectiontimeout", "10000");
+        props.put("mail.imap.timeout", "10000");
+        props.put("mail.imap.writetimeout", "10000");
+
+        if (config.getSecurityMode() == SecurityMode.SSL) {
+            props.put("mail.smtp.ssl.enable", "true");
+            props.put("mail.imap.ssl.enable", "true");
+        } else {
+            props.put("mail.smtp.starttls.enable", "true");
+            props.put("mail.imap.starttls.enable", "true");
+            if (config.getImapPort() == 993) {
+                props.put("mail.imap.ssl.enable", "true");
+            }
+        }
+
+        Session session = Session.getInstance(props);
+        LOGGER.info("Testing mail server connection for sender={}.", LogHelper.maskEmail(account.getUsername()));
+
+        try (Transport transport = session.getTransport("smtp")) {
+            transport.connect(
+                    config.getSmtpHost(),
+                    config.getSmtpPort(),
+                    account.getUsername(),
+                    account.getPassword()
+            );
+        }
+
+        try (Store store = session.getStore("imap")) {
+            store.connect(
+                    config.getImapHost(),
+                    config.getImapPort(),
+                    account.getUsername(),
+                    account.getPassword()
+            );
+        }
     }
 
     public static void send(Account account, Email email) throws MessagingException, IOException {
@@ -123,7 +182,7 @@ public class EmailUtil {
 
         Multipart multipart = new MimeMultipart();
         MimeBodyPart textPart = new MimeBodyPart();
-        textPart.setText(email.content);
+        textPart.setContent(email.content == null ? "" : email.content, "text/html; charset=UTF-8");
         multipart.addBodyPart(textPart);
 
         if (email.attachments != null) {
@@ -131,7 +190,7 @@ public class EmailUtil {
                 File file = new File(attachFilePath);
 
                 if (!file.exists()) {
-                    LOGGER.warn("Attachment skipped because file does not exist. path={}", attachFilePath);
+                    LOGGER.warn("Attachment skipped because file does not exist.");
                     continue;
                 }
 

@@ -16,6 +16,8 @@ public class Email {
     public String content;
     public List<String> attachments;
     public LocalDateTime sentAt;
+    public EmailStatus status = EmailStatus.SENT;
+    public String errorMessage;
 
     public Email() {
     }
@@ -37,6 +39,7 @@ public class Email {
         this.content = content;
         this.attachments = attachments;
         this.sentAt = sentAt;
+        this.status = EmailStatus.SENT;
     }
 
     public String getFrom() {

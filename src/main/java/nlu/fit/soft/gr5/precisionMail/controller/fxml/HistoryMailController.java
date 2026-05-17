@@ -6,8 +6,8 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
-import nlu.fit.soft.gr5.precisionMail.service.EmailService;
-import nlu.fit.soft.gr5.precisionMail.service.impl.EmailServiceImpl;
+import nlu.fit.soft.gr5.precisionMail.service.HistoryService;
+import nlu.fit.soft.gr5.precisionMail.service.impl.HistoryServiceImpl;
 import nlu.fit.soft.gr5.precisionMail.util.LogHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,12 +33,12 @@ public class HistoryMailController {
     @FXML
     public TextArea contentArea;
 
-    private final EmailService emailService = new EmailServiceImpl();
+    private final HistoryService historyService = new HistoryServiceImpl();
 
     @FXML
     public void initialize() throws IOException {
         LOGGER.info("History mail screen initialization started.");
-        List<Email> emails = emailService.findAll();
+        List<Email> emails = historyService.latest();
         emailListView.getItems().addAll(emails);
         LOGGER.info("History mail loaded successfully. recordCount={}", emails.size());
 

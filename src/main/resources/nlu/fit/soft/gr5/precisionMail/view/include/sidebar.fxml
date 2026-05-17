@@ -21,7 +21,8 @@
         <Insets top="16" bottom="16" left="12"/>
     </padding>
 
-    <Button onAction="#onNewMailClick"
+    <Button fx:id="composeButton"
+            onAction="#onNewMailClick"
             text="Soạn thư mới"
             maxWidth="Infinity"
             graphicTextGap="10"
@@ -53,7 +54,7 @@
     <Button fx:id="btnDrafts"
             text="📝  Thư nháp"
             maxWidth="Infinity"
-            styleClass="sidebar-nav-item-active"/>
+            styleClass="sidebar-nav-item"/>
 
     <Button fx:id="btnSent"
             text="📤  Đã gửi"
@@ -95,5 +96,6 @@
     <Button fx:id="btnSettings"
             text="⚙️  Cài đặt"
             maxWidth="Infinity"
+            onAction="#handleSettings"
             styleClass="sidebar-footer-item"/>
 </VBox>

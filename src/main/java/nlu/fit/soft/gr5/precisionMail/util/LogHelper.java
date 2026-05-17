@@ -16,7 +16,9 @@ public final class LogHelper {
             return "***";
         }
 
-        return email.charAt(0) + "***" + email.substring(atIndex);
+        String localPart = email.substring(0, atIndex);
+        String visibleLocalPart = localPart.substring(0, Math.min(3, localPart.length()));
+        return visibleLocalPart + "***" + email.substring(atIndex);
     }
 
     public static int recipientCount(Email email) {

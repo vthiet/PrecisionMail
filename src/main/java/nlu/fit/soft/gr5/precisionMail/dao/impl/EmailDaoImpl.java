@@ -3,6 +3,7 @@ package nlu.fit.soft.gr5.precisionMail.dao.impl;
 import nlu.fit.soft.gr5.precisionMail.dao.EmailDao;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
 import nlu.fit.soft.gr5.precisionMail.model.EmailStatus;
+import nlu.fit.soft.gr5.precisionMail.service.HistorySearchCriteria;
 import nlu.fit.soft.gr5.precisionMail.util.DbUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 public class EmailDaoImpl implements EmailDao {
@@ -111,6 +113,98 @@ public class EmailDaoImpl implements EmailDao {
     }
 
     @Override
+    public List<Email> findHistory(HistorySearchCriteria criteria, int pageIndex, int pageSize) throws IOException {
+        QueryParts query = buildHistoryWhere(criteria);
+        String sql = """
+                select id,
+                       sender_email,
+                       to_recipients,
+                       cc_recipients,
+                       bcc_recipients,
+                       subject,
+                       body,
+                       attachment_paths,
+                       status,
+                       error_message,
+                       sent_at
+                from sent_emails
+                %s
+                order by coalesce(sent_at, created_at) desc
+                limit ? offset ?
+                """.formatted(query.whereClause());
+
+        try (Connection connection = DbUtil.getConnect();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+            bindParams(ps, query.params());
+            int next = query.params().size() + 1;
+            ps.setInt(next, pageSize);
+            ps.setInt(next + 1, Math.max(0, pageIndex) * pageSize);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                List<Email> result = new ArrayList<>();
+                while (rs.next()) {
+                    result.add(mapEmail(rs));
+                }
+                return result;
+            }
+        } catch (SQLException e) {
+            LOGGER.error("Failed to search email history from SQLite.", e);
+            throw new IOException("Failed to search email history.", e);
+        }
+    }
+
+    @Override
+    public int countHistory(HistorySearchCriteria criteria) throws IOException {
+        QueryParts query = buildHistoryWhere(criteria);
+        String sql = "select count(*) from sent_emails " + query.whereClause();
+
+        try (Connection connection = DbUtil.getConnect();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+            bindParams(ps, query.params());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        } catch (SQLException e) {
+            LOGGER.error("Failed to count email history from SQLite.", e);
+            throw new IOException("Failed to count email history.", e);
+        }
+    }
+
+    @Override
+    public Optional<Email> findById(Long id) throws IOException {
+        if (id == null) {
+            return Optional.empty();
+        }
+
+        String sql = """
+                select id,
+                       sender_email,
+                       to_recipients,
+                       cc_recipients,
+                       bcc_recipients,
+                       subject,
+                       body,
+                       attachment_paths,
+                       status,
+                       error_message,
+                       sent_at
+                from sent_emails
+                where id = ?
+                """;
+
+        try (Connection connection = DbUtil.getConnect();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? Optional.of(mapEmail(rs)) : Optional.empty();
+            }
+        } catch (SQLException e) {
+            LOGGER.error("Failed to read email history detail from SQLite. id={}.", id, e);
+            throw new IOException("Failed to read email history detail.", e);
+        }
+    }
+
+    @Override
     public List<String> findAllEmailAddress() throws IOException {
         return findAll().stream().map(Email::getFrom).distinct().toList();
     }
@@ -157,5 +251,40 @@ public class EmailDaoImpl implements EmailDao {
             return new ArrayList<>();
         }
         return new ArrayList<>(Arrays.asList(value.split(DELIMITER)));
+    }
+
+    private QueryParts buildHistoryWhere(HistorySearchCriteria criteria) {
+        List<String> clauses = new ArrayList<>();
+        List<String> params = new ArrayList<>();
+
+        if (criteria != null && !criteria.normalizedKeyword().isBlank()) {
+            clauses.add("(lower(to_recipients) like ? or lower(cc_recipients) like ? or lower(bcc_recipients) like ? or lower(subject) like ?)");
+            String keyword = "%" + criteria.normalizedKeyword().toLowerCase() + "%";
+            params.add(keyword);
+            params.add(keyword);
+            params.add(keyword);
+            params.add(keyword);
+        }
+
+        if (criteria != null && criteria.startDate() != null) {
+            clauses.add("date(coalesce(sent_at, created_at)) >= date(?)");
+            params.add(criteria.startDate().toString());
+        }
+
+        if (criteria != null && criteria.endDate() != null) {
+            clauses.add("date(coalesce(sent_at, created_at)) <= date(?)");
+            params.add(criteria.endDate().toString());
+        }
+
+        return new QueryParts(clauses.isEmpty() ? "" : "where " + String.join(" and ", clauses), params);
+    }
+
+    private void bindParams(PreparedStatement ps, List<String> params) throws SQLException {
+        for (int i = 0; i < params.size(); i++) {
+            ps.setString(i + 1, params.get(i));
+        }
+    }
+
+    private record QueryParts(String whereClause, List<String> params) {
     }
 }

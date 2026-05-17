@@ -4,6 +4,7 @@ module precisionMail {
     requires javafx.web;
     requires jakarta.mail;
     requires java.sql;
+    requires java.desktop;
     requires com.fasterxml.jackson.databind;
     requires com.fasterxml.jackson.datatype.jsr310;
     requires org.slf4j;

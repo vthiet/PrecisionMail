@@ -101,6 +101,7 @@ public final class DatabaseInitializer {
         st.execute("create index if not exists idx_sent_emails_sent_at on sent_emails(sent_at)");
         st.execute("create index if not exists idx_sent_emails_status on sent_emails(status)");
         st.execute("create index if not exists idx_sent_emails_sender on sent_emails(sender_email)");
+        st.execute("create index if not exists idx_sent_emails_to_recipients on sent_emails(to_recipients)");
         st.execute("create index if not exists idx_scheduled_emails_status on scheduled_emails(status)");
         st.execute("create index if not exists idx_scheduled_emails_scheduled_at on scheduled_emails(scheduled_at)");
     }

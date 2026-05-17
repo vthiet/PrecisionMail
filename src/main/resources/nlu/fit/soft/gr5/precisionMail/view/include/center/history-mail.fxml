@@ -1,49 +1,61 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.control.SplitPane?>
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ListView?>
-<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
 
-<SplitPane dividerPositions="0.35"
-           prefHeight="600"
-           prefWidth="1000"
-           xmlns="http://javafx.com/javafx"
-           xmlns:fx="http://javafx.com/fxml"
-           fx:controller="nlu.fit.soft.gr5.precisionMail.controller.fxml.HistoryMailController">
-    <VBox spacing="10">
-        <padding>
-            <Insets top="10" right="10" bottom="10" left="10"/>
-        </padding>
+<VBox spacing="10"
+      xmlns="http://javafx.com/javafx/25"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="nlu.fit.soft.gr5.precisionMail.controller.fxml.HistoryMailController">
+    <padding>
+        <Insets top="12" right="12" bottom="12" left="12"/>
+    </padding>
 
-        <Label text="Sent Emails"
-               style="-fx-font-size: 18px;
-                      -fx-font-weight: bold;"/>
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Label text="Lịch sử gửi thư"
+               style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+        <Pane HBox.hgrow="ALWAYS"/>
+        <Button text="Làm mới" onAction="#handleRefresh"/>
+    </HBox>
 
-        <ListView fx:id="emailListView"
-                  VBox.vgrow="ALWAYS"/>
-    </VBox>
+    <ToolBar>
+        <items>
+            <TextField fx:id="keywordField"
+                       promptText="Tìm theo người nhận hoặc tiêu đề"
+                       prefWidth="260"
+                       onAction="#handleSearch"/>
+            <DatePicker fx:id="startDatePicker" promptText="Từ ngày"/>
+            <DatePicker fx:id="endDatePicker" promptText="Đến ngày"/>
+            <Button text="Tìm kiếm" onAction="#handleSearch"/>
+            <Button text="Xem chi tiết" onAction="#handleViewDetail"/>
+            <Button text="Xuất báo cáo" onAction="#handleExportCsv"/>
+        </items>
+    </ToolBar>
 
-    <VBox spacing="12">
-        <padding>
-            <Insets top="10" right="10" bottom="10" left="10"/>
-        </padding>
+    <TableView fx:id="historyTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="idColumn" text="ID" prefWidth="70"/>
+            <TableColumn fx:id="recipientColumn" text="Người nhận" prefWidth="240"/>
+            <TableColumn fx:id="subjectColumn" text="Tiêu đề" prefWidth="320"/>
+            <TableColumn fx:id="sentAtColumn" text="Thời gian gửi" prefWidth="170"/>
+            <TableColumn fx:id="statusColumn" text="Trạng thái" prefWidth="120"/>
+        </columns>
+    </TableView>
 
-        <Label fx:id="subjectLabel"
-               style="-fx-font-size: 20px;
-                      -fx-font-weight: bold;"/>
-
-        <Label fx:id="fromLabel"/>
-
-        <Label fx:id="toLabel"/>
-
-        <Label fx:id="dateLabel"/>
-
-        <TextArea fx:id="contentArea"
-                  editable="false"
-                  wrapText="true"
-                  VBox.vgrow="ALWAYS"/>
-    </VBox>
-</SplitPane>
+    <HBox alignment="CENTER_LEFT" spacing="8">
+        <Button fx:id="previousPageButton" text="Trang trước" onAction="#handlePreviousPage"/>
+        <Label fx:id="pageLabel" text="Trang 0/0"/>
+        <Button fx:id="nextPageButton" text="Trang sau" onAction="#handleNextPage"/>
+        <Pane HBox.hgrow="ALWAYS"/>
+        <Label fx:id="statusLabel" text="Đang tải lịch sử gửi thư..."/>
+    </HBox>
+</VBox>

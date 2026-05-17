@@ -5,19 +5,14 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Utility class for validating email attachments.
- * Enforces business rules from FR2.3:
- * - Maximum 10 files
- * - Total size <= 25MB
- * - Dangerous file types are rejected
- */
 public class AttachmentValidator {
-    
+    // 2.3.1 Giới hạn tối đa không vượt quá 10 file đính kèm
     private static final int MAX_FILE_COUNT = 10;
+
+    // 2.3.1 Giới hạn tổng dung lượng tệp đính kèm không vượt quá 25MB
     private static final long MAX_TOTAL_SIZE = 25 * 1024 * 1024; // 25 MB
-    
-    // File extensions that are considered dangerous/executable
+
+    // 2.3.2 Danh sách đen chứa các định dạng tệp nguy hiểm/thực thi bị cấm
     private static final Set<String> DANGEROUS_EXTENSIONS = new HashSet<>();
     
     static {
@@ -29,23 +24,19 @@ public class AttachmentValidator {
         DANGEROUS_EXTENSIONS.add(".pif");
         DANGEROUS_EXTENSIONS.add(".scr");
         DANGEROUS_EXTENSIONS.add(".vbe");
-        DANGEROUS_EXTENSIONS.add(".js");  // JavaScript could be dangerous
+        DANGEROUS_EXTENSIONS.add(".js");
         DANGEROUS_EXTENSIONS.add(".jse");
         DANGEROUS_EXTENSIONS.add(".ws");
         DANGEROUS_EXTENSIONS.add(".wsh");
     }
-    
-    /**
-     * Validates a single file for attachment.
-     * 
-     * @param file The file to validate
-     * @return ValidationResult containing success status and error message if any
-     */
+
+
+    // 2.1.8 Hệ thống kiểm tra tính hợp lệ của tệp dựa trên: sự tồn tại và cấu trúc tệp dữ liệu vật lý
     public static ValidationResult validateFile(File file) {
         if (file == null) {
             return new ValidationResult(false, "File không được null");
         }
-        
+        // Kiểm tra sự tồn tại của tệp
         if (!file.exists()) {
             return new ValidationResult(false, "File không tồn tại: " + file.getName());
         }
@@ -53,47 +44,41 @@ public class AttachmentValidator {
         if (!file.isFile()) {
             return new ValidationResult(false, "Đó không phải là một file: " + file.getName());
         }
-        
-        // Check for dangerous file extensions
+
+        // 2.3.2 Cảnh báo bảo mật định dạng nằm trong danh sách nguy hiểm
         String fileName = file.getName().toLowerCase();
         for (String ext : DANGEROUS_EXTENSIONS) {
             if (fileName.endsWith(ext)) {
-                return new ValidationResult(false, 
+                // 2.3.2.1 Hệ thống chặn tệp ngay lập tức
+                // 2.3.2.2 Hệ thống chuẩn bị thông điệp từ chối bảo mật
+                return new ValidationResult(false,
                     "Định dạng file không được phép vì lý do bảo mật: " + file.getName());
             }
         }
         
         return new ValidationResult(true, null);
     }
-    
-    /**
-     * Validates a file to be added to the current attachment list.
-     * Checks against existing attachments.
-     * 
-     * @param fileToAdd The file to add
-     * @param currentAttachments The current list of attachments
-     * @return ValidationResult containing success status and error message if any
-     */
+
+    // 2.1.8 Kiểm tra tính hợp lệ khi người dùng cố gắng Duyệt và Thêm một file mới vào danh sách hiện tại
     public static ValidationResult validateFileAddition(File fileToAdd, Collection<File> currentAttachments) {
-        // First, validate the file itself
         ValidationResult fileValidation = validateFile(fileToAdd);
         if (!fileValidation.isValid) {
             return fileValidation;
         }
-        
-        // Check if file count would exceed limit
+
+        // 2.3.1 VI PHẠM SỐ LƯỢNG: Kiểm tra xem số lượng file thêm mới có vượt quá 10 file hay không
         int newCount = (currentAttachments != null ? currentAttachments.size() : 0) + 1;
         if (newCount > MAX_FILE_COUNT) {
             return new ValidationResult(false, 
                 "Không thể thêm file. Tối đa " + MAX_FILE_COUNT + " file được cho phép. " +
                 "Hiện tại có " + (newCount - 1) + " file.");
         }
-        
-        // Calculate total size
-        long totalSize = (currentAttachments != null ? 
-            currentAttachments.stream().mapToLong(File::length).sum() : 0) + fileToAdd.length();
+
+        // 2.3.1 VI PHẠM DUNG LƯỢNG: Tính toán tổng dung lượng mới sau khi cộng dồn file chuẩn bị thêm
+        long totalSize = (currentAttachments != null ? currentAttachments.stream().mapToLong(File::length).sum() : 0) + fileToAdd.length();
         
         if (totalSize > MAX_TOTAL_SIZE) {
+            // 2.3.1.1 & 2.3.1.2 Từ chối thêm tệp và trả về thông tin lỗi chi tiết giới hạn dung lượng 25MB
             return new ValidationResult(false, 
                 "Tổng dung lượng vượt quá giới hạn 25MB. " +
                 "Dung lượng hiện tại: " + formatSize(totalSize - fileToAdd.length()) + 
@@ -102,25 +87,20 @@ public class AttachmentValidator {
         
         return new ValidationResult(true, null);
     }
-    
-    /**
-     * Validates the entire attachment list.
-     * 
-     * @param attachments The list of attachments to validate
-     * @return ValidationResult containing success status and error message if any
-     */
+
+    //  2.1.8 Kiểm tra toàn diện danh sách tệp đính kèm một lần cuối trước khi thực thi gửi tin
     public static ValidationResult validateAttachmentList(Collection<File> attachments) {
         if (attachments == null || attachments.isEmpty()) {
             return new ValidationResult(true, null);
         }
-        
-        // Check file count
+
+        // Kiểm tra số lượng tệp chót
         if (attachments.size() > MAX_FILE_COUNT) {
             return new ValidationResult(false, 
                 "Số lượng file vượt quá giới hạn: " + attachments.size() + " > " + MAX_FILE_COUNT);
         }
         
-        // Check total size
+        // Kiểm tra tổng dung lượng
         long totalSize = attachments.stream().mapToLong(File::length).sum();
         if (totalSize > MAX_TOTAL_SIZE) {
             return new ValidationResult(false, 
@@ -129,10 +109,7 @@ public class AttachmentValidator {
         
         return new ValidationResult(true, null);
     }
-    
-    /**
-     * Formats bytes to human-readable size string.
-     */
+
     public static String formatSize(long bytes) {
         if (bytes <= 0) return "0 B";
         final String[] units = new String[]{"B", "KB", "MB", "GB"};

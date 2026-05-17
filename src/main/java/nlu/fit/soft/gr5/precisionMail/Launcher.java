@@ -39,7 +39,6 @@ public class Launcher extends Application {
 
     public static void main(String[] args){
         LOGGER.info("Application bootstrap started.");
-        initDatabase();
         Application.launch(Launcher.class, args);
     }
 

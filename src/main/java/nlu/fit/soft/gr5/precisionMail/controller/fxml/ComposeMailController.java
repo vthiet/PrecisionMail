@@ -189,6 +189,9 @@ public class ComposeMailController {
                 }, attachments)
         );
 
+        // 2.1.2. Hệ thống vô hiệu hóa chức năng "Gửi" cho đến khi các địa chỉ người nhận được nhập hợp lệ.
+        // 2.1.4. Hệ thống tự động kiểm tra định dạng email sau mỗi thay đổi.
+        // Nếu tất cả email đúng định dạng và có ít nhất một người nhận, chức năng "Gửi" sẽ được kích hoạt.
         sendBtn.disableProperty().bind(
                 scheduleLocked.or(
                         Bindings.createBooleanBinding(() -> {
@@ -254,6 +257,7 @@ public class ComposeMailController {
             return;
         }
 
+        // Post-Condition: Thông tin Email được đóng gói vào đối tượng Email và sẵn sàng để gửi
         Email email = buildEmail(currentAccount);
         if (!hasAnyRecipient(email)) {
             LOGGER.warn("Send email rejected because recipient list is empty.");
@@ -269,6 +273,7 @@ public class ComposeMailController {
             return;
         }
 
+        // Post-Condition: Thông tin Email được đóng gói vào đối tượng Email và sẵn sàng để gửi
         emailService.send(currentAccount, email);
 
         LOGGER.info(
@@ -305,6 +310,8 @@ public class ComposeMailController {
             }
         }
 
+        // 2.1.1. Hệ thống hiển thị giao diện soạn thảo.
+        // Trường "Người gửi" (From) tự động hiển thị thông tin của tài khoản đầu tiên trong danh sách tài khoản đã lưu và có thể chọn các account trong dropdown đã được lưu vào Database làm From Account.
         if (currentAccount == null && !accounts.isEmpty()) {
             Account firstAccount = accounts.getFirst();
             currentAccount = firstAccount;
@@ -331,6 +338,7 @@ public class ComposeMailController {
         }
     }
 
+    // 2.1.7. Hệ thống kiểm tra tính hợp lệ của tệp dựa trên: sự tồn tại, định dạng an toàn, số lượng tệp và tổng dung lượng.
     public void handleAttachFiles(ActionEvent actionEvent) {
         FileChooser chooser = new FileChooser();
         List<File> selectedFiles = chooser.showOpenMultipleDialog(
@@ -346,6 +354,7 @@ public class ComposeMailController {
             AttachmentValidator.ValidationResult validation =
                     AttachmentValidator.validateFileAddition(file, attachments);
 
+            // 2.1.8. Nếu tệp hợp lệ, hệ thống hiển thị tệp trong danh sách đính kèm và cập nhật tổng dung lượng hiển thị trên giao diện.
             if (validation.isValid) {
                 attachments.add(file);
                 LOGGER.info("Attachment accepted. name={}, size={} bytes.", file.getName(), file.length());
@@ -356,6 +365,8 @@ public class ComposeMailController {
         }
     }
 
+    // 2.2.1. Xóa tệp đính kèm (Từ bước 2.1.8): Người dùng nhấn nút xóa bên cạnh tệp đã đính kèm.
+    // Hệ thống loại bỏ tệp khỏi danh sách và cập nhật lại thông số dung lượng/số lượng.
     public void deleteAttachment(File file) {
         attachments.remove(file);
         LOGGER.info("Attachment removed. name={}", file.getName());

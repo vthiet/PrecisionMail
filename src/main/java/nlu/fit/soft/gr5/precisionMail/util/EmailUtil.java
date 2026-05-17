@@ -20,7 +20,8 @@ import java.util.stream.Collectors;
 
 public class EmailUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmailUtil.class);
-    private static final String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
+    // Chuỗi Regex phục vụ kiểm tra cấu trúc email hợp lệ
+    private static final String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
     private static final Pattern EMAIL_EXTRACT_PATTERN =
             Pattern.compile("[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+");
 
@@ -39,6 +40,7 @@ public class EmailUtil {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
+    // 2.1.3 & 2.1.5 Ràng buộc kích hoạt nút Gửi (Mọi email nhập vào phải đúng định dạng)
     public static boolean containsOnlyValidEmails(String plainText) {
         Set<String> emails = emailFeature(plainText);
         if (emails.isEmpty()) {
@@ -48,10 +50,12 @@ public class EmailUtil {
         return emails.stream().allMatch(EmailUtil::isValidEmail);
     }
 
+    // 2.1.3 & 2.1.5 Ràng buộc kích hoạt nút Gửi (Có ít nhất một địa chỉ người nhận)
     public static boolean hasAnyValidEmail(String plainText) {
         return emailFeature(plainText).stream().anyMatch(EmailUtil::isValidEmail);
     }
 
+    // 2.2.2 Trích xuất các địa chỉ email hợp lệ bằng bộ lọc từ nội dung tệp thô
     public static Set<String> extractEmails(String rawText) {
         if (rawText == null || rawText.isBlank()) {
             return Set.of();
@@ -65,7 +69,7 @@ public class EmailUtil {
                 emails.add(email);
             }
         }
-        return emails;
+        return emails; // Trả về danh sách đã lọc
     }
 
     public static InternetAddress[] parseAddresses(Set<String> emails) {
@@ -98,6 +102,7 @@ public class EmailUtil {
         });
     }
 
+    // Post-condition: Đóng gói vào đối tượng Email và sẵn sàng để gửi qua SMTP
     public static void send(Account account, Email email) throws MessagingException, IOException {
         Set<String> toList = email.toLst;
         Set<String> ccList = email.cc;
@@ -106,30 +111,39 @@ public class EmailUtil {
         Session session = getSession(account);
         MimeMessage message = new MimeMessage(session);
 
+        // 2.1.4 Đóng gói danh sách người nhận chính (To)
         if (toList != null && !toList.isEmpty()) {
             message.setRecipients(Message.RecipientType.TO, parseAddresses(toList));
         }
-
+        // 2.1.4 Đóng gói danh sách đồng gửi công khai (Cc)
         if (ccList != null && !ccList.isEmpty()) {
             message.setRecipients(Message.RecipientType.CC, parseAddresses(ccList));
         }
-
+        // 2.1.4 Đóng gói danh sách gửi ẩn danh (Bcc)
         if (bccList != null && !bccList.isEmpty()) {
             message.setRecipients(Message.RecipientType.BCC, parseAddresses(bccList));
         }
 
+        // 2.1.2 Thiết lập tài khoản gửi thư (From)
         message.setFrom(new InternetAddress(account.getUsername()));
+
+        // 2.1.6 Thiết lập tiêu đề thư (Subject)
         message.setSubject(email.subject);
 
         Multipart multipart = new MimeMultipart();
         MimeBodyPart textPart = new MimeBodyPart();
-        textPart.setText(email.content); // setContent()
+
+        // 2.1.6 Thiết lập nội dung văn bản thư (Content)
+        textPart.setText(email.content);
+
         multipart.addBodyPart(textPart);
 
+        // 2.1.9 Nếu tệp đính kèm hợp lệ, tiến hành đóng gói chúng vào cấu trúc Mail để gửi đi
         if (email.attachments != null) {
             for (String attachFilePath : email.attachments) {
                 File file = new File(attachFilePath);
 
+                // 2.1.8 Kiểm tra sự tồn tại vật lý của tệp trên ổ đĩa trước khi nạp
                 if (!file.exists()) {
                     LOGGER.warn("Attachment skipped because file does not exist. path={}", attachFilePath);
                     continue;

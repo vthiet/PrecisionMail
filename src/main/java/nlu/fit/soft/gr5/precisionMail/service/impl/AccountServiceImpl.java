@@ -25,6 +25,7 @@ public class AccountServiceImpl implements AccountService {
         return accountDao.save(account);
     }
 
+    // Pre-condition: Cung cấp danh sách chuỗi email tài khoản có sẵn nhằm phục vụ cho dropdown người gửi
     @Override
     public List<Account> findAll() {
         LOGGER.debug("Account list load requested.");

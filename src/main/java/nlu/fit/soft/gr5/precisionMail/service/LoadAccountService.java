@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+// Pre-condition: Tải danh sách tài khoản đã lưu trữ từ cơ sở dữ liệu/file hệ thống lên ứng dụng
 public class LoadAccountService  extends Service<List<Account>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoadAccountService.class);
     private final AccountService accountService = new AccountServiceImpl();
@@ -19,6 +20,7 @@ public class LoadAccountService  extends Service<List<Account>> {
             @Override
             protected List<Account> call() throws Exception {
                 LOGGER.debug("Background account loading started.");
+                // Tìm kiếm tất cả tài khoản hợp lệ đang được cấu hình trong hệ thống
                 List<Account> accounts = accountService.findAll();
                 LOGGER.debug("Background account loading completed. accountCount={}", accounts.size());
                 return accounts;

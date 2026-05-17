@@ -3,6 +3,7 @@ package nlu.fit.soft.gr5.precisionMail.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.sql.*;
 
 public class DbUtil {
@@ -12,12 +13,40 @@ public class DbUtil {
 
     public static Connection getConnect() throws SQLException {
         try {
-            Connection connection = DriverManager.getConnection(URL);
-            LOGGER.debug("Opened SQLite connection to {}.", URL);
-            return connection;
-        } catch (SQLException e) {
-            LOGGER.error("Failed to open SQLite connection to {}.", URL, e);
-            throw e;
+            String folderPath = System.getProperty("user.home") + "\\PrecisionMail";
+            File folder = new File(folderPath);
+            if (!folder.exists()) folder.mkdirs();
+
+            String dbPath = folderPath + "\\precisionmail.db";
+            String url = "jdbc:sqlite:" + dbPath;
+
+            Class.forName("org.sqlite.JDBC");
+
+            Connection conn = DriverManager.getConnection(url);
+
+            // 🔥 AUTO CREATE TABLE (QUAN TRỌNG)
+            initDatabase(conn);
+
+            return conn;
+
+        } catch (Exception e) {
+            throw new SQLException(e);
+        }
+    }
+
+    private static void initDatabase(Connection conn) throws SQLException {
+        String sql = """
+        CREATE TABLE IF NOT EXISTS accounts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT NOT NULL UNIQUE,
+            encrypt_app_password TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+    """;
+
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
         }
     }
 

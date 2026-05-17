@@ -60,7 +60,6 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Collectors;
 
 public class ComposeController {
@@ -118,15 +117,13 @@ public class ComposeController {
 
     private final EmailService emailService = new EmailServiceImpl();
     private final LoadAccountService loadAccountService = new LoadAccountService();
-    private final ScheduledEmailServiceImpl scheduledEmailService = new ScheduledEmailServiceImpl();
+    private final ScheduledEmailServiceImpl scheduledEmailService = ScheduledEmailServiceImpl.getInstance();
     private final ToggleGroup accountGroup = new ToggleGroup();
     private final ObservableList<File> attachments = FXCollections.observableArrayList();
     private final BooleanProperty scheduleLocked = new SimpleBooleanProperty(false);
     private final BooleanProperty sendLocked = new SimpleBooleanProperty(false);
 
     private Account currentAccount = null;
-    private ScheduledFuture<?> pendingScheduledJob;
-
     @FXML
     public void initialize() {
         ccBtn.managedProperty().bind(ccBtn.visibleProperty());
@@ -394,15 +391,6 @@ public class ComposeController {
     }
 
     public void handleScheduleSendMail(ActionEvent actionEvent) {
-        if (pendingScheduledJob != null && !pendingScheduledJob.isDone()) {
-            pendingScheduledJob.cancel(false);
-            pendingScheduledJob = null;
-            setScheduleLocked(false);
-            LOGGER.info("Pending scheduled email cancelled by user.");
-            AlertUtil.showInfo("Cancelled", "Scheduled email was cancelled.");
-            return;
-        }
-
         if (currentAccount == null) {
             LOGGER.warn("Schedule email rejected because no active account is selected.");
             AlertUtil.showError("Error", "Please select an account before scheduling email.");
@@ -423,12 +411,6 @@ public class ComposeController {
         if (scheduledAt.isBefore(LocalDateTime.now().plusSeconds(60))) {
             LOGGER.warn("Schedule email rejected because scheduled time is less than 60 seconds ahead.");
             AlertUtil.showError("Error", "Scheduled time must be at least 60 seconds in the future.");
-            return;
-        }
-
-        if (scheduledAt.isAfter(LocalDateTime.now().plusHours(2))) {
-            LOGGER.warn("Schedule email rejected because scheduled time is more than 2 hours ahead.");
-            AlertUtil.showError("Error", "Scheduled time must be within the next 2 hours.");
             return;
         }
 
@@ -455,7 +437,7 @@ public class ComposeController {
         scheduledEmail.status = EmailStatus.SCHEDULED;
 
         try {
-            pendingScheduledJob = scheduledEmailService.scheduleJob(scheduledEmail);
+            scheduledEmail = scheduledEmailService.schedule(scheduledEmail);
         } catch (IllegalArgumentException ex) {
             LOGGER.warn(
                     "Schedule request rejected. sender={}, reason={}",
@@ -464,13 +446,15 @@ public class ComposeController {
             );
             AlertUtil.showError("Error", ex.getMessage());
             return;
+        } catch (RuntimeException ex) {
+            LOGGER.error("Schedule request failed.", ex);
+            AlertUtil.showError("Error", "Cannot save scheduled email. Please try again.");
+            return;
         }
 
-        setScheduleLocked(true);
-        watchScheduledJobCompletion(pendingScheduledJob);
-
         LOGGER.info(
-                "Schedule request accepted. sender={}, scheduledAt={}, recipients={}, attachments={}.",
+                "Schedule request accepted. taskId={}, sender={}, scheduledAt={}, recipients={}, attachments={}.",
+                scheduledEmail.id,
                 LogHelper.maskEmail(currentAccount.getUsername()),
                 scheduledAt,
                 LogHelper.recipientCount(email),
@@ -478,7 +462,7 @@ public class ComposeController {
         );
 
         clearComposeForm();
-        AlertUtil.showInfo("Success", "Email was scheduled successfully. Use the same button to cancel before send time.");
+        AlertUtil.showInfo("Success", "Email was scheduled successfully.");
     }
 
     private Email buildEmail(Account account) {
@@ -733,22 +717,4 @@ public class ComposeController {
         return false;
     }
 
-    private void watchScheduledJobCompletion(ScheduledFuture<?> job) {
-        Thread watcher = new Thread(() -> {
-            try {
-                job.get();
-            } catch (Exception ignored) {
-                // The scheduled worker already logs the failure details.
-            } finally {
-                Platform.runLater(() -> {
-                    if (pendingScheduledJob == job) {
-                        pendingScheduledJob = null;
-                    }
-                    setScheduleLocked(false);
-                });
-            }
-        }, "scheduled-email-ui-watcher");
-        watcher.setDaemon(true);
-        watcher.start();
-    }
 }

@@ -24,6 +24,7 @@ public final class DatabaseInitializer {
             migrateAccountsTableIfNeeded(connection);
             createSentEmailsTable(st);
             createScheduledEmailsTable(st);
+            migrateScheduledEmailsTableIfNeeded(connection);
             createIndexes(st);
             LOGGER.info("Database initialization completed successfully.");
         } catch (SQLException e) {
@@ -87,6 +88,8 @@ public final class DatabaseInitializer {
                     scheduled_at text not null,
                     status text not null,
                     error_message text,
+                    retry_count integer not null default 0,
+                    actual_sent_at text,
                     created_at text not null,
                     updated_at text not null,
                     foreign key(account_id) references accounts(id)
@@ -183,5 +186,17 @@ public final class DatabaseInitializer {
             }
         }
         return columns;
+    }
+
+    private static void migrateScheduledEmailsTableIfNeeded(Connection connection) throws SQLException {
+        Set<String> columns = getTableColumns(connection, "scheduled_emails");
+        try (Statement st = connection.createStatement()) {
+            if (!columns.contains("retry_count")) {
+                st.execute("alter table scheduled_emails add column retry_count integer not null default 0");
+            }
+            if (!columns.contains("actual_sent_at")) {
+                st.execute("alter table scheduled_emails add column actual_sent_at text");
+            }
+        }
     }
 }

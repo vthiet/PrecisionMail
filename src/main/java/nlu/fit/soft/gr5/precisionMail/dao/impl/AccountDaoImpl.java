@@ -13,6 +13,7 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class AccountDaoImpl implements AccountDao {
     private static final Logger LOGGER = LoggerFactory.getLogger(AccountDaoImpl.class);
@@ -146,6 +147,55 @@ public class AccountDaoImpl implements AccountDao {
             return result;
         } catch (SQLException e) {
             LOGGER.error("Failed to load accounts from database.", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public Optional<Account> findByEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return Optional.empty();
+        }
+
+        String sql = """
+                select id,
+                       email,
+                       encrypt_app_password,
+                       smtp_host,
+                       smtp_port,
+                       imap_host,
+                       imap_port,
+                       security_mode,
+                       created_at
+                from accounts
+                where lower(email) = lower(?)
+                limit 1
+                """;
+
+        try (Connection connection = DbUtil.getConnect();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatement.setString(1, email);
+            try (ResultSet rs = preparedStatement.executeQuery()) {
+                if (!rs.next()) {
+                    return Optional.empty();
+                }
+                Account account = new Account(
+                        rs.getString("email"),
+                        rs.getString("encrypt_app_password"),
+                        LocalDateTime.parse(rs.getString("created_at"))
+                );
+                account.setId(rs.getLong("id"));
+                account.setMailServerConfig(new MailServerConfig(
+                        rs.getString("smtp_host"),
+                        rs.getInt("smtp_port"),
+                        rs.getString("imap_host"),
+                        rs.getInt("imap_port"),
+                        parseSecurityMode(rs.getString("security_mode"))
+                ));
+                return Optional.of(account);
+            }
+        } catch (SQLException e) {
+            LOGGER.error("Failed to load account by email={}.", LogHelper.maskEmail(email), e);
             throw new RuntimeException(e);
         }
     }

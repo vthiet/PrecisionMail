@@ -8,6 +8,7 @@ import javafx.stage.Stage;
 import nlu.fit.soft.gr5.precisionMail.infrastructure.async.AppExecutors;
 import nlu.fit.soft.gr5.precisionMail.infrastructure.db.DatabaseInitializer;
 import nlu.fit.soft.gr5.precisionMail.service.ApplicationStateService;
+import nlu.fit.soft.gr5.precisionMail.service.impl.ScheduledEmailServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +52,7 @@ public class Launcher extends Application {
     public static void main(String[] args){
         LOGGER.info("Application bootstrap started.");
         DatabaseInitializer.initialize();
+        ScheduledEmailServiceImpl.getInstance().bootstrapPendingSchedules();
         Application.launch(Launcher.class, args);
     }
 

@@ -9,6 +9,8 @@ public class ScheduledEmail {
     public LocalDateTime scheduledAt;
     public EmailStatus status = EmailStatus.SCHEDULED;
     public String errorMessage;
+    public int retryCount;
+    public LocalDateTime actualSentAt;
 
     public ScheduledEmail() { }
 

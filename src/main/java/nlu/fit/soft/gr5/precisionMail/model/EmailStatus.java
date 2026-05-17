@@ -8,5 +8,6 @@ public enum EmailStatus {
     SENT,
     FAILED,
     CANCELLED,
-    RETRY_PENDING
+    RETRY_PENDING,
+    MISSED
 }

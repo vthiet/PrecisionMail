@@ -13,6 +13,10 @@ public class DbUtil {
     public static Connection getConnect() throws SQLException {
         try {
             Connection connection = DriverManager.getConnection(URL);
+            try (Statement statement = connection.createStatement()) {
+                statement.execute("pragma journal_mode=WAL");
+                statement.execute("pragma foreign_keys=ON");
+            }
             LOGGER.debug("Opened SQLite connection to {}.", URL);
             return connection;
         } catch (SQLException e) {

@@ -70,9 +70,19 @@ public class AccountServiceImpl implements AccountService {
         if (emailAddress == null) {
             return null;
         }
-        return findAll().stream()
-                .filter(account -> emailAddress.equalsIgnoreCase(account.getUsername()))
-                .findFirst()
+        return accountDao.findByEmail(emailAddress)
+                .map(account -> {
+                    Account decrypted = new Account(
+                            account.getUsername(),
+                            decryptPassword(account.getPassword()),
+                            account.getCreatedAt()
+                    );
+                    if (account.getId() != null) {
+                        decrypted.setId(account.getId());
+                    }
+                    decrypted.setMailServerConfig(account.getMailServerConfig());
+                    return decrypted;
+                })
                 .orElse(null);
     }
 

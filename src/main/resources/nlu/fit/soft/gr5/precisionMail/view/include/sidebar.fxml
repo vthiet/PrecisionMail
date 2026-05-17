@@ -56,6 +56,12 @@
             maxWidth="Infinity"
             styleClass="sidebar-nav-item"/>
 
+    <Button fx:id="btnQueue"
+            text="⏱  Hàng đợi chờ gửi"
+            maxWidth="Infinity"
+            styleClass="sidebar-nav-item"
+            onAction="#handleQueueBtn"/>
+
     <Button fx:id="btnSent"
             text="📤  Đã gửi"
             maxWidth="Infinity"

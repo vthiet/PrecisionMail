@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="SqlDialectMappings">
-    <file url="file://$PROJECT_DIR$/Query.sql" dialect="SQLite" />
     <file url="file://$PROJECT_DIR$/src/main/java/nlu/fit/soft/gr5/precisionMail/dao/impl/AccountDaoImpl.java" dialect="GenericSQL" />
     <file url="file://$PROJECT_DIR$/src/main/java/nlu/fit/soft/gr5/precisionMail/util/DbUtil.java" dialect="SQLite" />
   </component>

@@ -12,7 +12,9 @@ import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
@@ -23,19 +25,22 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.SeparatorMenuItem;
-import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputControl;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.web.HTMLEditor;
 import javafx.stage.FileChooser;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
+import nlu.fit.soft.gr5.precisionMail.model.EmailStatus;
 import nlu.fit.soft.gr5.precisionMail.model.ScheduledEmail;
 import nlu.fit.soft.gr5.precisionMail.service.AccountRefreshService;
+import nlu.fit.soft.gr5.precisionMail.service.ApplicationStateService;
 import nlu.fit.soft.gr5.precisionMail.service.EmailService;
 import nlu.fit.soft.gr5.precisionMail.service.LoadAccountService;
 import nlu.fit.soft.gr5.precisionMail.service.impl.EmailServiceImpl;
@@ -53,12 +58,15 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Collectors;
 
-public class ComposeMailController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ComposeMailController.class);
+public class ComposeController {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ComposeController.class);
+    private static final String INVALID_STYLE = "-fx-border-color: #dc2626; -fx-border-width: 1.2;";
+    private static final String EMPTY_EDITOR_HTML =
+            "<html dir=\"ltr\"><head></head><body contenteditable=\"true\"></body></html>";
 
     @FXML
     public Label ccLabel;
@@ -77,7 +85,7 @@ public class ComposeMailController {
     @FXML
     public TextField toField;
     @FXML
-    public TextArea contentArea;
+    public HTMLEditor contentEditor;
     @FXML
     public Label subjectLabel;
     @FXML
@@ -87,7 +95,11 @@ public class ComposeMailController {
     @FXML
     public Button sendBtn;
     @FXML
+    public Button cancelComposeBtn;
+    @FXML
     public Button importRecipientsBtn;
+    @FXML
+    public MenuButton attachMenuButton;
     @FXML
     public VBox attachmentContainer;
     @FXML
@@ -105,14 +117,13 @@ public class ComposeMailController {
 
     private final EmailService emailService = new EmailServiceImpl();
     private final LoadAccountService loadAccountService = new LoadAccountService();
-    private final ScheduledEmailServiceImpl scheduledEmailService = new ScheduledEmailServiceImpl();
+    private final ScheduledEmailServiceImpl scheduledEmailService = ScheduledEmailServiceImpl.getInstance();
     private final ToggleGroup accountGroup = new ToggleGroup();
     private final ObservableList<File> attachments = FXCollections.observableArrayList();
     private final BooleanProperty scheduleLocked = new SimpleBooleanProperty(false);
+    private final BooleanProperty sendLocked = new SimpleBooleanProperty(false);
 
     private Account currentAccount = null;
-    private ScheduledFuture<?> pendingScheduledJob;
-
     @FXML
     public void initialize() {
         ccBtn.managedProperty().bind(ccBtn.visibleProperty());
@@ -190,7 +201,7 @@ public class ComposeMailController {
         );
 
         sendBtn.disableProperty().bind(
-                scheduleLocked.or(
+                sendLocked.or(scheduleLocked).or(
                         Bindings.createBooleanBinding(() -> {
                                     boolean hasRecipient =
                                             EmailUtil.hasAnyValidEmail(toField.getText())
@@ -207,6 +218,9 @@ public class ComposeMailController {
                                 bccField.textProperty())
                 )
         );
+        attachMenuButton.disableProperty().bind(sendLocked.or(scheduleLocked));
+        scheduleBtn.disableProperty().bind(sendLocked);
+        cancelComposeBtn.disableProperty().bind(sendLocked.or(scheduleLocked));
 
         ProgressIndicator loadingIndicator = new ProgressIndicator();
         loadingIndicator.setPrefSize(15, 15);
@@ -269,7 +283,15 @@ public class ComposeMailController {
             return;
         }
 
-        emailService.send(currentAccount, email);
+        if (isBlankEmail(email) && !confirmBlankEmail()) {
+            LOGGER.info("Send email cancelled by user after blank-content confirmation.");
+            return;
+        }
+
+        setSendLocked(true);
+        ApplicationStateService.beginEmailSend();
+        emailService.sendAsync(currentAccount, email)
+                .whenComplete((result, throwable) -> Platform.runLater(() -> handleSendCompleted(result, throwable)));
 
         LOGGER.info(
                 "Email handoff to async sender completed. sender={}, recipients={}, attachments={}.",
@@ -277,15 +299,13 @@ public class ComposeMailController {
                 LogHelper.recipientCount(email),
                 LogHelper.attachmentCount(email)
         );
-
-        clearComposeForm();
-        AlertUtil.showInfo("Processing", "Email send request was submitted to the background worker.");
     }
 
     private void updateMenu(List<Account> accounts) {
         String selectedUsername = currentAccount != null ? currentAccount.getUsername() : null;
         currentAccount = null;
         accountMenuButton.getItems().clear();
+        accountGroup.getToggles().clear();
 
         for (Account account : accounts) {
             RadioMenuItem item = new RadioMenuItem(account.getUsername());
@@ -315,6 +335,10 @@ public class ComposeMailController {
                     .findFirst()
                     .ifPresent(toggle -> toggle.setSelected(true));
             LOGGER.info("Default active account set to username={}.", LogHelper.maskEmail(firstAccount.getUsername()));
+        }
+
+        if (currentAccount == null) {
+            accountMenuButton.setText("Chọn một tài khoản để gửi");
         }
 
         accountMenuButton.getItems().add(new SeparatorMenuItem());
@@ -348,9 +372,9 @@ public class ComposeMailController {
 
             if (validation.isValid) {
                 attachments.add(file);
-                LOGGER.info("Attachment accepted. name={}, size={} bytes.", file.getName(), file.length());
+                LOGGER.info("Attachment accepted. size={} bytes, totalAttachments={}.", file.length(), attachments.size());
             } else {
-                LOGGER.warn("Attachment rejected. name={}, reason={}", file.getName(), validation.errorMessage);
+                LOGGER.warn("Attachment rejected by client-side validation.");
                 AlertUtil.showError("Cannot add attachment", validation.errorMessage);
             }
         }
@@ -358,7 +382,7 @@ public class ComposeMailController {
 
     public void deleteAttachment(File file) {
         attachments.remove(file);
-        LOGGER.info("Attachment removed. name={}", file.getName());
+        LOGGER.info("Attachment removed. remainingAttachments={}.", attachments.size());
     }
 
     private String formatSize(long bytes) {
@@ -367,15 +391,6 @@ public class ComposeMailController {
     }
 
     public void handleScheduleSendMail(ActionEvent actionEvent) {
-        if (pendingScheduledJob != null && !pendingScheduledJob.isDone()) {
-            pendingScheduledJob.cancel(false);
-            pendingScheduledJob = null;
-            setScheduleLocked(false);
-            LOGGER.info("Pending scheduled email cancelled by user.");
-            AlertUtil.showInfo("Cancelled", "Scheduled email was cancelled.");
-            return;
-        }
-
         if (currentAccount == null) {
             LOGGER.warn("Schedule email rejected because no active account is selected.");
             AlertUtil.showError("Error", "Please select an account before scheduling email.");
@@ -393,15 +408,9 @@ public class ComposeMailController {
         }
 
         LocalDateTime scheduledAt = LocalDateTime.of(date, LocalTime.of(hour, minute));
-        if (scheduledAt.isBefore(LocalDateTime.now())) {
-            LOGGER.warn("Schedule email rejected because scheduled time is in the past.");
-            AlertUtil.showError("Error", "Scheduled time must be in the future.");
-            return;
-        }
-
-        if (scheduledAt.isAfter(LocalDateTime.now().plusHours(2))) {
-            LOGGER.warn("Schedule email rejected because scheduled time is more than 2 hours ahead.");
-            AlertUtil.showError("Error", "Scheduled time must be within the next 2 hours.");
+        if (scheduledAt.isBefore(LocalDateTime.now().plusSeconds(60))) {
+            LOGGER.warn("Schedule email rejected because scheduled time is less than 60 seconds ahead.");
+            AlertUtil.showError("Error", "Scheduled time must be at least 60 seconds in the future.");
             return;
         }
 
@@ -425,24 +434,27 @@ public class ComposeMailController {
         }
 
         ScheduledEmail scheduledEmail = new ScheduledEmail(currentAccount, email, scheduledAt);
+        scheduledEmail.status = EmailStatus.SCHEDULED;
 
         try {
-            pendingScheduledJob = scheduledEmailService.scheduleJob(scheduledEmail);
+            scheduledEmail = scheduledEmailService.schedule(scheduledEmail);
         } catch (IllegalArgumentException ex) {
             LOGGER.warn(
                     "Schedule request rejected. sender={}, reason={}",
                     LogHelper.maskEmail(currentAccount.getUsername()),
                     ex.getMessage()
             );
-            AlertUtil.showError("Error", "Scheduled time must be in the future.");
+            AlertUtil.showError("Error", ex.getMessage());
+            return;
+        } catch (RuntimeException ex) {
+            LOGGER.error("Schedule request failed.", ex);
+            AlertUtil.showError("Error", "Cannot save scheduled email. Please try again.");
             return;
         }
 
-        setScheduleLocked(true);
-        watchScheduledJobCompletion(pendingScheduledJob);
-
         LOGGER.info(
-                "Schedule request accepted. sender={}, scheduledAt={}, recipients={}, attachments={}.",
+                "Schedule request accepted. taskId={}, sender={}, scheduledAt={}, recipients={}, attachments={}.",
+                scheduledEmail.id,
                 LogHelper.maskEmail(currentAccount.getUsername()),
                 scheduledAt,
                 LogHelper.recipientCount(email),
@@ -450,7 +462,7 @@ public class ComposeMailController {
         );
 
         clearComposeForm();
-        AlertUtil.showInfo("Success", "Email was scheduled successfully. Use the same button to cancel before send time.");
+        AlertUtil.showInfo("Success", "Email was scheduled successfully.");
     }
 
     private Email buildEmail(Account account) {
@@ -458,7 +470,7 @@ public class ComposeMailController {
         Set<String> ccLst = EmailUtil.emailFeature(ccField.getText());
         Set<String> bccLst = EmailUtil.emailFeature(bccField.getText());
         String subject = subjectField.getText();
-        String content = contentArea.getText();
+        String content = contentEditor.getHtmlText();
 
         List<String> attachmentPaths = attachments.isEmpty()
                 ? null
@@ -477,8 +489,10 @@ public class ComposeMailController {
     }
 
     private void clearComposeForm() {
-        clearTextInput(toField, ccField, bccField, subjectField, contentArea);
+        clearTextInput(toField, ccField, bccField, subjectField);
+        contentEditor.setHtmlText(EMPTY_EDITOR_HTML);
         attachments.clear();
+        clearRecipientValidation();
     }
 
     private boolean hasAnyRecipient(Email email) {
@@ -513,7 +527,7 @@ public class ComposeMailController {
             Set<String> emails = importTask.getValue();
 
             if (emails.isEmpty()) {
-                LOGGER.warn("Recipient import found no valid email address. file={}", selectedFile.getAbsolutePath());
+                LOGGER.warn("Recipient import found no valid email address.");
                 AlertUtil.showError("Import Error", "Khong tim thay du lieu hop le.");
                 return;
             }
@@ -522,12 +536,12 @@ public class ComposeMailController {
             Set<String> merged = new java.util.LinkedHashSet<>(EmailUtil.emailFeature(targetField.getText()));
             merged.addAll(emails);
             targetField.setText(String.join(", ", merged));
-            LOGGER.info("Recipient import completed successfully. file={}, count={}", selectedFile.getName(), emails.size());
+            LOGGER.info("Recipient import completed successfully. count={}", emails.size());
             AlertUtil.showInfo("Import Success", "Imported " + emails.size() + " recipient(s).");
         });
         importTask.setOnFailed(event -> {
             importRecipientsBtn.disableProperty().unbind();
-            LOGGER.error("Recipient import failed. file={}", selectedFile.getAbsolutePath(), importTask.getException());
+            LOGGER.error("Recipient import failed.", importTask.getException());
             AlertUtil.showError("Import Error", "Cannot read recipient file.");
         });
 
@@ -537,6 +551,11 @@ public class ComposeMailController {
     }
 
     private void reloadAccounts() {
+        if (!Platform.isFxApplicationThread()) {
+            Platform.runLater(this::reloadAccounts);
+            return;
+        }
+
         if (loadAccountService.isRunning()) {
             return;
         }
@@ -550,11 +569,19 @@ public class ComposeMailController {
     }
 
     private boolean validateRecipientFields() {
-        if (!EmailUtil.containsOnlyValidEmails(toField.getText())
-                || !EmailUtil.containsOnlyValidEmails(ccField.getText())
-                || !EmailUtil.containsOnlyValidEmails(bccField.getText())) {
+        clearRecipientValidation();
+        Optional<String> invalidTo = firstInvalidEmail(toField.getText());
+        Optional<String> invalidCc = firstInvalidEmail(ccField.getText());
+        Optional<String> invalidBcc = firstInvalidEmail(bccField.getText());
+
+        if (invalidTo.isPresent() || invalidCc.isPresent() || invalidBcc.isPresent()) {
+            Optional<String> invalid = invalidTo.or(() -> invalidCc).or(() -> invalidBcc);
+            invalidTo.ifPresent(value -> markInvalid(toField, value));
+            invalidCc.ifPresent(value -> markInvalid(ccField, value));
+            invalidBcc.ifPresent(value -> markInvalid(bccField, value));
+
             LOGGER.warn("Recipient validation failed because at least one address is invalid.");
-            AlertUtil.showError("Error", "One or more recipient addresses are invalid.");
+            AlertUtil.showError("Error", "Địa chỉ email [" + invalid.orElse("") + "] không hợp lệ. Vui lòng kiểm tra lại.");
             return false;
         }
         return true;
@@ -566,7 +593,7 @@ public class ComposeMailController {
         ccField.setDisable(locked);
         bccField.setDisable(locked);
         subjectField.setDisable(locked);
-        contentArea.setDisable(locked);
+        contentEditor.setDisable(locked);
         accountMenuButton.setDisable(locked);
         scheduleDatePicker.setDisable(locked);
         hourBox.setDisable(locked);
@@ -577,22 +604,117 @@ public class ComposeMailController {
         scheduleBtn.setText(locked ? "Cancel schedule" : "Schedule send");
     }
 
-    private void watchScheduledJobCompletion(ScheduledFuture<?> job) {
-        Thread watcher = new Thread(() -> {
-            try {
-                job.get();
-            } catch (Exception ignored) {
-                // The scheduled worker already logs the failure details.
-            } finally {
-                Platform.runLater(() -> {
-                    if (pendingScheduledJob == job) {
-                        pendingScheduledJob = null;
-                    }
-                    setScheduleLocked(false);
-                });
-            }
-        }, "scheduled-email-ui-watcher");
-        watcher.setDaemon(true);
-        watcher.start();
+    public void handleCancelCompose(ActionEvent actionEvent) {
+        if (!hasDraftContent() || confirmDiscardDraft()) {
+            clearComposeForm();
+            LOGGER.info("Compose draft discarded by user.");
+        }
     }
+
+    private void handleSendCompleted(EmailService.SendResult result, Throwable throwable) {
+        ApplicationStateService.endEmailSend();
+        setSendLocked(false);
+        if (throwable != null || result == null || !result.success()) {
+            Throwable error = throwable != null ? throwable : result.error();
+            LOGGER.warn("Async send completed with failure.", error);
+            AlertUtil.showError("Send failed", userMessageForSendFailure(error));
+            return;
+        }
+
+        clearComposeForm();
+        AlertUtil.showInfo("Success", "Email đã được gửi thành công.");
+    }
+
+    private void setSendLocked(boolean locked) {
+        sendLocked.set(locked);
+        if (!importRecipientsBtn.disableProperty().isBound()) {
+            importRecipientsBtn.setDisable(locked);
+        }
+    }
+
+    private Optional<String> firstInvalidEmail(String plainText) {
+        return EmailUtil.emailFeature(plainText).stream()
+                .filter(email -> !EmailUtil.isValidEmail(email))
+                .findFirst();
+    }
+
+    private void markInvalid(TextInputControl field, String invalidEmail) {
+        field.setStyle(INVALID_STYLE);
+        field.setTooltip(new Tooltip("Địa chỉ email [" + invalidEmail + "] không hợp lệ."));
+    }
+
+    private void clearRecipientValidation() {
+        toField.setStyle(null);
+        ccField.setStyle(null);
+        bccField.setStyle(null);
+        toField.setTooltip(null);
+        ccField.setTooltip(null);
+        bccField.setTooltip(null);
+    }
+
+    private boolean isBlankEmail(Email email) {
+        return (email.subject == null || email.subject.isBlank()) && htmlBodyIsBlank(email.content);
+    }
+
+    private boolean hasDraftContent() {
+        return !toField.getText().isBlank()
+                || !ccField.getText().isBlank()
+                || !bccField.getText().isBlank()
+                || !subjectField.getText().isBlank()
+                || !htmlBodyIsBlank(contentEditor.getHtmlText())
+                || !attachments.isEmpty();
+    }
+
+    private boolean htmlBodyIsBlank(String html) {
+        if (html == null || html.isBlank()) {
+            return true;
+        }
+        String withoutTags = html.replaceAll("(?is)<style.*?</style>", "")
+                .replaceAll("(?is)<script.*?</script>", "")
+                .replaceAll("(?is)<[^>]+>", "")
+                .replace("&nbsp;", " ")
+                .replaceAll("\\s+", "");
+        return withoutTags.isBlank();
+    }
+
+    private boolean confirmBlankEmail() {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirm send");
+        alert.setHeaderText(null);
+        alert.setContentText("Tiêu đề và nội dung đang trống. Bạn có chắc chắn muốn gửi?");
+        return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
+    }
+
+    private boolean confirmDiscardDraft() {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Hủy soạn");
+        alert.setHeaderText(null);
+        alert.setContentText("Nội dung thư đang soạn thảo sẽ bị mất. Bạn có chắc chắn muốn thoát?");
+        return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
+    }
+
+    private String userMessageForSendFailure(Throwable error) {
+        if (isNetworkFailure(error)) {
+            return "Gửi email thất bại. Vui lòng kiểm tra kết nối Internet của máy trạm.";
+        }
+        String detail = error == null || error.getMessage() == null || error.getMessage().isBlank()
+                ? "Không rõ nguyên nhân"
+                : error.getMessage();
+        return "Gửi thư thất bại. Mail Server phản hồi lỗi: " + detail;
+    }
+
+    private boolean isNetworkFailure(Throwable error) {
+        Throwable cause = error;
+        while (cause != null) {
+            String name = cause.getClass().getName();
+            if (name.equals("java.net.UnknownHostException")
+                    || name.equals("java.net.ConnectException")
+                    || name.equals("java.net.SocketTimeoutException")) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
+    }
+
 }

@@ -5,8 +5,8 @@
 }
 
 .compose-button {
-    -fx-background-color: #C2E7FF;
-    -fx-text-fill: #001D35;
+    -fx-background-color: transparent;
+    -fx-text-fill: #202124;
     -fx-font-weight: bold;
     -fx-font-size: 13px;
     -fx-padding: 12 20 12 16;
@@ -15,6 +15,15 @@
 }
 
 .compose-button:hover {
+    -fx-background-color: #E8F0FE;
+}
+
+.compose-button-active {
+    -fx-background-color: #C2E7FF;
+    -fx-text-fill: #001D35;
+}
+
+.compose-button-active:hover {
     -fx-background-color: #B3DEFF;
 }
 
@@ -62,4 +71,8 @@
     -fx-background-radius: 0 24 24 0;
     -fx-cursor: hand;
     -fx-font-size: 13px;
+}
+
+.sidebar-footer-item:hover {
+    -fx-background-color: #DADCE0;
 }

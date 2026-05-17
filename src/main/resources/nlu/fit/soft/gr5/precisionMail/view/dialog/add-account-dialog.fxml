@@ -1,31 +1,89 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-
 <?import javafx.geometry.Insets?>
-<VBox spacing="12"
-      xmlns:fx="http://javafx.com/fxml"
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox spacing="14"
+      xmlns="http://javafx.com/javafx/25"
+      xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="nlu.fit.soft.gr5.precisionMail.controller.dialog.AddAccountDialogController">
 
     <padding>
-        <Insets top="16" right="16" bottom="16" left="16"/>
+        <Insets top="18" right="18" bottom="18" left="18"/>
     </padding>
 
-    <VBox spacing="4">
-        <Label text="Email"/>
-        <TextField fx:id="usernameField"
-                   promptText="example@gmail.com"/>
-    </VBox>
+    <Label text="Cấu hình kết nối Mail Server"
+           style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
 
-    <VBox spacing="4">
-        <Label text="App Password"/>
+    <GridPane hgap="12" vgap="10">
+        <columnConstraints>
+            <ColumnConstraints minWidth="130"/>
+            <ColumnConstraints hgrow="ALWAYS" minWidth="260"/>
+        </columnConstraints>
+
+        <Label text="Sender Email" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+        <TextField fx:id="usernameField"
+                   promptText="example@gmail.com"
+                   GridPane.rowIndex="0"
+                   GridPane.columnIndex="1"/>
+
+        <Label text="App Password" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
         <PasswordField fx:id="passwordField"
-                       promptText="asdf asdf asdf asdf"/>
-    </VBox>
+                       promptText="Mật khẩu ứng dụng"
+                       GridPane.rowIndex="1"
+                       GridPane.columnIndex="1"/>
+
+        <Label text="SMTP Host" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+        <TextField fx:id="smtpHostField"
+                   promptText="smtp.gmail.com"
+                   GridPane.rowIndex="2"
+                   GridPane.columnIndex="1"/>
+
+        <Label text="SMTP Port" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+        <TextField fx:id="smtpPortField"
+                   promptText="587"
+                   GridPane.rowIndex="3"
+                   GridPane.columnIndex="1"/>
+
+        <Label text="IMAP Host" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+        <TextField fx:id="imapHostField"
+                   promptText="imap.gmail.com"
+                   GridPane.rowIndex="4"
+                   GridPane.columnIndex="1"/>
+
+        <Label text="IMAP Port" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+        <TextField fx:id="imapPortField"
+                   promptText="993"
+                   GridPane.rowIndex="5"
+                   GridPane.columnIndex="1"/>
+
+        <Label text="Security" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+        <ComboBox fx:id="securityModeComboBox"
+                  maxWidth="Infinity"
+                  GridPane.rowIndex="6"
+                  GridPane.columnIndex="1"/>
+    </GridPane>
+
+    <HBox spacing="8" alignment="CENTER_LEFT">
+        <ProgressIndicator fx:id="progressIndicator"
+                           visible="false"
+                           prefWidth="22"
+                           prefHeight="22"/>
+        <Label fx:id="statusLabel" text="Sẵn sàng cấu hình."/>
+    </HBox>
 
     <HBox spacing="10" alignment="CENTER_RIGHT">
-        <Button text="Cancel" onAction="#handleCancel"/>
-        <Button text="Save" onAction="#handleSave"/>
+        <Button fx:id="cancelButton" text="Hủy bỏ" onAction="#handleCancel"/>
+        <Button fx:id="testConnectionButton" text="Kiểm tra kết nối" onAction="#handleTestConnection"/>
+        <Button fx:id="saveButton" text="Lưu cấu hình" onAction="#handleSave"/>
     </HBox>
 </VBox>

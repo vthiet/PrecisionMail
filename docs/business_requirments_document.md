@@ -100,7 +100,7 @@ Hệ thống phải có cơ chế ghi nhận nhật ký (Log) chi tiết nhằm 
 ```
 
 * **UR-12 (Cơ chế xoay vòng Log - Log Rotation & Storage):**
-    * File log phải được lưu trữ tại thư mục cục bộ của ứng dụng (Ví dụ: %APPDATA%/EmailSystem/logs/ trên Windows hoặc \~/.config/emailsystem/logs/ trên Linux).
+    * File log phải được lưu trữ tại thư mục cục bộ của ứng dụng: `${user.home}/.precisionmail/logs/system.log` trên Windows và Linux.
     * Áp dụng chính sách xoay vòng: Mỗi tệp log dung lượng tối đa là 10MB. Khi vượt ngưỡng, hệ thống tự động nén thành file .gz và tạo tệp mới.
     * Thời gian lưu trữ log tối đa là 30 ngày hoặc tổng dung lượng bộ nhớ log không quá 200MB. Hệ thống sẽ tự động xóa log cũ nhất khi vượt ngưỡng.
 * **UR-13 (Nội dung ghi log bảo mật):** **Tuyệt đối nghiêm cấm** ghi trực tiếp mật khẩu, mã PIN hoặc nội dung nhạy cảm của email vào tệp log dưới dạng văn bản thường (Plaintext). Mật khẩu chỉ được phép hiển thị dưới dạng chuỗi đã được che giấu (\*\*\*\*\*\*\*\*).
@@ -130,4 +130,3 @@ Hệ thống phải có cơ chế ghi nhận nhật ký (Log) chi tiết nhằm 
 | **UR-06**  | Chức năng    | Lập lịch ngầm         | Trung bình | JVM 21 Background Threads       |
 | **UR-10**  | Chức năng    | Ghi log phân cấp      | Cao        | Logback Library / Local Storage |
 | **UR-12**  | Chức năng    | Xoay vòng Log         | Trung bình | Windows & Linux File Systems    |
-

@@ -21,7 +21,8 @@
         <Insets top="16" bottom="16" left="12"/>
     </padding>
 
-    <Button onAction="#onNewMailClick"
+    <Button fx:id="composeButton"
+            onAction="#onNewMailClick"
             text="Soạn thư mới"
             maxWidth="Infinity"
             graphicTextGap="10"
@@ -53,13 +54,25 @@
     <Button fx:id="btnDrafts"
             text="📝  Thư nháp"
             maxWidth="Infinity"
-            styleClass="sidebar-nav-item-active"/>
+            styleClass="sidebar-nav-item"/>
+
+    <Button fx:id="btnQueue"
+            text="⏱  Hàng đợi chờ gửi"
+            maxWidth="Infinity"
+            styleClass="sidebar-nav-item"
+            onAction="#handleQueueBtn"/>
 
     <Button fx:id="btnSent"
             text="📤  Đã gửi"
             maxWidth="Infinity"
             styleClass="sidebar-nav-item"
             onAction="#handleSentMailBtn"/>
+
+    <Button fx:id="btnLogs"
+            text="📋  Log hệ thống"
+            maxWidth="Infinity"
+            styleClass="sidebar-nav-item"
+            onAction="#handleLogsBtn"/>
 
     <Separator>
         <VBox.margin>
@@ -95,5 +108,6 @@
     <Button fx:id="btnSettings"
             text="⚙️  Cài đặt"
             maxWidth="Infinity"
+            onAction="#handleSettings"
             styleClass="sidebar-footer-item"/>
 </VBox>

@@ -29,6 +29,13 @@
             <version>25.0.3</version>
             <scope>compile</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-web</artifactId>
+            <version>25.0.3</version>
+            <scope>compile</scope>
+        </dependency>
         
         <dependency>
             <groupId>org.eclipse.angus</groupId>
@@ -106,7 +113,7 @@
                         <!-- Default configuration for running with: mvn clean javafx:run -->
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>nlu.fit.soft.gr5.precisionMail/nlu.fit.soft.gr5.precisionMail.Launcher</mainClass>
+                            <mainClass>precisionMail/nlu.fit.soft.gr5.precisionMail.Launcher</mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
                             <jlinkImageName>app</jlinkImageName>
@@ -115,6 +122,7 @@
                             <noHeaderFiles>true</noHeaderFiles>
                             <options>
                                 <option>--enable-native-access=javafx.graphics</option>
+                                <option>--enable-native-access=ALL-UNNAMED</option>
                             </options>
                         </configuration>
                     </execution>

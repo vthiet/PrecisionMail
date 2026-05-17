@@ -1,17 +1,19 @@
 <configuration>
-    <property name="LOG_DIR" value="logs"/>
+    <property name="LOG_DIR" value="${user.home}/.precisionmail/logs"/>
     <property name="LOG_FILE" value="${LOG_DIR}/system.log"/>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_FILE}</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_DIR}/system.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <maxFileSize>5MB</maxFileSize>
-            <maxHistory>14</maxHistory>
-            <totalSizeCap>100MB</totalSizeCap>
+            <fileNamePattern>${LOG_DIR}/system.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>200MB</totalSizeCap>
         </rollingPolicy>
-        <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%level] [%thread] %logger{36} - %msg%n</pattern>
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <layout class="nlu.fit.soft.gr5.precisionMail.util.SecurePatternLayout">
+                <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%level] [%thread] [%class:%line] - %msg%n%ex</pattern>
+            </layout>
         </encoder>
     </appender>
 
@@ -19,6 +21,7 @@
         <queueSize>2048</queueSize>
         <discardingThreshold>0</discardingThreshold>
         <neverBlock>true</neverBlock>
+        <includeCallerData>true</includeCallerData>
         <appender-ref ref="FILE"/>
     </appender>
 

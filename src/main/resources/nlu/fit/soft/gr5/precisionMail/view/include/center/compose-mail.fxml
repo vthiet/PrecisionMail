@@ -5,16 +5,17 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.image.Image?>
+<?import javafx.scene.web.HTMLEditor?>
 
 <VBox BorderPane.alignment="CENTER"
       xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="nlu.fit.soft.gr5.precisionMail.controller.fxml.ComposeMailController"
+      fx:controller="nlu.fit.soft.gr5.precisionMail.controller.fxml.ComposeController"
       stylesheets="@../../../css/compose-mail.css">
 
     <ToolBar>
         <items>
             <Button fx:id="sendBtn"
-                    text="Send"
+                    text="Gửi ngay"
                     onAction="#handleSendMail"
                     styleClass="borderRadius">
                 <graphic>
@@ -25,6 +26,8 @@
                     </ImageView>
                 </graphic>
             </Button>
+
+            <Button fx:id="cancelComposeBtn" text="Hủy soạn" onAction="#handleCancelCompose" styleClass="borderRadius"/>
 
             <Button text="Encrypt" styleClass="borderRadius"/>
 
@@ -74,7 +77,7 @@
                 <Button fx:id="scheduleBtn" text="Schedule send" onAction="#handleScheduleSendMail"/>
             </HBox>
 
-            <MenuButton text="Attach" mnemonicParsing="true"
+            <MenuButton fx:id="attachMenuButton" text="Attach" mnemonicParsing="true"
                         styleClass="borderRadius">
                 <items>
                     <MenuItem text="_File(s)..." onAction="#handleAttachFiles"/>
@@ -147,9 +150,7 @@
     <!--        </items>-->
     <!--    </ToolBar>-->
 
-    <TextArea fx:id="contentArea" VBox.vgrow="ALWAYS">
-        <promptText>Write your email here...</promptText>
-    </TextArea>
+    <HTMLEditor fx:id="contentEditor" VBox.vgrow="ALWAYS"/>
 
     <VBox BorderPane.alignment="CENTER">
 

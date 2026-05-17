@@ -32,13 +32,19 @@ public class MenuBarController {
             AddAccountDialogController controller = loader.getController();
             Stage stage = new Stage();
             controller.setStage(stage);
-            stage.setTitle("Add Account");
-            stage.setScene(new Scene(root, 250, 180));
+            stage.setTitle("Cấu hình tài khoản");
+            stage.setScene(new Scene(root, 520, 430));
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.showAndWait();
             LOGGER.info("Add-account dialog closed.");
         } catch (IOException e) {
             LOGGER.error("Failed to open add-account dialog.", e);
         }
+    }
+
+    @FXML
+    public void handleSystemLogs(ActionEvent actionEvent) {
+        LOGGER.info("Navigate to system-log view requested from menu.");
+        NavigationService.getInstance().navigateTo("center/system-logs.fxml");
     }
 }

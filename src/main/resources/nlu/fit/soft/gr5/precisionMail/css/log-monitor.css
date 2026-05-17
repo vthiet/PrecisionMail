@@ -1,0 +1,28 @@
+.table-row-cell.log-row-error {
+    -fx-background-color: #FCE8E6;
+}
+
+.table-row-cell.log-row-error:selected {
+    -fx-background-color: #F28B82;
+}
+
+.table-row-cell.log-row-warn {
+    -fx-background-color: #FEF7E0;
+}
+
+.table-row-cell.log-row-warn:selected {
+    -fx-background-color: #FDD663;
+}
+
+.table-row-cell.log-row-info {
+    -fx-background-color: #FFFFFF;
+}
+
+.table-row-cell.log-row-debug {
+    -fx-background-color: #F1F3F4;
+}
+
+.text-area {
+    -fx-font-family: "JetBrains Mono", "Consolas", monospace;
+    -fx-font-size: 12px;
+}

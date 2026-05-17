@@ -3,8 +3,10 @@ package nlu.fit.soft.gr5.precisionMail.service.impl;
 import jakarta.mail.*;
 import nlu.fit.soft.gr5.precisionMail.dao.EmailDao;
 import nlu.fit.soft.gr5.precisionMail.dao.impl.EmailDaoImpl;
+import nlu.fit.soft.gr5.precisionMail.infrastructure.async.AppExecutors;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
+import nlu.fit.soft.gr5.precisionMail.model.EmailStatus;
 import nlu.fit.soft.gr5.precisionMail.service.EmailService;
 import nlu.fit.soft.gr5.precisionMail.util.EmailUtil;
 import nlu.fit.soft.gr5.precisionMail.util.LogHelper;
@@ -13,16 +15,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.CompletableFuture;
 
 public class EmailServiceImpl implements EmailService {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmailServiceImpl.class);
-    private static final ExecutorService EMAIL_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
-        Thread thread = new Thread(r, "email-send-worker");
-        thread.setDaemon(true);
-        return thread;
-    });
 
     private final EmailDao emailDao = new EmailDaoImpl();
 
@@ -30,6 +26,11 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void send(Account account, Email email) throws MessagingException, IOException {
+        sendAsync(account, email);
+    }
+
+    @Override
+    public CompletableFuture<SendResult> sendAsync(Account account, Email email) {
         LOGGER.info(
                 "Email send requested. sender={}, recipients={}, attachments={}.",
                 LogHelper.maskEmail(account.getUsername()),
@@ -37,9 +38,12 @@ public class EmailServiceImpl implements EmailService {
                 LogHelper.attachmentCount(email)
         );
 
-        EMAIL_EXECUTOR.submit(() -> {
+        email.status = EmailStatus.SENDING;
+        return CompletableFuture.supplyAsync(() -> {
             try {
                 EmailUtil.send(account, email);
+                email.status = EmailStatus.SENT;
+                email.sentAt = java.time.LocalDateTime.now();
                 save(email);
                 LOGGER.info(
                         "Email sent successfully. sender={}, recipients={}, attachments={}.",
@@ -47,7 +51,15 @@ public class EmailServiceImpl implements EmailService {
                         LogHelper.recipientCount(email),
                         LogHelper.attachmentCount(email)
                 );
+                return new SendResult(email, true, null);
             } catch (MessagingException | IOException | RuntimeException e) {
+                email.status = EmailStatus.FAILED;
+                email.errorMessage = e.getMessage();
+                try {
+                    save(email);
+                } catch (IOException saveException) {
+                    LOGGER.error("Failed to persist failed email history.", saveException);
+                }
                 LOGGER.error(
                         "Email send failed. sender={}, recipients={}, attachments={}.",
                         LogHelper.maskEmail(account.getUsername()),
@@ -55,8 +67,15 @@ public class EmailServiceImpl implements EmailService {
                         LogHelper.attachmentCount(email),
                         e
                 );
+                return new SendResult(email, false, e);
             }
-        });
+        }, AppExecutors.io());
+    }
+
+    @Override
+    public void validateConnection(Account account) throws MessagingException {
+        EmailUtil.validateConnection(account);
+        LOGGER.info("Mail server connection validated for sender={}.", LogHelper.maskEmail(account.getUsername()));
     }
 
     @Override

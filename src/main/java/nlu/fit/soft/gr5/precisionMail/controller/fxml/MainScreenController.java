@@ -15,6 +15,7 @@ public class MainScreenController {
 
     @FXML
     public BorderPane mainBorderPane;
+    private Object currentCenterController;
 
     @FXML
     public void initialize() {
@@ -27,10 +28,18 @@ public class MainScreenController {
                     getClass().getResource("/nlu/fit/soft/gr5/precisionMail/view/include/" + fxmlFileName)
             );
             Parent newView = loader.load();
+            shutdownCurrentCenterController();
+            currentCenterController = loader.getController();
             mainBorderPane.setCenter(newView);
             LOGGER.info("Center view changed to {}.", fxmlFileName);
         } catch (IOException e) {
             LOGGER.error("Failed to change center view to {}.", fxmlFileName, e);
+        }
+    }
+
+    private void shutdownCurrentCenterController() {
+        if (currentCenterController instanceof LogController logController) {
+            logController.shutdown();
         }
     }
 }

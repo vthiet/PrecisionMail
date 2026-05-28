@@ -12,4 +12,8 @@ public interface AccountDao {
     List<Account> findAll();
 
     Optional<Account> findByEmail(String email);
+
+    void update(Account account);
+
+    void deleteByEmail(String email);
 }

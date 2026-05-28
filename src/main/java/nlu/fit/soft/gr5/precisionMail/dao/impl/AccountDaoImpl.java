@@ -179,25 +179,97 @@ public class AccountDaoImpl implements AccountDao {
                 if (!rs.next()) {
                     return Optional.empty();
                 }
-                Account account = new Account(
-                        rs.getString("email"),
-                        rs.getString("encrypt_app_password"),
-                        LocalDateTime.parse(rs.getString("created_at"))
-                );
-                account.setId(rs.getLong("id"));
-                account.setMailServerConfig(new MailServerConfig(
-                        rs.getString("smtp_host"),
-                        rs.getInt("smtp_port"),
-                        rs.getString("imap_host"),
-                        rs.getInt("imap_port"),
-                        parseSecurityMode(rs.getString("security_mode"))
-                ));
-                return Optional.of(account);
+                return Optional.of(mapAccount(rs));
             }
         } catch (SQLException e) {
             LOGGER.error("Failed to load account by email={}.", LogHelper.maskEmail(email), e);
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void update(Account account) {
+        if (account == null || account.getUsername() == null || account.getUsername().isBlank()) {
+            return;
+        }
+
+        String sql = """
+                update accounts
+                set encrypt_app_password = ?,
+                    smtp_host = ?,
+                    smtp_port = ?,
+                    imap_host = ?,
+                    imap_port = ?,
+                    security_mode = ?,
+                    updated_at = ?
+                where lower(email) = lower(?)
+                """;
+
+        try (Connection connection = DbUtil.getConnect();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            MailServerConfig config = account.getMailServerConfig();
+            preparedStatement.setString(1, account.getPassword());
+            preparedStatement.setString(2, config.getSmtpHost());
+            preparedStatement.setInt(3, config.getSmtpPort());
+            preparedStatement.setString(4, config.getImapHost());
+            preparedStatement.setInt(5, config.getImapPort());
+            preparedStatement.setString(6, config.getSecurityMode().name());
+            preparedStatement.setString(7, LocalDateTime.now().toString());
+            preparedStatement.setString(8, account.getUsername());
+
+            int affectedRows = preparedStatement.executeUpdate();
+            if (affectedRows > 0) {
+                LOGGER.info("Account updated successfully for username={}.", LogHelper.maskEmail(account.getUsername()));
+            } else {
+                LOGGER.warn("No account found to update for username={}.", LogHelper.maskEmail(account.getUsername()));
+            }
+        } catch (SQLException e) {
+            LOGGER.error("Failed to update account for username={}.", LogHelper.maskEmail(account.getUsername()), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void deleteByEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return;
+        }
+
+        String sql = """
+                delete from accounts
+                where lower(email) = lower(?)
+                """;
+
+        try (Connection connection = DbUtil.getConnect();
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatement.setString(1, email);
+            int affectedRows = preparedStatement.executeUpdate();
+            if (affectedRows > 0) {
+                LOGGER.info("Account deleted successfully for username={}.", LogHelper.maskEmail(email));
+            } else {
+                LOGGER.warn("No account found to delete for username={}.", LogHelper.maskEmail(email));
+            }
+        } catch (SQLException e) {
+            LOGGER.error("Failed to delete account for username={}.", LogHelper.maskEmail(email), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Account mapAccount(ResultSet rs) throws SQLException {
+        Account account = new Account(
+                rs.getString("email"),
+                rs.getString("encrypt_app_password"),
+                LocalDateTime.parse(rs.getString("created_at"))
+        );
+        account.setId(rs.getLong("id"));
+        account.setMailServerConfig(new MailServerConfig(
+                rs.getString("smtp_host"),
+                rs.getInt("smtp_port"),
+                rs.getString("imap_host"),
+                rs.getInt("imap_port"),
+                parseSecurityMode(rs.getString("security_mode"))
+        ));
+        return account;
     }
 
     private SecurityMode parseSecurityMode(String value) {

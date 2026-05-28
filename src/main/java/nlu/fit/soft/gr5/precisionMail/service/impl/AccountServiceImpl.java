@@ -88,12 +88,29 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public void update(Account account) {
-
+        if (account == null || account.getUsername() == null || account.getUsername().isBlank()) {
+            return;
+        }
+        LOGGER.info("Account update requested for username={}.", LogHelper.maskEmail(account.getUsername()));
+        Account encrypted = new Account(
+                account.getUsername(),
+                CryptoUtil.encrypt(account.getPassword()),
+                account.getCreatedAt() == null ? LocalDateTime.now() : account.getCreatedAt()
+        );
+        encrypted.setMailServerConfig(account.getMailServerConfig());
+        if (account.getId() != null) {
+            encrypted.setId(account.getId());
+        }
+        accountDao.update(encrypted);
     }
 
     @Override
     public void deleteByEmailAddress(String emailAddress) {
-
+        if (emailAddress == null || emailAddress.isBlank()) {
+            return;
+        }
+        LOGGER.info("Account delete requested for username={}.", LogHelper.maskEmail(emailAddress));
+        accountDao.deleteByEmail(emailAddress);
     }
 
     private String decryptPassword(String encryptedPassword) {

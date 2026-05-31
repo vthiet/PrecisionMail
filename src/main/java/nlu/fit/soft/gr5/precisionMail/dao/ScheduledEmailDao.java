@@ -2,6 +2,7 @@ package nlu.fit.soft.gr5.precisionMail.dao;
 
 import nlu.fit.soft.gr5.precisionMail.model.EmailStatus;
 import nlu.fit.soft.gr5.precisionMail.model.ScheduledEmail;
+import nlu.fit.soft.gr5.precisionMail.service.QueueSearchCriteria;
 
 import java.io.IOException;
 import java.util.List;
@@ -27,4 +28,6 @@ public interface ScheduledEmailDao {
     void updateScheduledAt(Long id, java.time.LocalDateTime scheduledAt) throws IOException;
 
     void updateQueuedEmail(Long id, nlu.fit.soft.gr5.precisionMail.model.Email email, java.time.LocalDateTime scheduledAt) throws IOException;
+
+    List<ScheduledEmail> search(QueueSearchCriteria criteria) throws IOException;
 }

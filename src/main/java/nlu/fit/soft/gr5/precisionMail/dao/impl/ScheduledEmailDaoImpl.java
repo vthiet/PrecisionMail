@@ -5,6 +5,7 @@ import nlu.fit.soft.gr5.precisionMail.model.Account;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
 import nlu.fit.soft.gr5.precisionMail.model.EmailStatus;
 import nlu.fit.soft.gr5.precisionMail.model.ScheduledEmail;
+import nlu.fit.soft.gr5.precisionMail.service.QueueSearchCriteria;
 import nlu.fit.soft.gr5.precisionMail.util.DbUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -432,5 +433,74 @@ public class ScheduledEmailDaoImpl implements ScheduledEmailDao {
             return new ArrayList<>();
         }
         return new ArrayList<>(Arrays.asList(value.split(DELIMITER)));
+    }
+
+    @Override
+    public List<ScheduledEmail> search(QueueSearchCriteria criteria) throws IOException {
+
+        StringBuilder sql = new StringBuilder("""
+        SELECT *
+        FROM scheduled_emails
+        WHERE 1=1
+    """);
+
+        List<Object> params = new ArrayList<>();
+
+        if (criteria.getKeyword() != null &&
+                !criteria.getKeyword().isBlank()) {
+
+            sql.append("""
+            AND (
+                subject LIKE ?
+                OR to_recipients LIKE ?
+                OR sender_email LIKE ?
+            )
+        """);
+
+            String keyword = "%" + criteria.getKeyword() + "%";
+
+            params.add(keyword);
+            params.add(keyword);
+            params.add(keyword);
+        }
+
+        if (criteria.getStatus() != null) {
+            sql.append(" AND status = ? ");
+            params.add(criteria.getStatus().name());
+        }
+
+        if (criteria.getFromDate() != null) {
+            sql.append(" AND scheduled_at >= ? ");
+            params.add(criteria.getFromDate().toString());
+        }
+
+        if (criteria.getToDate() != null) {
+            sql.append(" AND scheduled_at <= ? ");
+            params.add(criteria.getToDate().toString());
+        }
+
+        sql.append(" ORDER BY scheduled_at DESC ");
+
+        try (Connection connection = DbUtil.getConnect();
+             PreparedStatement ps =
+                     connection.prepareStatement(sql.toString())) {
+
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+
+                List<ScheduledEmail> result = new ArrayList<>();
+
+                while (rs.next()) {
+                    result.add(mapScheduledEmail(rs));
+                }
+
+                return result;
+            }
+        } catch (SQLException e) {
+            throw new IOException(e);
+        }
     }
 }

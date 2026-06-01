@@ -503,4 +503,9 @@ public class ScheduledEmailDaoImpl implements ScheduledEmailDao {
             throw new IOException(e);
         }
     }
+
+    @Override
+    public List<ScheduledEmail> findScheduled() throws IOException {
+        return findByStatus(EmailStatus.SCHEDULED);
+    }
 }

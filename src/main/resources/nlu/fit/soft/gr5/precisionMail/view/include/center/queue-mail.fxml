@@ -10,6 +10,8 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.TextField?>
 <VBox spacing="10"
       xmlns="http://javafx.com/javafx/25"
       xmlns:fx="http://javafx.com/fxml/1"
@@ -23,6 +25,18 @@
                style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
         <Pane HBox.hgrow="ALWAYS"/>
         <Button text="Làm mới" onAction="#handleRefresh"/>
+
+        <TextField fx:id="txtKeyword"
+                   promptText="Search subject, sender..." />
+
+        <ComboBox fx:id="cbStatus"
+                  promptText="Status"/>
+
+        <Button text="Search"
+                onAction="#handleSearch"/>
+
+        <Button text="Reset"
+                onAction="#handleReset"/>
     </HBox>
 
     <ToolBar>

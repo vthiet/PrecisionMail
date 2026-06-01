@@ -11,6 +11,7 @@ import nlu.fit.soft.gr5.precisionMail.model.Email;
 import nlu.fit.soft.gr5.precisionMail.model.EmailStatus;
 import nlu.fit.soft.gr5.precisionMail.model.ScheduledEmail;
 import nlu.fit.soft.gr5.precisionMail.service.AccountService;
+import nlu.fit.soft.gr5.precisionMail.service.QueueSearchCriteria;
 import nlu.fit.soft.gr5.precisionMail.service.ScheduledEmailService;
 import nlu.fit.soft.gr5.precisionMail.util.EmailUtil;
 import nlu.fit.soft.gr5.precisionMail.util.LogHelper;
@@ -330,5 +331,12 @@ public class ScheduledEmailServiceImpl implements ScheduledEmailService {
             cause = cause.getCause();
         }
         return false;
+    }
+
+    public List<ScheduledEmail> search(
+            QueueSearchCriteria criteria)
+            throws IOException {
+
+        return scheduledEmailDao.search(criteria);
     }
 }

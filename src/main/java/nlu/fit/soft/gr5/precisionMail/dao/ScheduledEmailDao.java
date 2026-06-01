@@ -30,4 +30,6 @@ public interface ScheduledEmailDao {
     void updateQueuedEmail(Long id, nlu.fit.soft.gr5.precisionMail.model.Email email, java.time.LocalDateTime scheduledAt) throws IOException;
 
     List<ScheduledEmail> search(QueueSearchCriteria criteria) throws IOException;
+
+    List<ScheduledEmail> findScheduled() throws IOException;
 }

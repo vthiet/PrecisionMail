@@ -17,4 +17,7 @@ public interface QueueService {
     void updateQueuedEmail(Long scheduledEmailId, Email email, LocalDateTime scheduledAt) throws IOException;
 
     void markRetryPending(Long scheduledEmailId, String reason) throws IOException;
+
+    List<ScheduledEmail> search(QueueSearchCriteria criteria)
+            throws IOException;
 }

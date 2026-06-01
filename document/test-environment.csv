@@ -1,0 +1,5 @@
+No,Name,Model,Configuration,OS,Software
+1,Test machine,ASUS TUF Gaming F15 FX507ZC4_FX507ZC4,"RAM 16 GB; x64 architecture; local storage includes precisionmail.db, emails.json, logs/system.log",Windows 11 Home Single Language 64-bit (10.0.26200),"OpenJDK Temurin 21.0.5 LTS; JavaFX 25.0.3; Maven Wrapper; SQLite JDBC 3.50.3.0"
+2,Desktop email client under test,PrecisionMail 1.0-SNAPSHOT,"Java desktop application; SMTP via smtp.gmail.com:587; AES key in application.properties; SQLite accounts table; JSON email history",Windows 11 Home Single Language 64-bit,"Jakarta Mail 2.0.4; Angus Activation 2.0.2; Jackson Databind 2.19.0; Logback 1.5.18; SLF4J 2.0.17"
+3,Mail service environment,Gmail SMTP server,"Requires Google account and App Password; outbound SMTP authentication; internet connection required",Cloud service,"smtp.gmail.com; port 587; STARTTLS"
+4,Database and log storage,Local file-based storage,"SQLite database: precisionmail.db; Email history file: emails.json; Log file: logs/system.log",Windows file system,"SQLite; JSON; Logback rolling file appender"

@@ -1,5 +1,7 @@
 package nlu.fit.soft.gr5.precisionMail;
 
+import atlantafx.base.theme.CupertinoDark;
+import atlantafx.base.theme.CupertinoLight;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -14,12 +16,16 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Locale;
 
 public class Launcher extends Application {
     private static final Logger LOGGER = LoggerFactory.getLogger(Launcher.class);
 
     @Override
     public void start(Stage stage) throws IOException {
+        Application.setUserAgentStylesheet(new CupertinoLight().getUserAgentStylesheet());
+        Locale.setDefault(Locale.ENGLISH);
+
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) ->
                 LOGGER.error("Unhandled runtime exception on thread={}", thread.getName(), throwable)
         );

@@ -9,8 +9,7 @@
 
 <VBox BorderPane.alignment="CENTER"
       xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="nlu.fit.soft.gr5.precisionMail.controller.fxml.ComposeController"
-      stylesheets="@../../../css/compose-mail.css">
+      fx:controller="nlu.fit.soft.gr5.precisionMail.controller.fxml.ComposeController">
 
     <ToolBar>
         <items>

@@ -21,7 +21,9 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import nlu.fit.soft.gr5.precisionMail.infrastructure.async.AppExecutors;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
+import nlu.fit.soft.gr5.precisionMail.model.EmailStatus;
 import nlu.fit.soft.gr5.precisionMail.model.ScheduledEmail;
+import nlu.fit.soft.gr5.precisionMail.service.QueueSearchCriteria;
 import nlu.fit.soft.gr5.precisionMail.service.QueueService;
 import nlu.fit.soft.gr5.precisionMail.service.impl.QueueServiceImpl;
 import nlu.fit.soft.gr5.precisionMail.util.AlertUtil;
@@ -71,6 +73,12 @@ public class QueueController {
     private final ObservableList<ScheduledEmail> queuedEmails = FXCollections.observableArrayList();
 
     @FXML
+    private TextField txtKeyword;
+
+    @FXML
+    private ComboBox<EmailStatus> cbStatus;
+
+    @FXML
     public void initialize() {
         idColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(String.valueOf(data.getValue().id)));
         senderColumn.setCellValueFactory(data ->
@@ -86,6 +94,11 @@ public class QueueController {
         queueTable.setItems(queuedEmails);
         queueTable.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, selected) ->
                 detailLabel.setText(selected == null ? "" : detailFor(selected)));
+
+        cbStatus.getItems().addAll(
+                EmailStatus.values()
+        );
+
         refreshQueue();
     }
 
@@ -388,5 +401,44 @@ public class QueueController {
             ComboBox<Integer> hourBox,
             ComboBox<Integer> minuteBox
     ) {
+    }
+
+    @FXML
+    private void handleSearch() {
+
+        QueueSearchCriteria criteria =
+                new QueueSearchCriteria();
+
+        criteria.setKeyword(txtKeyword.getText());
+        criteria.setStatus(cbStatus.getValue());
+
+        statusLabel.setText("Đang tìm kiếm...");
+
+        AppExecutors.io().execute(() -> {
+
+            try {
+
+                List<ScheduledEmail> result =
+                        queueService.search(criteria);
+
+                Platform.runLater(() -> {
+
+                    queuedEmails.setAll(result);
+
+                    statusLabel.setText(
+                            "Tìm thấy " + result.size() + " email."
+                    );
+                });
+
+            } catch (Exception e) {
+
+                Platform.runLater(() ->
+                        AlertUtil.showError(
+                                "Search Error",
+                                e.getMessage()
+                        )
+                );
+            }
+        });
     }
 }

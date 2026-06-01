@@ -28,6 +28,7 @@ import nlu.fit.soft.gr5.precisionMail.service.impl.EmailServiceImpl;
 import nlu.fit.soft.gr5.precisionMail.util.AlertUtil;
 import nlu.fit.soft.gr5.precisionMail.util.EmailUtil;
 import nlu.fit.soft.gr5.precisionMail.util.LogHelper;
+import nlu.fit.soft.gr5.precisionMail.util.MailServerConfigValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -203,9 +204,9 @@ public class AddAccountDialogController {
         }
         account.setMailServerConfig(new MailServerConfig(
                 textOf(smtpHostField),
-                parsePort(smtpPortField),
+                MailServerConfigValidator.parsePort(textOf(smtpPortField)),
                 textOf(imapHostField),
-                parsePort(imapPortField),
+                MailServerConfigValidator.parsePort(textOf(imapPortField)),
                 securityModeComboBox.getValue() == null ? SecurityMode.TLS : securityModeComboBox.getValue()
         ));
         return account;
@@ -231,11 +232,11 @@ public class AddAccountDialogController {
             markInvalid(imapHostField, "IMAP host không được để trống.");
             valid = false;
         }
-        if (!isValidPort(smtpPortField)) {
+        if (!MailServerConfigValidator.isValidPort(textOf(smtpPortField))) {
             markInvalid(smtpPortField, "Cổng SMTP phải là số nguyên từ 1 đến 65535.");
             valid = false;
         }
-        if (!isValidPort(imapPortField)) {
+        if (!MailServerConfigValidator.isValidPort(textOf(imapPortField))) {
             markInvalid(imapPortField, "Cổng IMAP phải là số nguyên từ 1 đến 65535.");
             valid = false;
         }
@@ -397,19 +398,6 @@ public class AddAccountDialogController {
     private void clearInvalid(TextField field) {
         field.setStyle(null);
         field.setTooltip(null);
-    }
-
-    private boolean isValidPort(TextField field) {
-        int port = parsePort(field);
-        return port >= 1 && port <= 65535;
-    }
-
-    private int parsePort(TextField field) {
-        try {
-            return Integer.parseInt(textOf(field));
-        } catch (NumberFormatException ex) {
-            return -1;
-        }
     }
 
     private String textOf(TextField field) {

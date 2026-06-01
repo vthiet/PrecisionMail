@@ -5,6 +5,7 @@ import nlu.fit.soft.gr5.precisionMail.dao.impl.ScheduledEmailDaoImpl;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
 import nlu.fit.soft.gr5.precisionMail.model.EmailStatus;
 import nlu.fit.soft.gr5.precisionMail.model.ScheduledEmail;
+import nlu.fit.soft.gr5.precisionMail.service.QueueSearchCriteria;
 import nlu.fit.soft.gr5.precisionMail.service.QueueService;
 
 import java.io.IOException;
@@ -50,5 +51,45 @@ public class QueueServiceImpl implements QueueService {
     @Override
     public void markRetryPending(Long scheduledEmailId, String reason) throws IOException {
         scheduledEmailDao.updateStatus(scheduledEmailId, EmailStatus.RETRY_PENDING, reason);
+    }
+    @Override
+    public List<ScheduledEmail> search(QueueSearchCriteria criteria) throws IOException {
+
+        List<ScheduledEmail> emails =
+                scheduledEmailDao.findScheduled();
+
+        return emails.stream()
+
+                .filter(email -> {
+
+                    if (criteria.getKeyword() == null
+                            || criteria.getKeyword().isBlank()) {
+                        return true;
+                    }
+
+                    String keyword =
+                            criteria.getKeyword().toLowerCase();
+
+                    return (email.email.subject != null
+                            && email.email.subject.toLowerCase().contains(keyword))
+
+                            || (email.email.from != null
+                            && email.email.from.toLowerCase().contains(keyword))
+
+                            || email.email.toLst.stream()
+                            .anyMatch(to ->
+                                    to.toLowerCase().contains(keyword));
+                })
+
+                .filter(email -> {
+
+                    if (criteria.getStatus() == null) {
+                        return true;
+                    }
+
+                    return email.status == criteria.getStatus();
+                })
+
+                .toList();
     }
 }

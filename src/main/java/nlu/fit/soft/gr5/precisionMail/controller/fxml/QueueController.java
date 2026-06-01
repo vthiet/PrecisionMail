@@ -441,4 +441,13 @@ public class QueueController {
             }
         });
     }
+
+    @FXML
+    private void handleReset() {
+
+        txtKeyword.clear();
+        cbStatus.setValue(null);
+
+        refreshQueue();
+    }
 }

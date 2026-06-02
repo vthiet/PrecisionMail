@@ -32,6 +32,14 @@
         <ComboBox fx:id="cbStatus"
                   promptText="Status"/>
 
+        <ComboBox fx:id="cbSortBy"
+                  promptText="Sort By"
+                  prefWidth="130"/>
+
+        <ComboBox fx:id="cbSortDirection"
+                  promptText="Order"
+                  prefWidth="90"/>
+
         <Button text="Search"
                 onAction="#handleSearch"/>
 

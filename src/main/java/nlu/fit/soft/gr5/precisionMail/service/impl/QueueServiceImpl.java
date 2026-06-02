@@ -90,6 +90,40 @@ public class QueueServiceImpl implements QueueService {
                     return email.status == criteria.getStatus();
                 })
 
+                .sorted((e1, e2) -> {
+
+                    String sortBy = criteria.getSortBy();
+                    String direction = criteria.getSortDirection();
+
+                    int result = 0;
+
+                    if ("ID".equals(sortBy)) {
+                        result = Long.compare(e1.id, e2.id);
+                    }
+
+                    else if ("Subject".equals(sortBy)) {
+                        result = e1.email.subject.compareToIgnoreCase(
+                                e2.email.subject
+                        );
+                    }
+
+                    else if ("Status".equals(sortBy)) {
+                        result = e1.status.name().compareTo(
+                                e2.status.name()
+                        );
+                    }
+
+                    else {
+                        result = e1.scheduledAt.compareTo(
+                                e2.scheduledAt
+                        );
+                    }
+
+                    return "DESC".equals(direction)
+                            ? -result
+                            : result;
+                })
+
                 .toList();
     }
 }

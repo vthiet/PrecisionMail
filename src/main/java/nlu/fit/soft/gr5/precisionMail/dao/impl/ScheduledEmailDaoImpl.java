@@ -479,7 +479,27 @@ public class ScheduledEmailDaoImpl implements ScheduledEmailDao {
             params.add(criteria.getToDate().toString());
         }
 
-        sql.append(" ORDER BY scheduled_at DESC ");
+        String sortColumn = "scheduled_at";
+
+        if ("ID".equals(criteria.getSortBy())) {
+            sortColumn = "id";
+        }
+        else if ("Subject".equals(criteria.getSortBy())) {
+            sortColumn = "subject";
+        }
+        else if ("Status".equals(criteria.getSortBy())) {
+            sortColumn = "status";
+        }
+
+        String direction =
+                "ASC".equalsIgnoreCase(criteria.getSortDirection())
+                        ? "ASC"
+                        : "DESC";
+
+        sql.append(" ORDER BY ")
+                .append(sortColumn)
+                .append(" ")
+                .append(direction);
 
         try (Connection connection = DbUtil.getConnect();
              PreparedStatement ps =

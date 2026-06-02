@@ -79,6 +79,12 @@ public class QueueController {
     private ComboBox<EmailStatus> cbStatus;
 
     @FXML
+    private ComboBox<String> cbSortBy;
+
+    @FXML
+    private ComboBox<String> cbSortDirection;
+
+    @FXML
     public void initialize() {
         idColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(String.valueOf(data.getValue().id)));
         senderColumn.setCellValueFactory(data ->
@@ -98,6 +104,21 @@ public class QueueController {
         cbStatus.getItems().addAll(
                 EmailStatus.values()
         );
+
+        cbSortBy.getItems().addAll(
+                "ID",
+                "Subject",
+                "Scheduled Time",
+                "Status"
+        );
+
+        cbSortDirection.getItems().addAll(
+                "ASC",
+                "DESC"
+        );
+
+        cbSortBy.setValue("Scheduled Time");
+        cbSortDirection.setValue("DESC");
 
         refreshQueue();
     }
@@ -411,6 +432,9 @@ public class QueueController {
 
         criteria.setKeyword(txtKeyword.getText());
         criteria.setStatus(cbStatus.getValue());
+
+        criteria.setSortBy(cbSortBy.getValue());
+        criteria.setSortDirection(cbSortDirection.getValue());
 
         statusLabel.setText("Đang tìm kiếm...");
 

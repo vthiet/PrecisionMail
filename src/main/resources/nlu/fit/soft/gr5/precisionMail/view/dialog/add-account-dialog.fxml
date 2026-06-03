@@ -30,46 +30,52 @@
             <ColumnConstraints hgrow="ALWAYS" minWidth="260"/>
         </columnConstraints>
 
-        <Label text="Sender Email" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+        <Label text="Provider" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+        <ComboBox fx:id="providerComboBox"
+                  maxWidth="Infinity"
+                  GridPane.rowIndex="0"
+                  GridPane.columnIndex="1"/>
+
+        <Label text="Sender Email" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
         <TextField fx:id="usernameField"
                    promptText="example@gmail.com"
-                   GridPane.rowIndex="0"
+                   GridPane.rowIndex="1"
                    GridPane.columnIndex="1"/>
 
-        <Label text="App Password" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+        <Label text="App Password" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
         <PasswordField fx:id="passwordField"
                        promptText="Mật khẩu ứng dụng"
-                       GridPane.rowIndex="1"
+                       GridPane.rowIndex="2"
                        GridPane.columnIndex="1"/>
 
-        <Label text="SMTP Host" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+        <Label text="SMTP Host" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
         <TextField fx:id="smtpHostField"
                    promptText="smtp.gmail.com"
-                   GridPane.rowIndex="2"
-                   GridPane.columnIndex="1"/>
-
-        <Label text="SMTP Port" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
-        <TextField fx:id="smtpPortField"
-                   promptText="587"
                    GridPane.rowIndex="3"
                    GridPane.columnIndex="1"/>
 
-        <Label text="IMAP Host" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
-        <TextField fx:id="imapHostField"
-                   promptText="imap.gmail.com"
+        <Label text="SMTP Port" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+        <TextField fx:id="smtpPortField"
+                   promptText="587"
                    GridPane.rowIndex="4"
                    GridPane.columnIndex="1"/>
 
-        <Label text="IMAP Port" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
-        <TextField fx:id="imapPortField"
-                   promptText="993"
+        <Label text="IMAP Host" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+        <TextField fx:id="imapHostField"
+                   promptText="imap.gmail.com"
                    GridPane.rowIndex="5"
                    GridPane.columnIndex="1"/>
 
-        <Label text="Security" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+        <Label text="IMAP Port" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+        <TextField fx:id="imapPortField"
+                   promptText="993"
+                   GridPane.rowIndex="6"
+                   GridPane.columnIndex="1"/>
+
+        <Label text="Security" GridPane.rowIndex="7" GridPane.columnIndex="0"/>
         <ComboBox fx:id="securityModeComboBox"
                   maxWidth="Infinity"
-                  GridPane.rowIndex="6"
+                  GridPane.rowIndex="7"
                   GridPane.columnIndex="1"/>
     </GridPane>
 

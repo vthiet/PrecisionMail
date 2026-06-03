@@ -126,4 +126,13 @@ public class QueueServiceImpl implements QueueService {
 
                 .toList();
     }
+
+    @Override
+    public void delete(Long scheduledEmailId)
+            throws IOException {
+
+        scheduledEmailDao.delete(
+                scheduledEmailId
+        );
+    }
 }

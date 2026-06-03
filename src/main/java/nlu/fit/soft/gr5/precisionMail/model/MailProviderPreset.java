@@ -2,9 +2,9 @@ package nlu.fit.soft.gr5.precisionMail.model;
 
 public enum MailProviderPreset {
     CUSTOM("Custom", null),
-    GMAIL("Gmail", new MailServerConfig("smtp.gmail.com", 587, "imap.gmail.com", 993, SecurityMode.TLS)),
-    OUTLOOK("Outlook", new MailServerConfig("smtp.office365.com", 587, "outlook.office365.com", 993, SecurityMode.TLS)),
-    YAHOO("Yahoo", new MailServerConfig("smtp.mail.yahoo.com", 465, "imap.mail.yahoo.com", 993, SecurityMode.SSL));
+    GMAIL("Gmail", new MailServerConfig("smtp.gmail.com", 587, "imap.gmail.com", 993, SecurityMode.TLS, SecurityMode.SSL)),
+    OUTLOOK("Outlook", new MailServerConfig("smtp.office365.com", 587, "outlook.office365.com", 993, SecurityMode.TLS, SecurityMode.SSL)),
+    YAHOO("Yahoo", new MailServerConfig("smtp.mail.yahoo.com", 465, "imap.mail.yahoo.com", 993, SecurityMode.SSL, SecurityMode.SSL));
 
     private final String displayName;
     private final MailServerConfig config;
@@ -27,7 +27,8 @@ public enum MailProviderPreset {
                 config.getSmtpPort(),
                 config.getImapHost(),
                 config.getImapPort(),
-                config.getSecurityMode()
+                config.getSmtpSecurityMode(),
+                config.getImapSecurityMode()
         );
     }
 
@@ -52,7 +53,8 @@ public enum MailProviderPreset {
                 && first.getSmtpPort() == second.getSmtpPort()
                 && equalsIgnoreCase(first.getImapHost(), second.getImapHost())
                 && first.getImapPort() == second.getImapPort()
-                && first.getSecurityMode() == second.getSecurityMode();
+                && first.getSmtpSecurityMode() == second.getSmtpSecurityMode()
+                && first.getImapSecurityMode() == second.getImapSecurityMode();
     }
 
     private static boolean equalsIgnoreCase(String first, String second) {

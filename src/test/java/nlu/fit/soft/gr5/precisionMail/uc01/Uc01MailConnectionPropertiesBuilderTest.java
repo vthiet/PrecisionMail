@@ -21,7 +21,8 @@ class Uc01MailConnectionPropertiesBuilderTest {
                 587,
                 "imap.gmail.com",
                 993,
-                SecurityMode.TLS
+                SecurityMode.TLS,
+                SecurityMode.SSL
         );
 
         Properties props = MailConnectionPropertiesBuilder.smtpProperties(config);
@@ -45,7 +46,8 @@ class Uc01MailConnectionPropertiesBuilderTest {
                 587,
                 "imap.gmail.com",
                 993,
-                SecurityMode.TLS
+                SecurityMode.TLS,
+                SecurityMode.SSL
         );
 
         Properties props = MailConnectionPropertiesBuilder.validationProperties(config);
@@ -61,7 +63,7 @@ class Uc01MailConnectionPropertiesBuilderTest {
                 () -> assertEquals(TIMEOUT, props.getProperty("mail.imap.connectiontimeout")),
                 () -> assertEquals(TIMEOUT, props.getProperty("mail.imap.timeout")),
                 () -> assertEquals(TIMEOUT, props.getProperty("mail.imap.writetimeout")),
-                () -> assertEquals("true", props.getProperty("mail.imap.starttls.enable")),
+                () -> assertNull(props.getProperty("mail.imap.starttls.enable")),
                 () -> assertEquals("true", props.getProperty("mail.imap.ssl.enable"))
         );
     }
@@ -73,6 +75,7 @@ class Uc01MailConnectionPropertiesBuilderTest {
                 465,
                 "imap.mail.yahoo.com",
                 993,
+                SecurityMode.SSL,
                 SecurityMode.SSL
         );
 

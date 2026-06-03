@@ -59,7 +59,9 @@ public class AddAccountDialogController {
     @FXML
     public TextField imapPortField;
     @FXML
-    public ComboBox<SecurityMode> securityModeComboBox;
+    public ComboBox<SecurityMode> smtpSecurityModeComboBox;
+    @FXML
+    public ComboBox<SecurityMode> imapSecurityModeComboBox;
     @FXML
     public Button testConnectionButton;
     @FXML
@@ -92,13 +94,24 @@ public class AddAccountDialogController {
             applyProviderPreset(newValue);
         });
 
-        securityModeComboBox.getItems().setAll(SecurityMode.values());
-        securityModeComboBox.setValue(SecurityMode.TLS);
-        securityModeComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+        smtpSecurityModeComboBox.getItems().setAll(SecurityMode.values());
+        smtpSecurityModeComboBox.setValue(SecurityMode.TLS);
+        smtpSecurityModeComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
             if (loadingConfiguration || applyingProviderPreset) {
                 return;
             }
-            applySuggestedPorts(newValue);
+            applySuggestedSmtpPort(newValue);
+            markProviderAsCustomForManualEdit();
+            markConnectionDirty();
+        });
+
+        imapSecurityModeComboBox.getItems().setAll(SecurityMode.values());
+        imapSecurityModeComboBox.setValue(SecurityMode.SSL);
+        imapSecurityModeComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (loadingConfiguration || applyingProviderPreset) {
+                return;
+            }
+            applySuggestedImapPort(newValue);
             markProviderAsCustomForManualEdit();
             markConnectionDirty();
         });
@@ -169,7 +182,8 @@ public class AddAccountDialogController {
                 smtpPortField.setText(String.valueOf(defaults.getSmtpPort()));
                 imapHostField.setText(defaults.getImapHost());
                 imapPortField.setText(String.valueOf(defaults.getImapPort()));
-                securityModeComboBox.setValue(defaults.getSecurityMode());
+                smtpSecurityModeComboBox.setValue(defaults.getSmtpSecurityMode());
+                imapSecurityModeComboBox.setValue(defaults.getImapSecurityMode());
                 providerComboBox.setValue(MailProviderPreset.inferFrom(defaults));
                 statusLabel.setText("Chưa có cấu hình. Vui lòng nhập thông tin mail server.");
             } else {
@@ -180,7 +194,8 @@ public class AddAccountDialogController {
                 smtpPortField.setText(String.valueOf(config.getSmtpPort()));
                 imapHostField.setText(config.getImapHost());
                 imapPortField.setText(String.valueOf(config.getImapPort()));
-                securityModeComboBox.setValue(config.getSecurityMode());
+                smtpSecurityModeComboBox.setValue(config.getSmtpSecurityMode());
+                imapSecurityModeComboBox.setValue(config.getImapSecurityMode());
                 providerComboBox.setValue(MailProviderPreset.inferFrom(config));
                 statusLabel.setText("Đã tải cấu hình hiện có.");
             }
@@ -237,7 +252,8 @@ public class AddAccountDialogController {
                 MailServerConfigValidator.parsePort(textOf(smtpPortField)),
                 textOf(imapHostField),
                 MailServerConfigValidator.parsePort(textOf(imapPortField)),
-                securityModeComboBox.getValue() == null ? SecurityMode.TLS : securityModeComboBox.getValue()
+                smtpSecurityModeComboBox.getValue() == null ? SecurityMode.TLS : smtpSecurityModeComboBox.getValue(),
+                imapSecurityModeComboBox.getValue() == null ? SecurityMode.SSL : imapSecurityModeComboBox.getValue()
         ));
         return account;
     }
@@ -355,15 +371,19 @@ public class AddAccountDialogController {
         return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
     }
 
-    private void applySuggestedPorts(SecurityMode mode) {
+    private void applySuggestedSmtpPort(SecurityMode mode) {
         if (mode == SecurityMode.SSL) {
             smtpPortField.setText("465");
-            imapPortField.setText("993");
         } else {
             smtpPortField.setText("587");
-            if (imapPortField.getText() == null || imapPortField.getText().isBlank()) {
-                imapPortField.setText("993");
-            }
+        }
+    }
+
+    private void applySuggestedImapPort(SecurityMode mode) {
+        if (mode == SecurityMode.SSL) {
+            imapPortField.setText("993");
+        } else {
+            imapPortField.setText("143");
         }
     }
 
@@ -380,7 +400,8 @@ public class AddAccountDialogController {
             smtpPortField.setText(String.valueOf(config.getSmtpPort()));
             imapHostField.setText(config.getImapHost());
             imapPortField.setText(String.valueOf(config.getImapPort()));
-            securityModeComboBox.setValue(config.getSecurityMode());
+            smtpSecurityModeComboBox.setValue(config.getSmtpSecurityMode());
+            imapSecurityModeComboBox.setValue(config.getImapSecurityMode());
         } finally {
             applyingProviderPreset = false;
         }
@@ -395,7 +416,8 @@ public class AddAccountDialogController {
         smtpPortField.setDisable(testing);
         imapHostField.setDisable(testing);
         imapPortField.setDisable(testing);
-        securityModeComboBox.setDisable(testing);
+        smtpSecurityModeComboBox.setDisable(testing);
+        imapSecurityModeComboBox.setDisable(testing);
         testConnectionButton.setDisable(testing);
         cancelButton.setDisable(testing);
         saveButton.setDisable(testing || !connectionValidated);
@@ -429,7 +451,8 @@ public class AddAccountDialogController {
                 textOf(imapHostField),
                 textOf(imapPortField),
                 String.valueOf(providerComboBox.getValue()),
-                String.valueOf(securityModeComboBox.getValue())
+                String.valueOf(smtpSecurityModeComboBox.getValue()),
+                String.valueOf(imapSecurityModeComboBox.getValue())
         );
     }
 

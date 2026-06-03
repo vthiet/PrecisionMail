@@ -45,6 +45,8 @@ public final class DatabaseInitializer {
                     imap_host text not null default 'imap.gmail.com',
                     imap_port integer not null default 993,
                     security_mode text not null default 'TLS',
+                    smtp_security_mode text not null default 'TLS',
+                    imap_security_mode text not null default 'SSL',
                     created_at text not null,
                     updated_at text not null
                 );
@@ -116,6 +118,8 @@ public final class DatabaseInitializer {
                 "imap_host",
                 "imap_port",
                 "security_mode",
+                "smtp_security_mode",
+                "imap_security_mode",
                 "created_at",
                 "updated_at"
         ))) {
@@ -139,6 +143,10 @@ public final class DatabaseInitializer {
         String imapHostExpression = columns.contains("imap_host") ? "imap_host" : "'imap.gmail.com'";
         String imapPortExpression = columns.contains("imap_port") ? "imap_port" : "993";
         String securityModeExpression = columns.contains("security_mode") ? "security_mode" : "'TLS'";
+        String smtpSecurityModeExpression = columns.contains("smtp_security_mode") ? "smtp_security_mode" : securityModeExpression;
+        String imapSecurityModeExpression = columns.contains("imap_security_mode")
+                ? "imap_security_mode"
+                : "case when " + imapPortExpression + " = 993 then 'SSL' else " + securityModeExpression + " end";
 
         try (Statement st = connection.createStatement()) {
             st.execute("alter table accounts rename to accounts_legacy");
@@ -153,10 +161,12 @@ public final class DatabaseInitializer {
                         imap_host,
                         imap_port,
                         security_mode,
+                        smtp_security_mode,
+                        imap_security_mode,
                         created_at,
                         updated_at
                     )
-                    select id, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    select id, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     from accounts_legacy
                     where %s is not null and trim(%s) <> ''
                     """.formatted(
@@ -167,6 +177,8 @@ public final class DatabaseInitializer {
                     imapHostExpression,
                     imapPortExpression,
                     securityModeExpression,
+                    smtpSecurityModeExpression,
+                    imapSecurityModeExpression,
                     createdAtExpression,
                     updatedAtExpression,
                     emailColumn,

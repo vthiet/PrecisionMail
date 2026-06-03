@@ -8,6 +8,8 @@ create table if not exists accounts
     imap_host text not null default 'imap.gmail.com',
     imap_port integer not null default 993,
     security_mode text not null default 'TLS',
+    smtp_security_mode text not null default 'TLS',
+    imap_security_mode text not null default 'SSL',
     created_at text not null,
     updated_at text not null
 );

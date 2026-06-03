@@ -30,10 +30,12 @@ public class AccountDaoImpl implements AccountDao {
                     imap_host,
                     imap_port,
                     security_mode,
+                    smtp_security_mode,
+                    imap_security_mode,
                     created_at,
                     updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(email) DO UPDATE SET
                     encrypt_app_password = excluded.encrypt_app_password,
                     smtp_host = excluded.smtp_host,
@@ -41,6 +43,8 @@ public class AccountDaoImpl implements AccountDao {
                     imap_host = excluded.imap_host,
                     imap_port = excluded.imap_port,
                     security_mode = excluded.security_mode,
+                    smtp_security_mode = excluded.smtp_security_mode,
+                    imap_security_mode = excluded.imap_security_mode,
                     updated_at = excluded.updated_at
                 """;
 
@@ -62,9 +66,11 @@ public class AccountDaoImpl implements AccountDao {
             preparedStatement.setInt(4, config.getSmtpPort());
             preparedStatement.setString(5, config.getImapHost());
             preparedStatement.setInt(6, config.getImapPort());
-            preparedStatement.setString(7, config.getSecurityMode().name());
-            preparedStatement.setString(8, now);
-            preparedStatement.setString(9, now);
+            preparedStatement.setString(7, config.getSmtpSecurityMode().name());
+            preparedStatement.setString(8, config.getSmtpSecurityMode().name());
+            preparedStatement.setString(9, config.getImapSecurityMode().name());
+            preparedStatement.setString(10, now);
+            preparedStatement.setString(11, now);
 
             preparedStatement.executeUpdate();
 
@@ -117,6 +123,8 @@ public class AccountDaoImpl implements AccountDao {
                        imap_host,
                        imap_port,
                        security_mode,
+                       smtp_security_mode,
+                       imap_security_mode,
                        created_at
                 from accounts
                 order by created_at asc
@@ -138,7 +146,8 @@ public class AccountDaoImpl implements AccountDao {
                         rs.getInt("smtp_port"),
                         rs.getString("imap_host"),
                         rs.getInt("imap_port"),
-                        parseSecurityMode(rs.getString("security_mode"))
+                        parseSecurityMode(rs.getString("smtp_security_mode")),
+                        parseSecurityMode(rs.getString("imap_security_mode"))
                 ));
                 result.add(account);
             }
@@ -166,6 +175,8 @@ public class AccountDaoImpl implements AccountDao {
                        imap_host,
                        imap_port,
                        security_mode,
+                       smtp_security_mode,
+                       imap_security_mode,
                        created_at
                 from accounts
                 where lower(email) = lower(?)
@@ -201,6 +212,8 @@ public class AccountDaoImpl implements AccountDao {
                     imap_host = ?,
                     imap_port = ?,
                     security_mode = ?,
+                    smtp_security_mode = ?,
+                    imap_security_mode = ?,
                     updated_at = ?
                 where lower(email) = lower(?)
                 """;
@@ -213,9 +226,11 @@ public class AccountDaoImpl implements AccountDao {
             preparedStatement.setInt(3, config.getSmtpPort());
             preparedStatement.setString(4, config.getImapHost());
             preparedStatement.setInt(5, config.getImapPort());
-            preparedStatement.setString(6, config.getSecurityMode().name());
-            preparedStatement.setString(7, LocalDateTime.now().toString());
-            preparedStatement.setString(8, account.getUsername());
+            preparedStatement.setString(6, config.getSmtpSecurityMode().name());
+            preparedStatement.setString(7, config.getSmtpSecurityMode().name());
+            preparedStatement.setString(8, config.getImapSecurityMode().name());
+            preparedStatement.setString(9, LocalDateTime.now().toString());
+            preparedStatement.setString(10, account.getUsername());
 
             int affectedRows = preparedStatement.executeUpdate();
             if (affectedRows > 0) {
@@ -267,7 +282,8 @@ public class AccountDaoImpl implements AccountDao {
                 rs.getInt("smtp_port"),
                 rs.getString("imap_host"),
                 rs.getInt("imap_port"),
-                parseSecurityMode(rs.getString("security_mode"))
+                parseSecurityMode(rs.getString("smtp_security_mode")),
+                parseSecurityMode(rs.getString("imap_security_mode"))
         ));
         return account;
     }

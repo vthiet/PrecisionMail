@@ -16,6 +16,7 @@ class Uc01TestInfrastructureTest {
         assertEquals(587, config.getSmtpPort());
         assertEquals("imap.gmail.com", config.getImapHost());
         assertEquals(993, config.getImapPort());
-        assertEquals(SecurityMode.TLS, config.getSecurityMode());
+        assertEquals(SecurityMode.TLS, config.getSmtpSecurityMode());
+        assertEquals(SecurityMode.SSL, config.getImapSecurityMode());
     }
 }

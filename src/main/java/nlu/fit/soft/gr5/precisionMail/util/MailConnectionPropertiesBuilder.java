@@ -43,7 +43,7 @@ public final class MailConnectionPropertiesBuilder {
     }
 
     private static void applySmtpSecurity(Properties props, MailServerConfig config) {
-        if (config.getSecurityMode() == SecurityMode.SSL) {
+        if (config.getSmtpSecurityMode() == SecurityMode.SSL) {
             props.put("mail.smtp.ssl.enable", "true");
         } else {
             props.put("mail.smtp.starttls.enable", "true");
@@ -51,14 +51,10 @@ public final class MailConnectionPropertiesBuilder {
     }
 
     private static void applyImapSecurity(Properties props, MailServerConfig config) {
-        if (config.getSecurityMode() == SecurityMode.SSL) {
+        if (config.getImapSecurityMode() == SecurityMode.SSL) {
             props.put("mail.imap.ssl.enable", "true");
-            return;
-        }
-
-        props.put("mail.imap.starttls.enable", "true");
-        if (config.getImapPort() == 993) {
-            props.put("mail.imap.ssl.enable", "true");
+        } else {
+            props.put("mail.imap.starttls.enable", "true");
         }
     }
 }

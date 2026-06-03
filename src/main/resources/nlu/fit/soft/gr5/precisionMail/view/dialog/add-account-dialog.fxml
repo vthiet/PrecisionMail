@@ -72,10 +72,16 @@
                    GridPane.rowIndex="6"
                    GridPane.columnIndex="1"/>
 
-        <Label text="Security" GridPane.rowIndex="7" GridPane.columnIndex="0"/>
-        <ComboBox fx:id="securityModeComboBox"
+        <Label text="SMTP Security" GridPane.rowIndex="7" GridPane.columnIndex="0"/>
+        <ComboBox fx:id="smtpSecurityModeComboBox"
                   maxWidth="Infinity"
                   GridPane.rowIndex="7"
+                  GridPane.columnIndex="1"/>
+
+        <Label text="IMAP Security" GridPane.rowIndex="8" GridPane.columnIndex="0"/>
+        <ComboBox fx:id="imapSecurityModeComboBox"
+                  maxWidth="Infinity"
+                  GridPane.rowIndex="8"
                   GridPane.columnIndex="1"/>
     </GridPane>
 

@@ -21,7 +21,8 @@ class Uc01MailProviderPresetTest {
                 () -> assertEquals(587, config.getSmtpPort()),
                 () -> assertEquals("imap.gmail.com", config.getImapHost()),
                 () -> assertEquals(993, config.getImapPort()),
-                () -> assertEquals(SecurityMode.TLS, config.getSecurityMode())
+                () -> assertEquals(SecurityMode.TLS, config.getSmtpSecurityMode()),
+                () -> assertEquals(SecurityMode.SSL, config.getImapSecurityMode())
         );
     }
 
@@ -34,7 +35,8 @@ class Uc01MailProviderPresetTest {
                 () -> assertEquals(587, config.getSmtpPort()),
                 () -> assertEquals("outlook.office365.com", config.getImapHost()),
                 () -> assertEquals(993, config.getImapPort()),
-                () -> assertEquals(SecurityMode.TLS, config.getSecurityMode())
+                () -> assertEquals(SecurityMode.TLS, config.getSmtpSecurityMode()),
+                () -> assertEquals(SecurityMode.SSL, config.getImapSecurityMode())
         );
     }
 
@@ -47,7 +49,8 @@ class Uc01MailProviderPresetTest {
                 () -> assertEquals(465, config.getSmtpPort()),
                 () -> assertEquals("imap.mail.yahoo.com", config.getImapHost()),
                 () -> assertEquals(993, config.getImapPort()),
-                () -> assertEquals(SecurityMode.SSL, config.getSecurityMode())
+                () -> assertEquals(SecurityMode.SSL, config.getSmtpSecurityMode()),
+                () -> assertEquals(SecurityMode.SSL, config.getImapSecurityMode())
         );
     }
 
@@ -58,7 +61,8 @@ class Uc01MailProviderPresetTest {
                 587,
                 "OUTLOOK.OFFICE365.COM",
                 993,
-                SecurityMode.TLS
+                SecurityMode.TLS,
+                SecurityMode.SSL
         );
 
         MailServerConfig custom = new MailServerConfig(

@@ -5,18 +5,31 @@ public class MailServerConfig {
     private int smtpPort;
     private String imapHost;
     private int imapPort;
-    private SecurityMode securityMode;
+    private SecurityMode smtpSecurityMode;
+    private SecurityMode imapSecurityMode;
 
     public MailServerConfig() {
-        this("smtp.gmail.com", 587, "imap.gmail.com", 993, SecurityMode.TLS);
+        this("smtp.gmail.com", 587, "imap.gmail.com", 993, SecurityMode.TLS, SecurityMode.SSL);
     }
 
     public MailServerConfig(String smtpHost, int smtpPort, String imapHost, int imapPort, SecurityMode securityMode) {
+        this(smtpHost, smtpPort, imapHost, imapPort, securityMode, securityMode);
+    }
+
+    public MailServerConfig(
+            String smtpHost,
+            int smtpPort,
+            String imapHost,
+            int imapPort,
+            SecurityMode smtpSecurityMode,
+            SecurityMode imapSecurityMode
+    ) {
         this.smtpHost = smtpHost;
         this.smtpPort = smtpPort;
         this.imapHost = imapHost;
         this.imapPort = imapPort;
-        this.securityMode = securityMode;
+        this.smtpSecurityMode = smtpSecurityMode == null ? SecurityMode.TLS : smtpSecurityMode;
+        this.imapSecurityMode = imapSecurityMode == null ? SecurityMode.SSL : imapSecurityMode;
     }
 
     public String getSmtpHost() {
@@ -36,7 +49,15 @@ public class MailServerConfig {
     }
 
     public SecurityMode getSecurityMode() {
-        return securityMode;
+        return smtpSecurityMode;
+    }
+
+    public SecurityMode getSmtpSecurityMode() {
+        return smtpSecurityMode;
+    }
+
+    public SecurityMode getImapSecurityMode() {
+        return imapSecurityMode;
     }
 
     public void setSmtpHost(String smtpHost) {
@@ -56,6 +77,15 @@ public class MailServerConfig {
     }
 
     public void setSecurityMode(SecurityMode securityMode) {
-        this.securityMode = securityMode;
+        setSmtpSecurityMode(securityMode);
+        setImapSecurityMode(securityMode);
+    }
+
+    public void setSmtpSecurityMode(SecurityMode smtpSecurityMode) {
+        this.smtpSecurityMode = smtpSecurityMode == null ? SecurityMode.TLS : smtpSecurityMode;
+    }
+
+    public void setImapSecurityMode(SecurityMode imapSecurityMode) {
+        this.imapSecurityMode = imapSecurityMode == null ? SecurityMode.SSL : imapSecurityMode;
     }
 }

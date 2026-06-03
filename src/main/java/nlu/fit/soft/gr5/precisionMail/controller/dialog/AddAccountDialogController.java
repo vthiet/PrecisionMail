@@ -19,6 +19,7 @@ import javafx.stage.WindowEvent;
 import nlu.fit.soft.gr5.precisionMail.infrastructure.async.AppExecutors;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
 import nlu.fit.soft.gr5.precisionMail.model.MailServerConfig;
+import nlu.fit.soft.gr5.precisionMail.model.MailProviderPreset;
 import nlu.fit.soft.gr5.precisionMail.model.SecurityMode;
 import nlu.fit.soft.gr5.precisionMail.service.AccountRefreshService;
 import nlu.fit.soft.gr5.precisionMail.service.AccountService;
@@ -43,6 +44,8 @@ public class AddAccountDialogController {
     private static final Logger LOGGER = LoggerFactory.getLogger(AddAccountDialogController.class);
     private static final String INVALID_STYLE = "-fx-border-color: #dc2626; -fx-border-width: 1.2;";
 
+    @FXML
+    public ComboBox<MailProviderPreset> providerComboBox;
     @FXML
     public TextField usernameField;
     @FXML
@@ -76,13 +79,23 @@ public class AddAccountDialogController {
     private boolean connectionValidated;
     private boolean closingAfterSave;
     private boolean loadingConfiguration;
+    private boolean applyingProviderPreset;
 
     @FXML
     public void initialize() {
+        providerComboBox.getItems().setAll(MailProviderPreset.values());
+        providerComboBox.setValue(MailProviderPreset.GMAIL);
+        providerComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (loadingConfiguration) {
+                return;
+            }
+            applyProviderPreset(newValue);
+        });
+
         securityModeComboBox.getItems().setAll(SecurityMode.values());
         securityModeComboBox.setValue(SecurityMode.TLS);
         securityModeComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
-            if (loadingConfiguration) {
+            if (loadingConfiguration || applyingProviderPreset) {
                 return;
             }
             applySuggestedPorts(newValue);
@@ -156,6 +169,7 @@ public class AddAccountDialogController {
                 imapHostField.setText(defaults.getImapHost());
                 imapPortField.setText(String.valueOf(defaults.getImapPort()));
                 securityModeComboBox.setValue(defaults.getSecurityMode());
+                providerComboBox.setValue(MailProviderPreset.inferFrom(defaults));
                 statusLabel.setText("Chưa có cấu hình. Vui lòng nhập thông tin mail server.");
             } else {
                 MailServerConfig config = loadedAccount.getMailServerConfig();
@@ -166,6 +180,7 @@ public class AddAccountDialogController {
                 imapHostField.setText(config.getImapHost());
                 imapPortField.setText(String.valueOf(config.getImapPort()));
                 securityModeComboBox.setValue(config.getSecurityMode());
+                providerComboBox.setValue(MailProviderPreset.inferFrom(config));
                 statusLabel.setText("Đã tải cấu hình hiện có.");
             }
             initialFingerprint = currentFingerprint();
@@ -337,7 +352,28 @@ public class AddAccountDialogController {
         }
     }
 
+    private void applyProviderPreset(MailProviderPreset preset) {
+        if (preset == null || !preset.hasConfig()) {
+            markConnectionDirty();
+            return;
+        }
+
+        applyingProviderPreset = true;
+        try {
+            MailServerConfig config = preset.getConfig();
+            smtpHostField.setText(config.getSmtpHost());
+            smtpPortField.setText(String.valueOf(config.getSmtpPort()));
+            imapHostField.setText(config.getImapHost());
+            imapPortField.setText(String.valueOf(config.getImapPort()));
+            securityModeComboBox.setValue(config.getSecurityMode());
+        } finally {
+            applyingProviderPreset = false;
+        }
+        markConnectionDirty();
+    }
+
     private void setTesting(boolean testing) {
+        providerComboBox.setDisable(testing);
         usernameField.setDisable(testing);
         passwordField.setDisable(testing);
         smtpHostField.setDisable(testing);
@@ -377,6 +413,7 @@ public class AddAccountDialogController {
                 textOf(smtpPortField),
                 textOf(imapHostField),
                 textOf(imapPortField),
+                String.valueOf(providerComboBox.getValue()),
                 String.valueOf(securityModeComboBox.getValue())
         );
     }

@@ -20,4 +20,7 @@ public interface QueueService {
 
     List<ScheduledEmail> search(QueueSearchCriteria criteria)
             throws IOException;
+
+    void delete(Long scheduledEmailId)
+            throws IOException;
 }

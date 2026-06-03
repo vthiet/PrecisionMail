@@ -528,4 +528,28 @@ public class ScheduledEmailDaoImpl implements ScheduledEmailDao {
     public List<ScheduledEmail> findScheduled() throws IOException {
         return findByStatus(EmailStatus.SCHEDULED);
     }
+
+    @Override
+    public void delete(Long id) throws IOException {
+
+        String sql = """
+        DELETE FROM scheduled_emails
+        WHERE id = ?
+    """;
+
+        try (Connection connection = DbUtil.getConnect();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setLong(1, id);
+
+            ps.executeUpdate();
+
+        } catch (SQLException e) {
+
+            throw new IOException(
+                    "Failed to delete scheduled email.",
+                    e
+            );
+        }
+    }
 }

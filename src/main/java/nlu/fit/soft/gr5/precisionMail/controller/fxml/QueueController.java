@@ -474,4 +474,63 @@ public class QueueController {
 
         refreshQueue();
     }
+
+    @FXML
+    public void handleDeleteTask() {
+
+        ScheduledEmail selected =
+                selectedEmail();
+
+        if (selected == null) {
+            return;
+        }
+
+        Alert confirm =
+                new Alert(Alert.AlertType.CONFIRMATION);
+
+        confirm.setTitle("Xác nhận xóa");
+
+        confirm.setHeaderText(null);
+
+        confirm.setContentText(
+                "Bạn có chắc muốn xóa email này?"
+        );
+
+        if (confirm.showAndWait()
+                .orElse(ButtonType.CANCEL)
+                != ButtonType.OK) {
+
+            return;
+        }
+
+        AppExecutors.io().execute(() -> {
+
+            try {
+
+                queueService.delete(
+                        selected.id
+                );
+
+                Platform.runLater(() -> {
+
+                    AlertUtil.showInfo(
+                            "Thành công",
+                            "Đã xóa email khỏi hàng đợi."
+                    );
+
+                    refreshQueue();
+                });
+
+            } catch (Exception e) {
+
+                Platform.runLater(() ->
+
+                        AlertUtil.showError(
+                                "Lỗi",
+                                "Không thể xóa email."
+                        )
+                );
+            }
+        });
+    }
 }

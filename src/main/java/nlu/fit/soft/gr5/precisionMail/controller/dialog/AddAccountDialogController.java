@@ -99,6 +99,7 @@ public class AddAccountDialogController {
                 return;
             }
             applySuggestedPorts(newValue);
+            markProviderAsCustomForManualEdit();
             markConnectionDirty();
         });
 
@@ -195,16 +196,30 @@ public class AddAccountDialogController {
     private void bindDirtyTracking() {
         usernameField.textProperty().addListener((observable, oldValue, newValue) -> markConnectionDirty());
         passwordField.textProperty().addListener((observable, oldValue, newValue) -> markConnectionDirty());
-        smtpHostField.textProperty().addListener((observable, oldValue, newValue) -> markConnectionDirty());
-        smtpPortField.textProperty().addListener((observable, oldValue, newValue) -> markConnectionDirty());
-        imapHostField.textProperty().addListener((observable, oldValue, newValue) -> markConnectionDirty());
-        imapPortField.textProperty().addListener((observable, oldValue, newValue) -> markConnectionDirty());
+        smtpHostField.textProperty().addListener((observable, oldValue, newValue) -> handleManualServerConfigurationChange());
+        smtpPortField.textProperty().addListener((observable, oldValue, newValue) -> handleManualServerConfigurationChange());
+        imapHostField.textProperty().addListener((observable, oldValue, newValue) -> handleManualServerConfigurationChange());
+        imapPortField.textProperty().addListener((observable, oldValue, newValue) -> handleManualServerConfigurationChange());
     }
 
     private void markConnectionDirty() {
         connectionValidated = false;
         if (saveButton != null) {
             saveButton.setDisable(true);
+        }
+    }
+
+    private void handleManualServerConfigurationChange() {
+        markProviderAsCustomForManualEdit();
+        markConnectionDirty();
+    }
+
+    private void markProviderAsCustomForManualEdit() {
+        if (loadingConfiguration || applyingProviderPreset || providerComboBox == null) {
+            return;
+        }
+        if (providerComboBox.getValue() != MailProviderPreset.CUSTOM) {
+            providerComboBox.setValue(MailProviderPreset.CUSTOM);
         }
     }
 

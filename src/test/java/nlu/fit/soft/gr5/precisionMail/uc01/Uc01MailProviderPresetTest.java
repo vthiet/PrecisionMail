@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class Uc01MailProviderPresetTest {
 
@@ -71,6 +73,15 @@ class Uc01MailProviderPresetTest {
                 () -> assertEquals(MailProviderPreset.OUTLOOK, MailProviderPreset.inferFrom(outlook)),
                 () -> assertEquals(MailProviderPreset.CUSTOM, MailProviderPreset.inferFrom(custom)),
                 () -> assertEquals(MailProviderPreset.CUSTOM, MailProviderPreset.inferFrom(null))
+        );
+    }
+
+    @Test
+    void customProviderDoesNotProvidePresetConfiguration() {
+        assertAll(
+                () -> assertFalse(MailProviderPreset.CUSTOM.hasConfig()),
+                () -> assertNull(MailProviderPreset.CUSTOM.getConfig()),
+                () -> assertEquals("Custom", MailProviderPreset.CUSTOM.toString())
         );
     }
 }

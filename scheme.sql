@@ -13,3 +13,14 @@ create table if not exists accounts
     created_at text not null,
     updated_at text not null
 );
+
+create table if not exists recipient_groups
+(
+    id integer primary key autoincrement,
+    name text not null unique,
+    description text,
+    emails text not null,
+    email_count integer not null default 0,
+    created_at text not null,
+    updated_at text not null
+);

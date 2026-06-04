@@ -281,8 +281,11 @@ public class AccountDaoImpl implements AccountDao {
 
         try (Connection connection = DbUtil.getConnect();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            connection.setAutoCommit(false);
             preparedStatement.setString(1, email);
             int affectedRows = preparedStatement.executeUpdate();
+            ensurePrimaryAccount(connection);
+            connection.commit();
             if (affectedRows > 0) {
                 LOGGER.info("Account deleted successfully for username={}.", LogHelper.maskEmail(email));
             } else {

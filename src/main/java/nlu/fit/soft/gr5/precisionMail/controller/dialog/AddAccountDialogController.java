@@ -87,6 +87,7 @@ public class AddAccountDialogController {
     private boolean closingAfterSave;
     private boolean loadingConfiguration;
     private boolean applyingProviderPreset;
+    private boolean editingExistingAccount;
 
     @FXML
     public void initialize() {
@@ -130,6 +131,52 @@ public class AddAccountDialogController {
     public void setStage(Stage stage) {
         this.stage = stage;
         this.stage.setOnCloseRequest(this::handleCloseRequest);
+    }
+
+    public void prepareNewAccount() {
+        loadingConfiguration = true;
+        try {
+            loadedAccount = null;
+            editingExistingAccount = false;
+            MailServerConfig defaults = new MailServerConfig();
+            displayNameField.clear();
+            usernameField.clear();
+            passwordField.clear();
+            primaryCheckBox.setSelected(true);
+            smtpHostField.setText(defaults.getSmtpHost());
+            smtpPortField.setText(String.valueOf(defaults.getSmtpPort()));
+            imapHostField.setText(defaults.getImapHost());
+            imapPortField.setText(String.valueOf(defaults.getImapPort()));
+            smtpSecurityModeComboBox.setValue(defaults.getSmtpSecurityMode());
+            imapSecurityModeComboBox.setValue(defaults.getImapSecurityMode());
+            providerComboBox.setValue(MailProviderPreset.inferFrom(defaults));
+            statusLabel.setText("Nhập thông tin tài khoản mail mới.");
+            connectionValidated = false;
+            initialFingerprint = currentFingerprint();
+            setTesting(false);
+        } finally {
+            loadingConfiguration = false;
+        }
+    }
+
+    public void prepareEditAccount(Account account) {
+        if (account == null) {
+            prepareNewAccount();
+            return;
+        }
+
+        loadingConfiguration = true;
+        try {
+            loadedAccount = account;
+            editingExistingAccount = true;
+            populateAccountForm(account);
+            statusLabel.setText("Đang chỉnh sửa tài khoản hiện có.");
+            connectionValidated = false;
+            initialFingerprint = currentFingerprint();
+            setTesting(false);
+        } finally {
+            loadingConfiguration = false;
+        }
     }
 
     public void handleCancel(ActionEvent actionEvent) {
@@ -193,18 +240,8 @@ public class AddAccountDialogController {
                 providerComboBox.setValue(MailProviderPreset.inferFrom(defaults));
                 statusLabel.setText("Chưa có cấu hình. Vui lòng nhập thông tin mail server.");
             } else {
-                MailServerConfig config = loadedAccount.getMailServerConfig();
-                displayNameField.setText(loadedAccount.getDisplayName());
-                usernameField.setText(loadedAccount.getUsername());
-                passwordField.setText(loadedAccount.getPassword());
-                primaryCheckBox.setSelected(loadedAccount.isPrimary());
-                smtpHostField.setText(config.getSmtpHost());
-                smtpPortField.setText(String.valueOf(config.getSmtpPort()));
-                imapHostField.setText(config.getImapHost());
-                imapPortField.setText(String.valueOf(config.getImapPort()));
-                smtpSecurityModeComboBox.setValue(config.getSmtpSecurityMode());
-                imapSecurityModeComboBox.setValue(config.getImapSecurityMode());
-                providerComboBox.setValue(MailProviderPreset.inferFrom(config));
+                editingExistingAccount = true;
+                populateAccountForm(loadedAccount);
                 statusLabel.setText("Đã tải cấu hình hiện có.");
             }
             initialFingerprint = currentFingerprint();
@@ -427,7 +464,7 @@ public class AddAccountDialogController {
     private void setTesting(boolean testing) {
         providerComboBox.setDisable(testing);
         displayNameField.setDisable(testing);
-        usernameField.setDisable(testing);
+        usernameField.setDisable(testing || editingExistingAccount);
         passwordField.setDisable(testing);
         smtpHostField.setDisable(testing);
         smtpPortField.setDisable(testing);
@@ -503,5 +540,20 @@ public class AddAccountDialogController {
     private String displayNameFromForm(String username) {
         String displayName = textOf(displayNameField);
         return displayName.isBlank() ? username : displayName;
+    }
+
+    private void populateAccountForm(Account account) {
+        MailServerConfig config = account.getMailServerConfig();
+        displayNameField.setText(account.getDisplayName());
+        usernameField.setText(account.getUsername());
+        passwordField.setText(account.getPassword());
+        primaryCheckBox.setSelected(account.isPrimary());
+        smtpHostField.setText(config.getSmtpHost());
+        smtpPortField.setText(String.valueOf(config.getSmtpPort()));
+        imapHostField.setText(config.getImapHost());
+        imapPortField.setText(String.valueOf(config.getImapPort()));
+        smtpSecurityModeComboBox.setValue(config.getSmtpSecurityMode());
+        imapSecurityModeComboBox.setValue(config.getImapSecurityMode());
+        providerComboBox.setValue(MailProviderPreset.inferFrom(config));
     }
 }

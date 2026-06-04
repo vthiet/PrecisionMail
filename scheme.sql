@@ -2,6 +2,8 @@ create table if not exists accounts
 (
     id integer primary key autoincrement,
     email text not null unique,
+    display_name text,
+    is_primary integer not null default 0,
     encrypt_app_password text not null,
     smtp_host text not null default 'smtp.gmail.com',
     smtp_port integer not null default 587,

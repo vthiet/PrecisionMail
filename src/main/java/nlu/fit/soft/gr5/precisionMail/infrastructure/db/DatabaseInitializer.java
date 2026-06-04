@@ -44,6 +44,8 @@ public final class DatabaseInitializer {
                 (
                     id integer primary key autoincrement,
                     email text not null unique,
+                    display_name text,
+                    is_primary integer not null default 0,
                     encrypt_app_password text not null,
                     smtp_host text not null default 'smtp.gmail.com',
                     smtp_port integer not null default 587,
@@ -117,6 +119,8 @@ public final class DatabaseInitializer {
         Set<String> columns = getTableColumns(connection, "accounts");
         if (columns.containsAll(Set.of(
                 "email",
+                "display_name",
+                "is_primary",
                 "encrypt_app_password",
                 "smtp_host",
                 "smtp_port",
@@ -128,6 +132,7 @@ public final class DatabaseInitializer {
                 "created_at",
                 "updated_at"
         ))) {
+            ensurePrimaryAccount(connection);
             return;
         }
 
@@ -140,6 +145,8 @@ public final class DatabaseInitializer {
         }
 
         String emailColumn = columns.contains("email") ? "email" : "username";
+        String displayNameExpression = columns.contains("display_name") ? "display_name" : emailColumn;
+        String primaryExpression = columns.contains("is_primary") ? "is_primary" : "0";
         String passwordColumn = columns.contains("encrypt_app_password") ? "encrypt_app_password" : "password";
         String createdAtExpression = columns.contains("created_at") ? "created_at" : "datetime('now')";
         String updatedAtExpression = columns.contains("updated_at") ? "updated_at" : createdAtExpression;
@@ -160,6 +167,8 @@ public final class DatabaseInitializer {
                     insert or ignore into accounts(
                         id,
                         email,
+                        display_name,
+                        is_primary,
                         encrypt_app_password,
                         smtp_host,
                         smtp_port,
@@ -171,11 +180,13 @@ public final class DatabaseInitializer {
                         created_at,
                         updated_at
                     )
-                    select id, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    select id, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                     from accounts_legacy
                     where %s is not null and trim(%s) <> ''
                     """.formatted(
                     emailColumn,
+                    displayNameExpression,
+                    primaryExpression,
                     passwordColumn,
                     smtpHostExpression,
                     smtpPortExpression,
@@ -192,7 +203,29 @@ public final class DatabaseInitializer {
             st.execute("drop table accounts_legacy");
         }
 
+        ensurePrimaryAccount(connection);
+
         LOGGER.info("Migrated accounts table to current schema.");
+    }
+
+    private static void ensurePrimaryAccount(Connection connection) throws SQLException {
+        try (Statement st = connection.createStatement()) {
+            st.execute("""
+                    update accounts
+                    set is_primary = 1
+                    where id = (
+                        select id
+                        from accounts
+                        order by created_at asc, id asc
+                        limit 1
+                    )
+                    and not exists (
+                        select 1
+                        from accounts
+                        where is_primary = 1
+                    )
+                    """);
+        }
     }
 
     private static Set<String> getTableColumns(Connection connection, String tableName) throws SQLException {

@@ -28,11 +28,15 @@ class DatabaseInitializerTest {
             assertAll(
                     () -> assertTrue(columns.contains("security_mode")),
                     () -> assertTrue(columns.contains("smtp_security_mode")),
-                    () -> assertTrue(columns.contains("imap_security_mode"))
+                    () -> assertTrue(columns.contains("imap_security_mode")),
+                    () -> assertTrue(columns.contains("display_name")),
+                    () -> assertTrue(columns.contains("is_primary"))
             );
 
             try (ResultSet rs = statement.executeQuery("""
                     select email,
+                           display_name,
+                           is_primary,
                            smtp_security_mode,
                            imap_security_mode
                     from accounts
@@ -41,6 +45,8 @@ class DatabaseInitializerTest {
                 assertTrue(rs.next());
                 assertAll(
                         () -> assertEquals("imap143@example.com", rs.getString("email")),
+                        () -> assertEquals("imap143@example.com", rs.getString("display_name")),
+                        () -> assertEquals(1, rs.getInt("is_primary")),
                         () -> assertEquals("TLS", rs.getString("smtp_security_mode")),
                         () -> assertEquals("TLS", rs.getString("imap_security_mode"))
                 );
@@ -48,6 +54,8 @@ class DatabaseInitializerTest {
                 assertTrue(rs.next());
                 assertAll(
                         () -> assertEquals("imap993@example.com", rs.getString("email")),
+                        () -> assertEquals("imap993@example.com", rs.getString("display_name")),
+                        () -> assertEquals(0, rs.getInt("is_primary")),
                         () -> assertEquals("TLS", rs.getString("smtp_security_mode")),
                         () -> assertEquals("SSL", rs.getString("imap_security_mode"))
                 );

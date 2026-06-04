@@ -8,6 +8,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
@@ -47,6 +48,8 @@ public class AddAccountDialogController {
     @FXML
     public ComboBox<MailProviderPreset> providerComboBox;
     @FXML
+    public TextField displayNameField;
+    @FXML
     public TextField usernameField;
     @FXML
     public PasswordField passwordField;
@@ -68,6 +71,8 @@ public class AddAccountDialogController {
     public Button saveButton;
     @FXML
     public Button cancelButton;
+    @FXML
+    public CheckBox primaryCheckBox;
     @FXML
     public ProgressIndicator progressIndicator;
     @FXML
@@ -178,6 +183,7 @@ public class AddAccountDialogController {
             loadedAccount = accountService.findPrimaryConfiguration();
             if (loadedAccount == null) {
                 MailServerConfig defaults = new MailServerConfig();
+                primaryCheckBox.setSelected(true);
                 smtpHostField.setText(defaults.getSmtpHost());
                 smtpPortField.setText(String.valueOf(defaults.getSmtpPort()));
                 imapHostField.setText(defaults.getImapHost());
@@ -188,8 +194,10 @@ public class AddAccountDialogController {
                 statusLabel.setText("Chưa có cấu hình. Vui lòng nhập thông tin mail server.");
             } else {
                 MailServerConfig config = loadedAccount.getMailServerConfig();
+                displayNameField.setText(loadedAccount.getDisplayName());
                 usernameField.setText(loadedAccount.getUsername());
                 passwordField.setText(loadedAccount.getPassword());
+                primaryCheckBox.setSelected(loadedAccount.isPrimary());
                 smtpHostField.setText(config.getSmtpHost());
                 smtpPortField.setText(String.valueOf(config.getSmtpPort()));
                 imapHostField.setText(config.getImapHost());
@@ -209,8 +217,10 @@ public class AddAccountDialogController {
     }
 
     private void bindDirtyTracking() {
+        displayNameField.textProperty().addListener((observable, oldValue, newValue) -> markConnectionDirty());
         usernameField.textProperty().addListener((observable, oldValue, newValue) -> markConnectionDirty());
         passwordField.textProperty().addListener((observable, oldValue, newValue) -> markConnectionDirty());
+        primaryCheckBox.selectedProperty().addListener((observable, oldValue, newValue) -> markConnectionDirty());
         smtpHostField.textProperty().addListener((observable, oldValue, newValue) -> handleManualServerConfigurationChange());
         smtpPortField.textProperty().addListener((observable, oldValue, newValue) -> handleManualServerConfigurationChange());
         imapHostField.textProperty().addListener((observable, oldValue, newValue) -> handleManualServerConfigurationChange());
@@ -247,6 +257,8 @@ public class AddAccountDialogController {
         if (loadedAccount != null && loadedAccount.getId() != null) {
             account.setId(loadedAccount.getId());
         }
+        account.setDisplayName(displayNameFromForm(account.getUsername()));
+        account.setPrimary(primaryCheckBox.isSelected());
         account.setMailServerConfig(new MailServerConfig(
                 textOf(smtpHostField),
                 MailServerConfigValidator.parsePort(textOf(smtpPortField)),
@@ -268,6 +280,10 @@ public class AddAccountDialogController {
         }
         if (account.getPassword().isBlank()) {
             markInvalid(passwordField, "Mật khẩu ứng dụng không được để trống.");
+            valid = false;
+        }
+        if (account.getDisplayName().isBlank()) {
+            markInvalid(displayNameField, "Display name is required.");
             valid = false;
         }
         if (account.getMailServerConfig().getSmtpHost().isBlank()) {
@@ -410,6 +426,7 @@ public class AddAccountDialogController {
 
     private void setTesting(boolean testing) {
         providerComboBox.setDisable(testing);
+        displayNameField.setDisable(testing);
         usernameField.setDisable(testing);
         passwordField.setDisable(testing);
         smtpHostField.setDisable(testing);
@@ -421,6 +438,7 @@ public class AddAccountDialogController {
         testConnectionButton.setDisable(testing);
         cancelButton.setDisable(testing);
         saveButton.setDisable(testing || !connectionValidated);
+        primaryCheckBox.setDisable(testing);
         progressIndicator.setVisible(testing);
     }
 
@@ -444,8 +462,10 @@ public class AddAccountDialogController {
 
     private String currentFingerprint() {
         return String.join("|",
+                textOf(displayNameField),
                 textOf(usernameField),
                 passwordField.getText() == null ? "" : passwordField.getText(),
+                String.valueOf(primaryCheckBox.isSelected()),
                 textOf(smtpHostField),
                 textOf(smtpPortField),
                 textOf(imapHostField),
@@ -457,6 +477,7 @@ public class AddAccountDialogController {
     }
 
     private void clearValidation() {
+        clearInvalid(displayNameField);
         clearInvalid(usernameField);
         clearInvalid(passwordField);
         clearInvalid(smtpHostField);
@@ -477,5 +498,10 @@ public class AddAccountDialogController {
 
     private String textOf(TextField field) {
         return field.getText() == null ? "" : field.getText().trim();
+    }
+
+    private String displayNameFromForm(String username) {
+        String displayName = textOf(displayNameField);
+        return displayName.isBlank() ? username : displayName;
     }
 }

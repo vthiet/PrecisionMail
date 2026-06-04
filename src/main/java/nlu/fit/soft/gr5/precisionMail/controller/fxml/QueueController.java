@@ -38,10 +38,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class QueueController {
@@ -85,6 +82,18 @@ public class QueueController {
     private ComboBox<String> cbSortDirection;
 
     @FXML
+    private Label lblScheduled;
+
+    @FXML
+    private Label lblSent;
+
+    @FXML
+    private Label lblFailed;
+
+    @FXML
+    private Label lblCancelled;
+
+    @FXML
     public void initialize() {
         idColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(String.valueOf(data.getValue().id)));
         senderColumn.setCellValueFactory(data ->
@@ -121,11 +130,13 @@ public class QueueController {
         cbSortDirection.setValue("DESC");
 
         refreshQueue();
+        loadStatistics();
     }
 
     @FXML
     public void handleRefresh() {
-        refreshQueue();
+        refreshQueue();     loadStatistics();
+
     }
 
     @FXML
@@ -530,6 +541,55 @@ public class QueueController {
                                 "Không thể xóa email."
                         )
                 );
+            }
+        });
+    }
+
+    private void loadStatistics() {
+
+        AppExecutors.io().execute(() -> {
+
+            try {
+
+                Map<EmailStatus, Integer> stats =
+                        queueService.getStatistics();
+
+                Platform.runLater(() -> {
+
+                    lblScheduled.setText(
+                            "Scheduled: "
+                                    + stats.getOrDefault(
+                                    EmailStatus.SCHEDULED,
+                                    0
+                            )
+                    );
+
+                    lblSent.setText(
+                            "Sent: "
+                                    + stats.getOrDefault(
+                                    EmailStatus.SENT,
+                                    0
+                            )
+                    );
+
+                    lblFailed.setText(
+                            "Failed: "
+                                    + stats.getOrDefault(
+                                    EmailStatus.FAILED,
+                                    0
+                            )
+                    );
+
+                    lblCancelled.setText(
+                            "Cancelled: "
+                                    + stats.getOrDefault(
+                                    EmailStatus.CANCELLED,
+                                    0
+                            )
+                    );
+                });
+
+            } catch (Exception ignored) {
             }
         });
     }

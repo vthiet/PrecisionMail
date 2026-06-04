@@ -11,6 +11,7 @@ import nlu.fit.soft.gr5.precisionMail.service.QueueService;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 public class QueueServiceImpl implements QueueService {
     private final ScheduledEmailDao scheduledEmailDao = new ScheduledEmailDaoImpl();
@@ -134,5 +135,10 @@ public class QueueServiceImpl implements QueueService {
         scheduledEmailDao.delete(
                 scheduledEmailId
         );
+    }
+
+    @Override
+    public Map<EmailStatus, Integer> getStatistics() throws IOException {
+        return scheduledEmailDao.getStatistics();
     }
 }

@@ -17,12 +17,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ScheduledEmailDaoImpl implements ScheduledEmailDao {
@@ -550,6 +545,38 @@ public class ScheduledEmailDaoImpl implements ScheduledEmailDao {
                     "Failed to delete scheduled email.",
                     e
             );
+        }
+    }
+
+    @Override
+    public Map<EmailStatus, Integer> getStatistics() throws IOException {
+
+        String sql = """
+        SELECT status, COUNT(*) total
+        FROM scheduled_emails
+        GROUP BY status
+    """;
+
+        Map<EmailStatus, Integer> statistics = new EnumMap<>(EmailStatus.class);
+
+        try (Connection connection = DbUtil.getConnect();
+             PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+
+                EmailStatus status =
+                        EmailStatus.valueOf(rs.getString("status"));
+
+                int total = rs.getInt("total");
+
+                statistics.put(status, total);
+            }
+
+            return statistics;
+
+        } catch (SQLException e) {
+            throw new IOException("Failed to load statistics", e);
         }
     }
 }

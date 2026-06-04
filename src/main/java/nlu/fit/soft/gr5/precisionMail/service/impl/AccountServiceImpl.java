@@ -22,6 +22,8 @@ public class AccountServiceImpl implements AccountService {
     public Account save(String username, String password) {
         LOGGER.info("Account save requested for username={}.", LogHelper.maskEmail(username));
         Account account = new Account(username, CryptoUtil.encrypt(password), LocalDateTime.now());
+        account.setDisplayName(username);
+        account.setPrimary(true);
         return accountDao.save(account);
     }
 
@@ -34,9 +36,7 @@ public class AccountServiceImpl implements AccountService {
                 account.getCreatedAt() == null ? LocalDateTime.now() : account.getCreatedAt()
         );
         encrypted.setMailServerConfig(account.getMailServerConfig());
-        if (account.getId() != null) {
-            encrypted.setId(account.getId());
-        }
+        copyAccountMetadata(account, encrypted);
         return accountDao.save(encrypted);
     }
 
@@ -55,6 +55,7 @@ public class AccountServiceImpl implements AccountService {
                         decrypted.setId(account.getId());
                     }
                     decrypted.setMailServerConfig(account.getMailServerConfig());
+                    copyAccountMetadata(account, decrypted);
                     return decrypted;
                 })
                 .collect(Collectors.toList());
@@ -81,6 +82,7 @@ public class AccountServiceImpl implements AccountService {
                         decrypted.setId(account.getId());
                     }
                     decrypted.setMailServerConfig(account.getMailServerConfig());
+                    copyAccountMetadata(account, decrypted);
                     return decrypted;
                 })
                 .orElse(null);
@@ -98,9 +100,7 @@ public class AccountServiceImpl implements AccountService {
                 account.getCreatedAt() == null ? LocalDateTime.now() : account.getCreatedAt()
         );
         encrypted.setMailServerConfig(account.getMailServerConfig());
-        if (account.getId() != null) {
-            encrypted.setId(account.getId());
-        }
+        copyAccountMetadata(account, encrypted);
         accountDao.update(encrypted);
     }
 
@@ -120,5 +120,13 @@ public class AccountServiceImpl implements AccountService {
             LOGGER.warn("Stored password could not be decrypted, falling back to raw value for compatibility.");
             return encryptedPassword;
         }
+    }
+
+    private void copyAccountMetadata(Account source, Account target) {
+        if (source.getId() != null) {
+            target.setId(source.getId());
+        }
+        target.setDisplayName(source.getDisplayName());
+        target.setPrimary(source.isPrimary());
     }
 }

@@ -416,11 +416,12 @@ public class ComposeController {
         accountGroup.getToggles().clear();
 
         for (Account account : accounts) {
-            RadioMenuItem item = new RadioMenuItem(account.getUsername());
+            RadioMenuItem item = new RadioMenuItem(accountMenuLabel(account));
+            item.setUserData(account.getUsername());
             item.setToggleGroup(accountGroup);
             item.setOnAction(e -> {
                 currentAccount = account;
-                accountMenuButton.setText(account.getUsername());
+                accountMenuButton.setText(accountButtonLabel(account));
                 LOGGER.info("Active account changed to username={}.", LogHelper.maskEmail(account.getUsername()));
             });
 
@@ -429,20 +430,23 @@ public class ComposeController {
             if (selectedUsername != null && selectedUsername.equals(account.getUsername())) {
                 item.setSelected(true);
                 currentAccount = account;
-                accountMenuButton.setText(account.getUsername());
+                accountMenuButton.setText(accountButtonLabel(account));
             }
         }
 
         if (currentAccount == null && !accounts.isEmpty()) {
-            Account firstAccount = accounts.getFirst();
-            currentAccount = firstAccount;
-            accountMenuButton.setText(firstAccount.getUsername());
+            Account defaultAccount = accounts.stream()
+                    .filter(Account::isPrimary)
+                    .findFirst()
+                    .orElse(accounts.getFirst());
+            currentAccount = defaultAccount;
+            accountMenuButton.setText(accountButtonLabel(defaultAccount));
             accountGroup.getToggles().stream()
                     .filter(toggle -> toggle instanceof RadioMenuItem item
-                            && firstAccount.getUsername().equals(item.getText()))
+                            && defaultAccount.getUsername().equals(item.getUserData()))
                     .findFirst()
                     .ifPresent(toggle -> toggle.setSelected(true));
-            LOGGER.info("Default active account set to username={}.", LogHelper.maskEmail(firstAccount.getUsername()));
+            LOGGER.info("Default active account set to username={}.", LogHelper.maskEmail(defaultAccount.getUsername()));
         }
 
         if (currentAccount == null) {
@@ -451,6 +455,19 @@ public class ComposeController {
 
         accountMenuButton.getItems().add(new SeparatorMenuItem());
         accountMenuButton.getItems().add(new MenuItem("Customize From Address..."));
+    }
+
+    private String accountMenuLabel(Account account) {
+        String displayName = account.getDisplayName();
+        if (displayName.equals(account.getUsername())) {
+            return account.isPrimary() ? displayName + " (default)" : displayName;
+        }
+        String label = displayName + " <" + account.getUsername() + ">";
+        return account.isPrimary() ? label + " (default)" : label;
+    }
+
+    private String accountButtonLabel(Account account) {
+        return account.isPrimary() ? account.getDisplayName() + " (default)" : account.getDisplayName();
     }
 
     private void clearTextInput(TextInputControl... inputLst) {

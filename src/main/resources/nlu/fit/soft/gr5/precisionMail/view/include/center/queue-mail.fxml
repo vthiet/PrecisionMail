@@ -56,6 +56,13 @@
         </items>
     </ToolBar>
 
+    <HBox spacing="20">
+        <Label fx:id="lblScheduled"/>
+        <Label fx:id="lblSent"/>
+        <Label fx:id="lblFailed"/>
+        <Label fx:id="lblCancelled"/>
+    </HBox>
+
     <TableView fx:id="queueTable" VBox.vgrow="ALWAYS">
         <columns>
             <TableColumn fx:id="idColumn" text="ID" prefWidth="70"/>

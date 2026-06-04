@@ -18,18 +18,23 @@ public final class DatabaseInitializer {
     }
 
     public static void initialize() {
-        try (Connection connection = DbUtil.getConnect();
-             Statement st = connection.createStatement()) {
+        try (Connection connection = DbUtil.getConnect()) {
+            initialize(connection);
+            LOGGER.info("Database initialization completed successfully.");
+        } catch (SQLException e) {
+            LOGGER.error("Database initialization failed.", e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void initialize(Connection connection) throws SQLException {
+        try (Statement st = connection.createStatement()) {
             createAccountsTable(st);
             migrateAccountsTableIfNeeded(connection);
             createSentEmailsTable(st);
             createScheduledEmailsTable(st);
             migrateScheduledEmailsTableIfNeeded(connection);
             createIndexes(st);
-            LOGGER.info("Database initialization completed successfully.");
-        } catch (SQLException e) {
-            LOGGER.error("Database initialization failed.", e);
-            throw new RuntimeException(e);
         }
     }
 

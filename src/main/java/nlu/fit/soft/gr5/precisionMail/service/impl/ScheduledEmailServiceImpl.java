@@ -10,6 +10,7 @@ import nlu.fit.soft.gr5.precisionMail.model.Account;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
 import nlu.fit.soft.gr5.precisionMail.model.EmailStatus;
 import nlu.fit.soft.gr5.precisionMail.model.ScheduledEmail;
+import nlu.fit.soft.gr5.precisionMail.service.AccountRateLimiter;
 import nlu.fit.soft.gr5.precisionMail.service.AccountService;
 import nlu.fit.soft.gr5.precisionMail.service.QueueSearchCriteria;
 import nlu.fit.soft.gr5.precisionMail.service.ScheduledEmailService;
@@ -39,6 +40,8 @@ public class ScheduledEmailServiceImpl implements ScheduledEmailService {
     private final ScheduledEmailDao scheduledEmailDao = new ScheduledEmailDaoImpl();
     private final AccountService accountService = new AccountServiceImpl();
     private final Map<Long, ScheduledFuture<?>> activeTasks = new ConcurrentHashMap<>();
+
+    private final AccountRateLimiter rateLimiter = new AccountRateLimiter(60, Duration.ofMinutes(1));
 
     public static ScheduledEmailServiceImpl getInstance() {
         return INSTANCE;
@@ -241,6 +244,18 @@ public class ScheduledEmailServiceImpl implements ScheduledEmailService {
                 scheduledEmailDao.updateStatus(scheduledEmailId, EmailStatus.FAILED, "Configured sender account was not found.");
                 LOGGER.warn("Scheduled email failed because sender account is missing. taskId={}.", scheduledEmailId);
                 return;
+            }
+
+            if (account.getId() != null) {
+                if (!rateLimiter.tryAcquire(account.getId())) {
+                    Duration waitDuration = rateLimiter.estimateWait(account.getId());
+                    long delaySeconds = Math.max(1, waitDuration.toSeconds() + 1);
+
+                    LOGGER.warn("[RATE LIMIT] Tài khoản ID {} vượt quá tần suất! Tính toán thời gian chờ: {} giây.",
+                            account.getId(), delaySeconds);
+
+                    throw new MessagingException("Rate limit triggered. Need to backoff for " + delaySeconds + " seconds.");
+                }
             }
 
             LOGGER.info(

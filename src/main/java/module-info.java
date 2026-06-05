@@ -9,6 +9,8 @@ module precisionMail {
     requires com.fasterxml.jackson.datatype.jsr310;
     requires org.slf4j;
     requires ch.qos.logback.classic;
+    requires org.apache.poi.poi;
+    requires org.apache.poi.ooxml;
 
     opens nlu.fit.soft.gr5.precisionMail to javafx.fxml;
     opens nlu.fit.soft.gr5.precisionMail.controller to javafx.fxml;

@@ -7,13 +7,15 @@ import javafx.scene.chart.PieChart;
 import nlu.fit.soft.gr5.precisionMail.dao.ScheduledEmailDao;
 import nlu.fit.soft.gr5.precisionMail.dao.impl.ScheduledEmailDaoImpl;
 import nlu.fit.soft.gr5.precisionMail.model.EmailStatus;
-
+import javafx.scene.control.Label;
 import java.util.Map;
 
 public class StatisticsController {
     @FXML
     private PieChart statusChart;
     private final ScheduledEmailDao dao = new ScheduledEmailDaoImpl();
+    @FXML
+    private Label emptyLabel;
 
     @FXML
     public void initialize() {
@@ -26,6 +28,7 @@ public class StatisticsController {
             case MISSED -> "Bỏ lỡ";
             case CANCELLED -> "Đã hủy";
             case SENDING -> "Đang gửi";
+            case SCHEDULED -> "Chờ gửi";
             case RETRY_PENDING -> "Chờ gửi lại";
             case FAILED -> "Thất bại";
             default -> status.name();
@@ -34,8 +37,18 @@ public class StatisticsController {
 
     private void loadData() {
         Map<EmailStatus, Long> stats = dao.countByStatus();
-        ObservableList<PieChart.Data> pieChartData = FXCollections.observableArrayList();
 
+        // Kiểm tra dữ liệu rỗng
+        if (stats == null || stats.isEmpty()) {
+            statusChart.setVisible(false);
+            emptyLabel.setVisible(true);
+            return;
+        }
+
+        statusChart.setVisible(true);
+        emptyLabel.setVisible(false);
+
+        ObservableList<PieChart.Data> pieChartData = FXCollections.observableArrayList();
         stats.forEach((status, count) -> {
             String label = getVietnameseLabel(status) + " (" + count + ")";
             pieChartData.add(new PieChart.Data(label, count));

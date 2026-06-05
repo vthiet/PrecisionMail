@@ -8,6 +8,7 @@ public class Account {
     private String password;
     private String displayName;
     private boolean primary;
+    private boolean passwordDecryptionFailed;
     private MailServerConfig mailServerConfig;
     private LocalDateTime createdAt;
 
@@ -38,6 +39,10 @@ public class Account {
 
     public boolean isPrimary() {
         return primary;
+    }
+
+    public boolean isPasswordDecryptionFailed() {
+        return passwordDecryptionFailed;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -73,6 +78,10 @@ public class Account {
 
     public void setPrimary(boolean primary) {
         this.primary = primary;
+    }
+
+    public void setPasswordDecryptionFailed(boolean passwordDecryptionFailed) {
+        this.passwordDecryptionFailed = passwordDecryptionFailed;
     }
 
     public void setCreatedAt(LocalDateTime createdAt) {

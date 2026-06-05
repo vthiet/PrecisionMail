@@ -91,6 +91,7 @@ public class AddAccountDialogController {
     private boolean applyingProviderPreset;
     private boolean editingExistingAccount;
     private boolean retestRequired;
+    private boolean passwordDecryptionFailed;
 
     @FXML
     public void initialize() {
@@ -155,6 +156,7 @@ public class AddAccountDialogController {
             providerComboBox.setValue(MailProviderPreset.inferFrom(defaults));
             statusLabel.setText("Nhập thông tin tài khoản mail mới.");
             connectionValidated = false;
+            passwordDecryptionFailed = false;
             setRetestRequired(false);
             initialFingerprint = currentFingerprint();
             setTesting(false);
@@ -174,9 +176,8 @@ public class AddAccountDialogController {
             loadedAccount = account;
             editingExistingAccount = true;
             populateAccountForm(account);
-            statusLabel.setText("Đang chỉnh sửa tài khoản hiện có.");
+            applyPasswordDecryptionState(account);
             connectionValidated = false;
-            setRetestRequired(false);
             initialFingerprint = currentFingerprint();
             setTesting(false);
         } finally {
@@ -248,10 +249,12 @@ public class AddAccountDialogController {
             } else {
                 editingExistingAccount = true;
                 populateAccountForm(loadedAccount);
-                statusLabel.setText("Đã tải cấu hình hiện có.");
+                applyPasswordDecryptionState(loadedAccount);
             }
             initialFingerprint = currentFingerprint();
-            setRetestRequired(false);
+            if (loadedAccount == null || !loadedAccount.isPasswordDecryptionFailed()) {
+                setRetestRequired(false);
+            }
         } catch (RuntimeException ex) {
             LOGGER.error("Failed to load existing mail-server configuration.", ex);
             statusLabel.setText("Không thể tải cấu hình hiện có.");
@@ -276,6 +279,7 @@ public class AddAccountDialogController {
             return;
         }
 
+        passwordDecryptionFailed = false;
         boolean wasValidated = connectionValidated;
         connectionValidated = false;
         if (saveButton != null) {
@@ -335,6 +339,10 @@ public class AddAccountDialogController {
         }
         if (account.getPassword().isBlank()) {
             markInvalid(passwordField, "Mật khẩu ứng dụng không được để trống.");
+            valid = false;
+        }
+        if (passwordDecryptionFailed) {
+            markInvalid(passwordField, "Không thể giải mã App Password đã lưu. Vui lòng nhập lại App Password.");
             valid = false;
         }
         if (account.getDisplayName().isBlank()) {
@@ -578,7 +586,7 @@ public class AddAccountDialogController {
         MailServerConfig config = account.getMailServerConfig();
         displayNameField.setText(account.getDisplayName());
         usernameField.setText(account.getUsername());
-        passwordField.setText(account.getPassword());
+        passwordField.setText(account.isPasswordDecryptionFailed() ? "" : account.getPassword());
         primaryCheckBox.setSelected(account.isPrimary());
         smtpHostField.setText(config.getSmtpHost());
         smtpPortField.setText(String.valueOf(config.getSmtpPort()));
@@ -587,5 +595,19 @@ public class AddAccountDialogController {
         smtpSecurityModeComboBox.setValue(config.getSmtpSecurityMode());
         imapSecurityModeComboBox.setValue(config.getImapSecurityMode());
         providerComboBox.setValue(MailProviderPreset.inferFrom(config));
+    }
+
+    private void applyPasswordDecryptionState(Account account) {
+        passwordDecryptionFailed = account.isPasswordDecryptionFailed();
+        if (passwordDecryptionFailed) {
+            connectionValidated = false;
+            saveButton.setDisable(true);
+            markInvalid(passwordField, "Không thể giải mã App Password đã lưu. Vui lòng nhập lại App Password.");
+            statusLabel.setText("Không thể giải mã App Password đã lưu. Vui lòng nhập lại mật khẩu và kiểm tra kết nối.");
+            setRetestRequired(true);
+            return;
+        }
+        setRetestRequired(false);
+        statusLabel.setText(editingExistingAccount ? "Đã tải cấu hình hiện có." : "Nhập thông tin tài khoản mail mới.");
     }
 }

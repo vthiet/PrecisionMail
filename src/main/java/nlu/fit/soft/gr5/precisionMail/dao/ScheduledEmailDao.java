@@ -6,6 +6,7 @@ import nlu.fit.soft.gr5.precisionMail.service.QueueSearchCriteria;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface ScheduledEmailDao {
@@ -32,4 +33,6 @@ public interface ScheduledEmailDao {
     List<ScheduledEmail> search(QueueSearchCriteria criteria) throws IOException;
 
     List<ScheduledEmail> findScheduled() throws IOException;
+
+    Map<EmailStatus, Long> countByStatus();
 }

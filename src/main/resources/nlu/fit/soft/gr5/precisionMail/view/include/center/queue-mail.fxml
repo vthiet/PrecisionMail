@@ -45,6 +45,8 @@
 
         <Button text="Reset"
                 onAction="#handleReset"/>
+        <Button text="Export Excel"
+                onAction="#handleExportExcel"/>
     </HBox>
 
     <ToolBar>

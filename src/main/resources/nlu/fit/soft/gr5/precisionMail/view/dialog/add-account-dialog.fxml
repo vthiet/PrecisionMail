@@ -103,6 +103,11 @@
                            visible="false"
                            prefWidth="22"
                            prefHeight="22"/>
+        <Label fx:id="retestRequiredLabel"
+               text="Cần kiểm tra lại"
+               visible="false"
+               managed="false"
+               style="-fx-background-color: #FEF3C7; -fx-text-fill: #92400E; -fx-padding: 3 8 3 8; -fx-background-radius: 10; -fx-font-weight: bold;"/>
         <Label fx:id="statusLabel" text="Sẵn sàng cấu hình."/>
     </HBox>
 

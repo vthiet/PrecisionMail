@@ -76,6 +76,8 @@ public class AddAccountDialogController {
     @FXML
     public ProgressIndicator progressIndicator;
     @FXML
+    public Label retestRequiredLabel;
+    @FXML
     public Label statusLabel;
 
     private Stage stage;
@@ -88,6 +90,7 @@ public class AddAccountDialogController {
     private boolean loadingConfiguration;
     private boolean applyingProviderPreset;
     private boolean editingExistingAccount;
+    private boolean retestRequired;
 
     @FXML
     public void initialize() {
@@ -152,6 +155,7 @@ public class AddAccountDialogController {
             providerComboBox.setValue(MailProviderPreset.inferFrom(defaults));
             statusLabel.setText("Nhập thông tin tài khoản mail mới.");
             connectionValidated = false;
+            setRetestRequired(false);
             initialFingerprint = currentFingerprint();
             setTesting(false);
         } finally {
@@ -172,6 +176,7 @@ public class AddAccountDialogController {
             populateAccountForm(account);
             statusLabel.setText("Đang chỉnh sửa tài khoản hiện có.");
             connectionValidated = false;
+            setRetestRequired(false);
             initialFingerprint = currentFingerprint();
             setTesting(false);
         } finally {
@@ -193,6 +198,7 @@ public class AddAccountDialogController {
 
         LOGGER.info("Mail-server test requested for username={}.", LogHelper.maskEmail(account.getUsername()));
         setTesting(true);
+        setRetestRequired(false);
         statusLabel.setText("Đang kiểm tra kết nối...");
 
         CompletableFuture
@@ -245,6 +251,7 @@ public class AddAccountDialogController {
                 statusLabel.setText("Đã tải cấu hình hiện có.");
             }
             initialFingerprint = currentFingerprint();
+            setRetestRequired(false);
         } catch (RuntimeException ex) {
             LOGGER.error("Failed to load existing mail-server configuration.", ex);
             statusLabel.setText("Không thể tải cấu hình hiện có.");
@@ -265,9 +272,20 @@ public class AddAccountDialogController {
     }
 
     private void markConnectionDirty() {
+        if (loadingConfiguration) {
+            return;
+        }
+
+        boolean wasValidated = connectionValidated;
         connectionValidated = false;
         if (saveButton != null) {
             saveButton.setDisable(true);
+        }
+        setRetestRequired(true);
+        if (statusLabel != null) {
+            statusLabel.setText(wasValidated
+                    ? "Cấu hình đã thay đổi. Vui lòng kiểm tra kết nối lại trước khi lưu."
+                    : "Cần kiểm tra kết nối trước khi lưu cấu hình.");
         }
     }
 
@@ -351,6 +369,7 @@ public class AddAccountDialogController {
         setTesting(false);
         if (throwable == null) {
             connectionValidated = true;
+            setRetestRequired(false);
             saveButton.setDisable(false);
             statusLabel.setText("Kiểm tra kết nối thành công.");
             AlertUtil.showInfo("Success", "Kiểm tra kết nối thành công!");
@@ -359,6 +378,7 @@ public class AddAccountDialogController {
         }
 
         connectionValidated = false;
+        setRetestRequired(true);
         saveButton.setDisable(true);
         Throwable cause = unwrap(throwable);
         if (cause instanceof AuthenticationFailedException) {
@@ -387,6 +407,7 @@ public class AddAccountDialogController {
 
         loadedAccount = savedAccount;
         initialFingerprint = currentFingerprint();
+        setRetestRequired(false);
         AccountRefreshService.publishAccountsChanged();
         LOGGER.info("Mail-server configuration saved successfully for username={}.", LogHelper.maskEmail(savedAccount.getUsername()));
         AlertUtil.showInfo("Success", "Lưu cấu hình thành công!");
@@ -477,6 +498,17 @@ public class AddAccountDialogController {
         saveButton.setDisable(testing || !connectionValidated);
         primaryCheckBox.setDisable(testing);
         progressIndicator.setVisible(testing);
+    }
+
+    private void setRetestRequired(boolean required) {
+        if (retestRequired == required && retestRequiredLabel != null) {
+            return;
+        }
+        retestRequired = required;
+        if (retestRequiredLabel != null) {
+            retestRequiredLabel.setVisible(required);
+            retestRequiredLabel.setManaged(required);
+        }
     }
 
     private boolean isConnectionFailure(Throwable cause) {

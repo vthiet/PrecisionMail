@@ -45,6 +45,8 @@
 
         <Button text="Reset"
                 onAction="#handleReset"/>
+        <Button text="Export Excel"
+                onAction="#handleExportExcel"/>
     </HBox>
 
     <ToolBar>
@@ -52,8 +54,16 @@
             <Button text="Xem chi tiết" onAction="#handleViewDetail"/>
             <Button text="Chỉnh sửa" onAction="#handleEditTask"/>
             <Button text="Hủy gửi" onAction="#handleCancelTask"/>
+            <Button text="Xóa" onAction="#handleDeleteTask"/>
         </items>
     </ToolBar>
+
+    <HBox spacing="20">
+        <Label fx:id="lblScheduled"/>
+        <Label fx:id="lblSent"/>
+        <Label fx:id="lblFailed"/>
+        <Label fx:id="lblCancelled"/>
+    </HBox>
 
     <TableView fx:id="queueTable" VBox.vgrow="ALWAYS">
         <columns>

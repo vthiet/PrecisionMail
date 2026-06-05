@@ -19,6 +19,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.stage.FileChooser;
 import nlu.fit.soft.gr5.precisionMail.infrastructure.async.AppExecutors;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
 import nlu.fit.soft.gr5.precisionMail.model.EmailStatus;
@@ -29,19 +30,22 @@ import nlu.fit.soft.gr5.precisionMail.service.impl.QueueServiceImpl;
 import nlu.fit.soft.gr5.precisionMail.util.AlertUtil;
 import nlu.fit.soft.gr5.precisionMail.util.EmailUtil;
 import nlu.fit.soft.gr5.precisionMail.util.LogHelper;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class QueueController {
@@ -85,6 +89,18 @@ public class QueueController {
     private ComboBox<String> cbSortDirection;
 
     @FXML
+    private Label lblScheduled;
+
+    @FXML
+    private Label lblSent;
+
+    @FXML
+    private Label lblFailed;
+
+    @FXML
+    private Label lblCancelled;
+
+    @FXML
     public void initialize() {
         idColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(String.valueOf(data.getValue().id)));
         senderColumn.setCellValueFactory(data ->
@@ -121,12 +137,112 @@ public class QueueController {
         cbSortDirection.setValue("DESC");
 
         refreshQueue();
+        loadStatistics();
     }
 
     @FXML
     public void handleRefresh() {
-        refreshQueue();
+        refreshQueue();     loadStatistics();
+
     }
+
+    @FXML
+    private void handleExportExcel() {
+
+        FileChooser fileChooser = new FileChooser();
+
+        fileChooser.setTitle("Save Excel File");
+
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter(
+                        "Excel Files",
+                        "*.xlsx"
+                )
+        );
+
+        fileChooser.setInitialFileName(
+                "EmailQueue.xlsx"
+        );
+
+        File file = fileChooser.showSaveDialog(
+                queueTable.getScene().getWindow()
+        );
+
+        if (file == null) {
+            return;
+        }
+
+        try (Workbook workbook = new XSSFWorkbook()) {
+
+            Sheet sheet =
+                    workbook.createSheet("Email Queue");
+
+            Row header =
+                    sheet.createRow(0);
+
+            header.createCell(0).setCellValue("ID");
+            header.createCell(1).setCellValue("Sender");
+            header.createCell(2).setCellValue("Subject");
+            header.createCell(3).setCellValue("Recipients");
+            header.createCell(4).setCellValue("Scheduled At");
+            header.createCell(5).setCellValue("Status");
+
+            int rowIndex = 1;
+
+            for (ScheduledEmail email : queuedEmails) {
+
+                Row row =
+                        sheet.createRow(rowIndex++);
+
+                row.createCell(0)
+                        .setCellValue(email.id);
+
+                row.createCell(1)
+                        .setCellValue(email.email.from);
+
+                row.createCell(2)
+                        .setCellValue(email.email.subject);
+
+                row.createCell(3)
+                        .setCellValue(email.email.toLst.size());
+
+                row.createCell(4)
+                        .setCellValue(
+                                formatDateTime(
+                                        email.scheduledAt
+                                )
+                        );
+
+                row.createCell(5)
+                        .setCellValue(
+                                email.status.name()
+                        );
+            }
+
+            for (int i = 0; i < 6; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            try (FileOutputStream fos =
+                         new FileOutputStream(file)) {
+
+                workbook.write(fos);
+            }
+
+            AlertUtil.showInfo(
+                    "Export Success",
+                    "Excel file exported successfully."
+            );
+
+        } catch (Exception e) {
+
+            AlertUtil.showError(
+                    "Export Failed",
+                    e.getMessage()
+            );
+        }
+    }
+
 
     @FXML
     public void handleViewDetail() {
@@ -473,5 +589,113 @@ public class QueueController {
         cbStatus.setValue(null);
 
         refreshQueue();
+    }
+
+    @FXML
+    public void handleDeleteTask() {
+
+        ScheduledEmail selected =
+                selectedEmail();
+
+        if (selected == null) {
+            return;
+        }
+
+        Alert confirm =
+                new Alert(Alert.AlertType.CONFIRMATION);
+
+        confirm.setTitle("Xác nhận xóa");
+
+        confirm.setHeaderText(null);
+
+        confirm.setContentText(
+                "Bạn có chắc muốn xóa email này?"
+        );
+
+        if (confirm.showAndWait()
+                .orElse(ButtonType.CANCEL)
+                != ButtonType.OK) {
+
+            return;
+        }
+
+        AppExecutors.io().execute(() -> {
+
+            try {
+
+                queueService.delete(
+                        selected.id
+                );
+
+                Platform.runLater(() -> {
+
+                    AlertUtil.showInfo(
+                            "Thành công",
+                            "Đã xóa email khỏi hàng đợi."
+                    );
+
+                    refreshQueue();
+                });
+
+            } catch (Exception e) {
+
+                Platform.runLater(() ->
+
+                        AlertUtil.showError(
+                                "Lỗi",
+                                "Không thể xóa email."
+                        )
+                );
+            }
+        });
+    }
+
+    private void loadStatistics() {
+
+        AppExecutors.io().execute(() -> {
+
+            try {
+
+                    Map<EmailStatus, Integer> stats =
+                        queueService.getStatistics();
+
+                Platform.runLater(() -> {
+
+                    lblScheduled.setText(
+                            "Scheduled: "
+                                    + stats.getOrDefault(
+                                    EmailStatus.SCHEDULED,
+                                    0
+                            )
+                    );
+
+                    lblSent.setText(
+                            "Sent: "
+                                    + stats.getOrDefault(
+                                    EmailStatus.SENT,
+                                    0
+                            )
+                    );
+
+                    lblFailed.setText(
+                            "Failed: "
+                                    + stats.getOrDefault(
+                                    EmailStatus.FAILED,
+                                    0
+                            )
+                    );
+
+                    lblCancelled.setText(
+                            "Cancelled: "
+                                    + stats.getOrDefault(
+                                    EmailStatus.CANCELLED,
+                                    0
+                            )
+                    );
+                });
+
+            } catch (Exception ignored) {
+            }
+        });
     }
 }

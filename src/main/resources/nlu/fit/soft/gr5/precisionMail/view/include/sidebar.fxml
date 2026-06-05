@@ -112,7 +112,7 @@
     </Separator>
 
     <Button fx:id="btnSettings"
-            text="⚙️  Cài đặt"
+            text="⚙️  Tài khoản"
             maxWidth="Infinity"
             onAction="#handleSettings"
             styleClass="sidebar-footer-item"/>

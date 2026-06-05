@@ -12,6 +12,7 @@
 
                         <SeparatorMenuItem/>
 
+                        <MenuItem text="Manage Accounts" onAction="#handleManageAccounts"/>
                         <MenuItem text="Add Account" onAction="#handleAddAccount"/>
                     </items>
                 </Menu>

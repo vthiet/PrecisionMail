@@ -525,6 +525,62 @@ public class ScheduledEmailDaoImpl implements ScheduledEmailDao {
     }
 
     @Override
+    public void delete(Long id) throws IOException {
+
+        String sql = """
+        DELETE FROM scheduled_emails
+        WHERE id = ?
+    """;
+
+        try (Connection connection = DbUtil.getConnect();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setLong(1, id);
+
+            ps.executeUpdate();
+
+        } catch (SQLException e) {
+
+            throw new IOException(
+                    "Failed to delete scheduled email.",
+                    e
+            );
+        }
+    }
+
+    @Override
+    public Map<EmailStatus, Integer> getStatistics() throws IOException {
+
+        String sql = """
+        SELECT status, COUNT(*) total
+        FROM scheduled_emails
+        GROUP BY status
+    """;
+
+        Map<EmailStatus, Integer> statistics = new EnumMap<>(EmailStatus.class);
+
+        try (Connection connection = DbUtil.getConnect();
+             PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+
+                EmailStatus status =
+                        EmailStatus.valueOf(rs.getString("status"));
+
+                int total = rs.getInt("total");
+
+                statistics.put(status, total);
+            }
+
+            return statistics;
+
+        } catch (SQLException e) {
+            throw new IOException("Failed to load statistics", e);
+        }
+    }
+
+    @Override
     public Map<EmailStatus, Long> countByStatus() {
         String sql = "SELECT status, COUNT(*) as total FROM scheduled_emails GROUP BY status";
         Map<EmailStatus, Long> result = new java.util.HashMap<>();

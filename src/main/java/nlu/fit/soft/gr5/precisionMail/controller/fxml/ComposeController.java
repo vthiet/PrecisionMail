@@ -9,6 +9,7 @@ import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -17,6 +18,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -29,12 +32,14 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.HTMLEditor;
 import javafx.stage.FileChooser;
+import nlu.fit.soft.gr5.precisionMail.controller.dialog.PreviewEmailController;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
 import nlu.fit.soft.gr5.precisionMail.model.EmailStatus;
@@ -48,6 +53,7 @@ import nlu.fit.soft.gr5.precisionMail.service.impl.ScheduledEmailServiceImpl;
 import nlu.fit.soft.gr5.precisionMail.util.AlertUtil;
 import nlu.fit.soft.gr5.precisionMail.util.AttachmentValidator;
 import nlu.fit.soft.gr5.precisionMail.util.EmailUtil;
+import nlu.fit.soft.gr5.precisionMail.util.KeyboardShortcutUtil;
 import nlu.fit.soft.gr5.precisionMail.util.LogHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,6 +102,8 @@ public class ComposeController {
     public Button sendBtn;
     @FXML
     public Button cancelComposeBtn;
+    @FXML
+    public Button previewBtn;
     @FXML
     public Button importRecipientsBtn;
     @FXML
@@ -244,11 +252,111 @@ public class ComposeController {
         });
 
         AccountRefreshService.subscribe(this::reloadAccounts);
+        setupKeyboardShortcuts();
         reloadAccounts();
+    }
+
+    /**
+     * Setup keyboard shortcuts for Compose Email UI
+     * Shortcuts:
+     * - Ctrl + Enter: Send Email
+     * - Ctrl + A: Attach File (when not in editor)
+     * - Ctrl + Shift + C: Toggle CC field
+     * - Ctrl + Shift + B: Toggle BCC field
+     * - Escape: Cancel Compose
+     */
+    private void setupKeyboardShortcuts() {
+        // Add key event handler to toField
+        toField.setOnKeyPressed(event -> {
+            if (KeyboardShortcutUtil.isCtrlEnter(event)) {
+                KeyboardShortcutUtil.logShortcutUsed("Ctrl+Enter (Send Email)");
+                if (!sendBtn.isDisabled()) {
+                    try {
+                        handleSendMail(null);
+                    } catch (Exception e) {
+                        LOGGER.error("Error sending email from keyboard shortcut", e);
+                    }
+                }
+                event.consume();
+            } else if (KeyboardShortcutUtil.isCtrlShiftC(event)) {
+                KeyboardShortcutUtil.logShortcutUsed("Ctrl+Shift+C (Toggle CC)");
+                if (ccBtn.isVisible()) {
+                    toggleCc(null);
+                }
+                event.consume();
+            } else if (KeyboardShortcutUtil.isCtrlShiftB(event)) {
+                KeyboardShortcutUtil.logShortcutUsed("Ctrl+Shift+B (Toggle BCC)");
+                if (bccBtn.isVisible()) {
+                    toggleBcc(null);
+                }
+                event.consume();
+            } else if (KeyboardShortcutUtil.isEscape(event)) {
+                KeyboardShortcutUtil.logShortcutUsed("Escape (Cancel Compose)");
+                handleCancelCompose(null);
+                event.consume();
+            }
+        });
+
+        // Add key event handler to subjectField
+        subjectField.setOnKeyPressed(event -> {
+            if (KeyboardShortcutUtil.isCtrlEnter(event)) {
+                KeyboardShortcutUtil.logShortcutUsed("Ctrl+Enter (Send Email)");
+                if (!sendBtn.isDisabled()) {
+                    try {
+                        handleSendMail(null);
+                    } catch (Exception e) {
+                        LOGGER.error("Error sending email from keyboard shortcut", e);
+                    }
+                }
+                event.consume();
+            } else if (KeyboardShortcutUtil.isCtrlA(event) && !event.isShiftDown()) {
+                // Allow Ctrl+A in text field for selecting all
+            }
+        });
+
+        // Add key event handler to ccField
+        ccField.setOnKeyPressed(event -> {
+            if (KeyboardShortcutUtil.isCtrlEnter(event)) {
+                KeyboardShortcutUtil.logShortcutUsed("Ctrl+Enter (Send Email)");
+                if (!sendBtn.isDisabled()) {
+                    try {
+                        handleSendMail(null);
+                    } catch (Exception e) {
+                        LOGGER.error("Error sending email from keyboard shortcut", e);
+                    }
+                }
+                event.consume();
+            }
+        });
+
+        // Add key event handler to bccField
+        bccField.setOnKeyPressed(event -> {
+            if (KeyboardShortcutUtil.isCtrlEnter(event)) {
+                KeyboardShortcutUtil.logShortcutUsed("Ctrl+Enter (Send Email)");
+                if (!sendBtn.isDisabled()) {
+                    try {
+                        handleSendMail(null);
+                    } catch (Exception e) {
+                        LOGGER.error("Error sending email from keyboard shortcut", e);
+                    }
+                }
+                event.consume();
+            }
+        });
+
+        // Set button tooltips to show keyboard shortcuts
+        sendBtn.setTooltip(new Tooltip("Send Email (Ctrl+Enter)"));
+        previewBtn.setTooltip(new Tooltip("Preview Email before sending"));
+        cancelComposeBtn.setTooltip(new Tooltip("Cancel Compose (Esc)"));
+        ccBtn.setTooltip(new Tooltip("Toggle CC field (Ctrl+Shift+C)"));
+        bccBtn.setTooltip(new Tooltip("Toggle BCC field (Ctrl+Shift+B)"));
+
+        LOGGER.info("Keyboard shortcuts initialized successfully for Compose Email UI");
     }
 
     @FXML
     public void toggleCc(ActionEvent actionEvent) {
+
         ccBtn.setVisible(false);
     }
 
@@ -308,11 +416,12 @@ public class ComposeController {
         accountGroup.getToggles().clear();
 
         for (Account account : accounts) {
-            RadioMenuItem item = new RadioMenuItem(account.getUsername());
+            RadioMenuItem item = new RadioMenuItem(accountMenuLabel(account));
+            item.setUserData(account.getUsername());
             item.setToggleGroup(accountGroup);
             item.setOnAction(e -> {
                 currentAccount = account;
-                accountMenuButton.setText(account.getUsername());
+                accountMenuButton.setText(accountButtonLabel(account));
                 LOGGER.info("Active account changed to username={}.", LogHelper.maskEmail(account.getUsername()));
             });
 
@@ -321,20 +430,23 @@ public class ComposeController {
             if (selectedUsername != null && selectedUsername.equals(account.getUsername())) {
                 item.setSelected(true);
                 currentAccount = account;
-                accountMenuButton.setText(account.getUsername());
+                accountMenuButton.setText(accountButtonLabel(account));
             }
         }
 
         if (currentAccount == null && !accounts.isEmpty()) {
-            Account firstAccount = accounts.getFirst();
-            currentAccount = firstAccount;
-            accountMenuButton.setText(firstAccount.getUsername());
+            Account defaultAccount = accounts.stream()
+                    .filter(Account::isPrimary)
+                    .findFirst()
+                    .orElse(accounts.getFirst());
+            currentAccount = defaultAccount;
+            accountMenuButton.setText(accountButtonLabel(defaultAccount));
             accountGroup.getToggles().stream()
                     .filter(toggle -> toggle instanceof RadioMenuItem item
-                            && firstAccount.getUsername().equals(item.getText()))
+                            && defaultAccount.getUsername().equals(item.getUserData()))
                     .findFirst()
                     .ifPresent(toggle -> toggle.setSelected(true));
-            LOGGER.info("Default active account set to username={}.", LogHelper.maskEmail(firstAccount.getUsername()));
+            LOGGER.info("Default active account set to username={}.", LogHelper.maskEmail(defaultAccount.getUsername()));
         }
 
         if (currentAccount == null) {
@@ -343,6 +455,19 @@ public class ComposeController {
 
         accountMenuButton.getItems().add(new SeparatorMenuItem());
         accountMenuButton.getItems().add(new MenuItem("Customize From Address..."));
+    }
+
+    private String accountMenuLabel(Account account) {
+        String displayName = account.getDisplayName();
+        if (displayName.equals(account.getUsername())) {
+            return account.isPrimary() ? displayName + " (default)" : displayName;
+        }
+        String label = displayName + " <" + account.getUsername() + ">";
+        return account.isPrimary() ? label + " (default)" : label;
+    }
+
+    private String accountButtonLabel(Account account) {
+        return account.isPrimary() ? account.getDisplayName() + " (default)" : account.getDisplayName();
     }
 
     private void clearTextInput(TextInputControl... inputLst) {
@@ -388,6 +513,79 @@ public class ComposeController {
     private String formatSize(long bytes) {
         double mb = bytes / 1024.0 / 1024.0;
         return String.format("%.1f MB", mb);
+    }
+
+    /**
+     * Handle Preview Email button click
+     * Displays a preview dialog showing From, To, Cc, Bcc, Subject, Body, and Attachments
+     */
+    public void handlePreviewEmail(ActionEvent actionEvent) {
+        if (currentAccount == null) {
+            LOGGER.warn("Preview email rejected because no active account is selected.");
+            AlertUtil.showError("Error", "Please select an account.");
+            return;
+        }
+
+        if (!validateRecipientFields()) {
+            return;
+        }
+
+        Email email = buildEmail(currentAccount);
+        if (!hasAnyRecipient(email)) {
+            LOGGER.warn("Preview email rejected because recipient list is empty.");
+            AlertUtil.showError("Error", "Please enter at least one valid recipient.");
+            return;
+        }
+
+        try {
+            // Load preview dialog FXML
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/nlu/fit/soft/gr5/precisionMail/view/dialog/preview-email.fxml")
+            );
+            DialogPane previewPane = loader.load();
+            PreviewEmailController controller = loader.getController();
+
+            // Populate preview with email data
+            controller.setEmail(email, currentAccount.getUsername(), attachments);
+
+            // Create and show dialog
+            Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.setDialogPane(previewPane);
+            dialog.setTitle("Email Preview");
+            dialog.initOwner(sendBtn.getScene().getWindow());
+
+            // Handle Send button from preview dialog
+            Button sendButton = (Button) previewPane.lookupAll("Button").stream()
+                    .filter(btn -> btn instanceof Button && ((Button) btn).getText().equals("Send"))
+                    .findFirst()
+                    .orElse(null);
+            if (sendButton != null) {
+                sendButton.setOnAction(e -> {
+                    try {
+                        handleSendMail(null);
+                    } catch (Exception ex) {
+                        LOGGER.error("Error sending email from keyboard shortcut", ex);
+                    }
+                    dialog.close();
+                });
+            }
+
+            // Handle Cancel button
+            Button cancelButton = (Button) previewPane.lookupAll("Button").stream()
+                    .filter(btn -> btn instanceof Button && ((Button) btn).getText().equals("Cancel"))
+                    .findFirst()
+                    .orElse(null);
+            if (cancelButton != null) {
+                cancelButton.setOnAction(e -> dialog.close());
+            }
+
+            dialog.showAndWait();
+            LOGGER.info("Email preview dialog closed. sender={}", LogHelper.maskEmail(currentAccount.getUsername()));
+
+        } catch (Exception e) {
+            LOGGER.error("Failed to load preview dialog.", e);
+            AlertUtil.showError("Error", "Failed to load preview dialog: " + e.getMessage());
+        }
     }
 
     public void handleScheduleSendMail(ActionEvent actionEvent) {

@@ -24,23 +24,31 @@ public class AccountDaoImpl implements AccountDao {
         String sql = """
                 INSERT INTO accounts(
                     email,
+                    display_name,
+                    is_primary,
                     encrypt_app_password,
                     smtp_host,
                     smtp_port,
                     imap_host,
                     imap_port,
                     security_mode,
+                    smtp_security_mode,
+                    imap_security_mode,
                     created_at,
                     updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(email) DO UPDATE SET
+                    display_name = excluded.display_name,
+                    is_primary = excluded.is_primary,
                     encrypt_app_password = excluded.encrypt_app_password,
                     smtp_host = excluded.smtp_host,
                     smtp_port = excluded.smtp_port,
                     imap_host = excluded.imap_host,
                     imap_port = excluded.imap_port,
                     security_mode = excluded.security_mode,
+                    smtp_security_mode = excluded.smtp_security_mode,
+                    imap_security_mode = excluded.imap_security_mode,
                     updated_at = excluded.updated_at
                 """;
 
@@ -53,20 +61,27 @@ public class AccountDaoImpl implements AccountDao {
                                 Statement.RETURN_GENERATED_KEYS
                         )
         ) {
+            conn.setAutoCommit(false);
             String now = LocalDateTime.now().toString();
 
             preparedStatement.setString(1, account.getUsername());
-            preparedStatement.setString(2, account.getPassword());
+            preparedStatement.setString(2, account.getDisplayName());
+            preparedStatement.setInt(3, account.isPrimary() ? 1 : 0);
+            preparedStatement.setString(4, account.getPassword());
             MailServerConfig config = account.getMailServerConfig();
-            preparedStatement.setString(3, config.getSmtpHost());
-            preparedStatement.setInt(4, config.getSmtpPort());
-            preparedStatement.setString(5, config.getImapHost());
-            preparedStatement.setInt(6, config.getImapPort());
-            preparedStatement.setString(7, config.getSecurityMode().name());
-            preparedStatement.setString(8, now);
-            preparedStatement.setString(9, now);
+            preparedStatement.setString(5, config.getSmtpHost());
+            preparedStatement.setInt(6, config.getSmtpPort());
+            preparedStatement.setString(7, config.getImapHost());
+            preparedStatement.setInt(8, config.getImapPort());
+            preparedStatement.setString(9, config.getSmtpSecurityMode().name());
+            preparedStatement.setString(10, config.getSmtpSecurityMode().name());
+            preparedStatement.setString(11, config.getImapSecurityMode().name());
+            preparedStatement.setString(12, now);
+            preparedStatement.setString(13, now);
 
             preparedStatement.executeUpdate();
+            unsetOtherPrimaryAccounts(conn, account);
+            ensurePrimaryAccount(conn);
 
             try (ResultSet rs =
                          preparedStatement.getGeneratedKeys()) {
@@ -88,6 +103,7 @@ public class AccountDaoImpl implements AccountDao {
                     }
                 }
             }
+            conn.commit();
 
             LOGGER.info(
                     "Account persisted successfully for username={}.",
@@ -111,15 +127,19 @@ public class AccountDaoImpl implements AccountDao {
         String sql = """
                 select id,
                        email,
+                       display_name,
+                       is_primary,
                        encrypt_app_password,
                        smtp_host,
                        smtp_port,
                        imap_host,
                        imap_port,
                        security_mode,
+                       smtp_security_mode,
+                       imap_security_mode,
                        created_at
                 from accounts
-                order by created_at asc
+                order by is_primary desc, created_at asc
                 """;
 
         try (Connection connection = DbUtil.getConnect();
@@ -133,12 +153,15 @@ public class AccountDaoImpl implements AccountDao {
                         LocalDateTime.parse(rs.getString("created_at"))
                 );
                 account.setId(rs.getLong("id"));
+                account.setDisplayName(rs.getString("display_name"));
+                account.setPrimary(rs.getInt("is_primary") == 1);
                 account.setMailServerConfig(new MailServerConfig(
                         rs.getString("smtp_host"),
                         rs.getInt("smtp_port"),
                         rs.getString("imap_host"),
                         rs.getInt("imap_port"),
-                        parseSecurityMode(rs.getString("security_mode"))
+                        parseSecurityMode(rs.getString("smtp_security_mode")),
+                        parseSecurityMode(rs.getString("imap_security_mode"))
                 ));
                 result.add(account);
             }
@@ -160,12 +183,16 @@ public class AccountDaoImpl implements AccountDao {
         String sql = """
                 select id,
                        email,
+                       display_name,
+                       is_primary,
                        encrypt_app_password,
                        smtp_host,
                        smtp_port,
                        imap_host,
                        imap_port,
                        security_mode,
+                       smtp_security_mode,
+                       imap_security_mode,
                        created_at
                 from accounts
                 where lower(email) = lower(?)
@@ -195,29 +222,41 @@ public class AccountDaoImpl implements AccountDao {
 
         String sql = """
                 update accounts
-                set encrypt_app_password = ?,
+                set display_name = ?,
+                    is_primary = ?,
+                    encrypt_app_password = ?,
                     smtp_host = ?,
                     smtp_port = ?,
                     imap_host = ?,
                     imap_port = ?,
                     security_mode = ?,
+                    smtp_security_mode = ?,
+                    imap_security_mode = ?,
                     updated_at = ?
                 where lower(email) = lower(?)
                 """;
 
         try (Connection connection = DbUtil.getConnect();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            connection.setAutoCommit(false);
             MailServerConfig config = account.getMailServerConfig();
-            preparedStatement.setString(1, account.getPassword());
-            preparedStatement.setString(2, config.getSmtpHost());
-            preparedStatement.setInt(3, config.getSmtpPort());
-            preparedStatement.setString(4, config.getImapHost());
-            preparedStatement.setInt(5, config.getImapPort());
-            preparedStatement.setString(6, config.getSecurityMode().name());
-            preparedStatement.setString(7, LocalDateTime.now().toString());
-            preparedStatement.setString(8, account.getUsername());
+            preparedStatement.setString(1, account.getDisplayName());
+            preparedStatement.setInt(2, account.isPrimary() ? 1 : 0);
+            preparedStatement.setString(3, account.getPassword());
+            preparedStatement.setString(4, config.getSmtpHost());
+            preparedStatement.setInt(5, config.getSmtpPort());
+            preparedStatement.setString(6, config.getImapHost());
+            preparedStatement.setInt(7, config.getImapPort());
+            preparedStatement.setString(8, config.getSmtpSecurityMode().name());
+            preparedStatement.setString(9, config.getSmtpSecurityMode().name());
+            preparedStatement.setString(10, config.getImapSecurityMode().name());
+            preparedStatement.setString(11, LocalDateTime.now().toString());
+            preparedStatement.setString(12, account.getUsername());
 
             int affectedRows = preparedStatement.executeUpdate();
+            unsetOtherPrimaryAccounts(connection, account);
+            ensurePrimaryAccount(connection);
+            connection.commit();
             if (affectedRows > 0) {
                 LOGGER.info("Account updated successfully for username={}.", LogHelper.maskEmail(account.getUsername()));
             } else {
@@ -242,8 +281,11 @@ public class AccountDaoImpl implements AccountDao {
 
         try (Connection connection = DbUtil.getConnect();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            connection.setAutoCommit(false);
             preparedStatement.setString(1, email);
             int affectedRows = preparedStatement.executeUpdate();
+            ensurePrimaryAccount(connection);
+            connection.commit();
             if (affectedRows > 0) {
                 LOGGER.info("Account deleted successfully for username={}.", LogHelper.maskEmail(email));
             } else {
@@ -262,12 +304,15 @@ public class AccountDaoImpl implements AccountDao {
                 LocalDateTime.parse(rs.getString("created_at"))
         );
         account.setId(rs.getLong("id"));
+        account.setDisplayName(rs.getString("display_name"));
+        account.setPrimary(rs.getInt("is_primary") == 1);
         account.setMailServerConfig(new MailServerConfig(
                 rs.getString("smtp_host"),
                 rs.getInt("smtp_port"),
                 rs.getString("imap_host"),
                 rs.getInt("imap_port"),
-                parseSecurityMode(rs.getString("security_mode"))
+                parseSecurityMode(rs.getString("smtp_security_mode")),
+                parseSecurityMode(rs.getString("imap_security_mode"))
         ));
         return account;
     }
@@ -281,6 +326,41 @@ public class AccountDaoImpl implements AccountDao {
         } catch (IllegalArgumentException ex) {
             LOGGER.warn("Unknown security mode in database: {}. Falling back to TLS.", value);
             return SecurityMode.TLS;
+        }
+    }
+
+    private void unsetOtherPrimaryAccounts(Connection connection, Account account) throws SQLException {
+        if (!account.isPrimary()) {
+            return;
+        }
+
+        try (PreparedStatement statement = connection.prepareStatement("""
+                update accounts
+                set is_primary = 0
+                where lower(email) <> lower(?)
+                """)) {
+            statement.setString(1, account.getUsername());
+            statement.executeUpdate();
+        }
+    }
+
+    private void ensurePrimaryAccount(Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("""
+                update accounts
+                set is_primary = 1
+                where id = (
+                    select id
+                    from accounts
+                    order by created_at asc, id asc
+                    limit 1
+                )
+                and not exists (
+                    select 1
+                    from accounts
+                    where is_primary = 1
+                )
+                """)) {
+            statement.executeUpdate();
         }
     }
 }

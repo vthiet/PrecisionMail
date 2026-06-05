@@ -579,4 +579,25 @@ public class ScheduledEmailDaoImpl implements ScheduledEmailDao {
             throw new IOException("Failed to load statistics", e);
         }
     }
+
+    @Override
+    public Map<EmailStatus, Long> countByStatus() {
+        String sql = "SELECT status, COUNT(*) as total FROM scheduled_emails GROUP BY status";
+        Map<EmailStatus, Long> result = new java.util.HashMap<>();
+
+        try (Connection connection = DbUtil.getConnect();
+             PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                EmailStatus status = EmailStatus.valueOf(rs.getString("status"));
+                long count = rs.getLong("total");
+                result.put(status, count);
+            }
+            return result;
+        } catch (SQLException e) {
+            LOGGER.error("Failed to aggregate email statistics.", e);
+        }
+        return result;
+    }
 }

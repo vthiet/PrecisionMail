@@ -7,6 +7,7 @@ import nlu.fit.soft.gr5.precisionMail.service.NavigationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 public class SideBarController {
     private static final Logger LOGGER = LoggerFactory.getLogger(SideBarController.class);
     private static final String COMPOSE_VIEW = "center/compose-mail.fxml";
@@ -14,6 +15,7 @@ public class SideBarController {
     private static final String QUEUE_VIEW = "center/queue-mail.fxml";
     private static final String LOG_VIEW = "center/system-logs.fxml";
     private static final String ACCOUNTS_VIEW = "center/accounts-management.fxml";
+    private static final String STATISTICS_VIEW = "center/statistics-view.fxml";
     private static final String COMPOSE_ACTIVE_STYLE = "compose-button-active";
     private static final String NAV_ACTIVE_STYLE = "sidebar-nav-item-active";
 
@@ -27,6 +29,7 @@ public class SideBarController {
     public Button btnQueue;
     @FXML
     public Button btnLogs;
+    public Button btnStats;
     @FXML
     public Button btnSettings;
 
@@ -35,6 +38,11 @@ public class SideBarController {
         NavigationService navigationService = NavigationService.getInstance();
         navigationService.addNavigationObserver(this::updateActiveButton);
         updateActiveButton(navigationService.getCurrentView());
+    }
+
+    @FXML
+    public void handleStatsBtn(ActionEvent actionEvent) {
+        NavigationService.getInstance().navigateTo(STATISTICS_VIEW);
     }
 
     @FXML
@@ -73,6 +81,7 @@ public class SideBarController {
         setActive(btnQueue, NAV_ACTIVE_STYLE, QUEUE_VIEW.equals(currentView));
         setActive(btnLogs, NAV_ACTIVE_STYLE, LOG_VIEW.equals(currentView));
         setActive(btnSettings, NAV_ACTIVE_STYLE, ACCOUNTS_VIEW.equals(currentView));
+        setActive(btnStats, NAV_ACTIVE_STYLE, STATISTICS_VIEW.equals(currentView));
         setActive(btnDrafts, NAV_ACTIVE_STYLE, false);
     }
 

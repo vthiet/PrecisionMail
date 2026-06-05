@@ -35,4 +35,6 @@ public interface ScheduledEmailDao {
     List<ScheduledEmail> findScheduled() throws IOException;
     void delete(Long id) throws IOException;
     Map<EmailStatus, Integer> getStatistics() throws IOException;
+
+    Map<EmailStatus, Long> countByStatus();
 }

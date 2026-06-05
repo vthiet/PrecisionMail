@@ -68,6 +68,12 @@
             styleClass="sidebar-nav-item"
             onAction="#handleSentMailBtn"/>
 
+    <Button fx:id="btnStats"
+            text="📊 Thống kê"
+            maxWidth="Infinity"
+            styleClass="sidebar-nav-item"
+            onAction="#handleStatsBtn"/>
+
     <Button fx:id="btnLogs"
             text="📋  Log hệ thống"
             maxWidth="Infinity"

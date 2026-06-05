@@ -33,6 +33,7 @@ import java.util.Optional;
 
 public class AccountManagementController {
     private static final Logger LOGGER = LoggerFactory.getLogger(AccountManagementController.class);
+    private static final ButtonType DELETE_BUTTON = new ButtonType("Xóa", ButtonType.OK.getButtonData());
 
     @FXML
     public TableView<Account> accountTable;
@@ -107,7 +108,13 @@ public class AccountManagementController {
     @FXML
     public void handleDeleteAccount() {
         Account selected = selectedAccount();
-        if (selected == null || !confirmDelete(selected)) {
+        if (selected == null) {
+            statusLabel.setText("Chọn một tài khoản trước khi xóa.");
+            return;
+        }
+
+        if (!confirmDelete(selected)) {
+            statusLabel.setText("Đã hủy xóa tài khoản.");
             return;
         }
 
@@ -116,6 +123,7 @@ public class AccountManagementController {
             AccountRefreshService.publishAccountsChanged();
             LOGGER.info("Account deleted from management screen. username={}.", LogHelper.maskEmail(selected.getUsername()));
             loadAccounts();
+            statusLabel.setText("Đã xóa tài khoản " + selected.getDisplayName() + ".");
         } catch (RuntimeException ex) {
             LOGGER.error("Failed to delete account from management screen. username={}.", LogHelper.maskEmail(selected.getUsername()), ex);
             AlertUtil.showError("Xóa tài khoản thất bại", "Không thể xóa tài khoản đã chọn. Vui lòng thử lại.");
@@ -193,10 +201,31 @@ public class AccountManagementController {
     private boolean confirmDelete(Account account) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Xóa tài khoản");
-        alert.setHeaderText(null);
-        alert.setContentText("Xóa tài khoản " + account.getDisplayName() + " <" + account.getUsername() + ">?");
+        alert.setHeaderText("Xóa tài khoản " + account.getDisplayName() + "?");
+        alert.setContentText(deleteConfirmationMessage(account));
+        alert.getButtonTypes().setAll(DELETE_BUTTON, ButtonType.CANCEL);
         Optional<ButtonType> result = alert.showAndWait();
-        return result.orElse(ButtonType.CANCEL) == ButtonType.OK;
+        return result.orElse(ButtonType.CANCEL) == DELETE_BUTTON;
+    }
+
+    private String deleteConfirmationMessage(Account account) {
+        StringBuilder message = new StringBuilder()
+                .append("Email: ")
+                .append(account.getUsername())
+                .append(System.lineSeparator())
+                .append("Cấu hình SMTP/IMAP đã lưu cho tài khoản này sẽ bị xóa.");
+
+        if (account.isPrimary() && accounts.size() > 1) {
+            message.append(System.lineSeparator())
+                    .append("Tài khoản này đang là mặc định. Sau khi xóa, hệ thống sẽ tự chọn tài khoản còn lại làm mặc định.");
+        }
+
+        if (accounts.size() == 1) {
+            message.append(System.lineSeparator())
+                    .append("Đây là tài khoản cuối cùng. Sau khi xóa, bạn cần thêm tài khoản mới trước khi gửi mail.");
+        }
+
+        return message.toString();
     }
 
     private void updateActionState(Account selected) {

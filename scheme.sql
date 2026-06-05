@@ -26,3 +26,19 @@ create table if not exists recipient_groups
     created_at text not null,
     updated_at text not null
 );
+
+create table if not exists draft_emails
+(
+    id integer primary key autoincrement,
+    sender_email text not null,
+    to_recipients text,
+    cc_recipients text,
+    bcc_recipients text,
+    subject text,
+    body longtext,
+    attachment_paths text,
+    last_saved_at text not null,
+    created_at text not null,
+    updated_at text not null,
+    foreign key (sender_email) references accounts(email) on delete cascade
+    );

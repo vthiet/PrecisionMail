@@ -3,6 +3,7 @@ package nlu.fit.soft.gr5.precisionMail.util;
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
+import nlu.fit.soft.gr5.precisionMail.model.ConnectionTestProgress;
 import nlu.fit.soft.gr5.precisionMail.model.ConnectionTestResult;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
 import nlu.fit.soft.gr5.precisionMail.model.MailServerConfig;
@@ -20,6 +21,7 @@ import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -101,11 +103,19 @@ public class EmailUtil {
     }
 
     public static ConnectionTestResult validateConnection(Account account) {
+        return validateConnection(account, null);
+    }
+
+    public static ConnectionTestResult validateConnection(
+            Account account,
+            Consumer<ConnectionTestProgress> progressListener
+    ) {
         MailServerConfig config = account.getMailServerConfig();
         Properties props = MailConnectionPropertiesBuilder.validationProperties(config);
         Session session = Session.getInstance(props);
         LOGGER.info("Testing mail server connection for sender={}.", LogHelper.maskEmail(account.getUsername()));
 
+        notifyProgress(progressListener, ConnectionTestProgress.SMTP_TESTING);
         try (Transport transport = session.getTransport("smtp")) {
             transport.connect(
                     config.getSmtpHost(),
@@ -114,9 +124,16 @@ public class EmailUtil {
                     account.getPassword()
             );
         } catch (MessagingException ex) {
-            return connectionFailure(ConnectionTestResult.Type.SMTP_FAILED, "SMTP connection test failed.", ex);
+            return connectionFailure(
+                    ConnectionTestResult.Type.SMTP_FAILED,
+                    ConnectionTestResult.Step.SMTP,
+                    "SMTP connection test failed.",
+                    ex
+            );
         }
 
+        notifyProgress(progressListener, ConnectionTestProgress.SMTP_SUCCEEDED);
+        notifyProgress(progressListener, ConnectionTestProgress.IMAP_TESTING);
         try (Store store = session.getStore("imap")) {
             store.connect(
                     config.getImapHost(),
@@ -125,27 +142,53 @@ public class EmailUtil {
                     account.getPassword()
             );
         } catch (MessagingException ex) {
-            return connectionFailure(ConnectionTestResult.Type.IMAP_FAILED, "IMAP connection test failed.", ex);
+            return connectionFailure(
+                    ConnectionTestResult.Type.IMAP_FAILED,
+                    ConnectionTestResult.Step.IMAP,
+                    "IMAP connection test failed.",
+                    ex
+            );
         }
 
+        notifyProgress(progressListener, ConnectionTestProgress.IMAP_SUCCEEDED);
         return ConnectionTestResult.success();
     }
 
     private static ConnectionTestResult connectionFailure(
             ConnectionTestResult.Type protocolFailureType,
+            ConnectionTestResult.Step step,
             String message,
             MessagingException ex
     ) {
         if (hasCause(ex, AuthenticationFailedException.class)) {
-            return ConnectionTestResult.failure(ConnectionTestResult.Type.AUTH_FAILED, "Mail server authentication failed.", ex);
+            return ConnectionTestResult.failure(
+                    ConnectionTestResult.Type.AUTH_FAILED,
+                    step,
+                    "Mail server authentication failed.",
+                    ex
+            );
         }
         if (hasCause(ex, SocketTimeoutException.class)
                 || hasCause(ex, ConnectException.class)
                 || hasCause(ex, UnknownHostException.class)
                 || hasCause(ex, NoRouteToHostException.class)) {
-            return ConnectionTestResult.failure(ConnectionTestResult.Type.TIMEOUT, "Mail server connection timed out or failed.", ex);
+            return ConnectionTestResult.failure(
+                    ConnectionTestResult.Type.TIMEOUT,
+                    step,
+                    "Mail server connection timed out or failed.",
+                    ex
+            );
         }
-        return ConnectionTestResult.failure(protocolFailureType, message, ex);
+        return ConnectionTestResult.failure(protocolFailureType, step, message, ex);
+    }
+
+    private static void notifyProgress(
+            Consumer<ConnectionTestProgress> progressListener,
+            ConnectionTestProgress progress
+    ) {
+        if (progressListener != null) {
+            progressListener.accept(progress);
+        }
     }
 
     private static boolean hasCause(Throwable throwable, Class<? extends Throwable> expectedType) {

@@ -17,6 +17,7 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import nlu.fit.soft.gr5.precisionMail.infrastructure.async.AppExecutors;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
+import nlu.fit.soft.gr5.precisionMail.model.ConnectionTestProgress;
 import nlu.fit.soft.gr5.precisionMail.model.ConnectionTestResult;
 import nlu.fit.soft.gr5.precisionMail.model.MailServerConfig;
 import nlu.fit.soft.gr5.precisionMail.model.MailProviderPreset;
@@ -197,10 +198,13 @@ public class AddAccountDialogController {
         LOGGER.info("Mail-server test requested for username={}.", LogHelper.maskEmail(account.getUsername()));
         setTesting(true);
         setRetestRequired(false);
-        statusLabel.setText("Đang kiểm tra kết nối...");
+        statusLabel.setText("Đang kiểm tra SMTP...");
 
         CompletableFuture
-                .supplyAsync(() -> emailService.validateConnection(account), AppExecutors.io())
+                .supplyAsync(
+                        () -> emailService.validateConnection(account, this::updateConnectionTestProgress),
+                        AppExecutors.io()
+                )
                 .whenComplete((result, throwable) -> Platform.runLater(() -> handleTestCompleted(account, result, throwable)));
     }
 
@@ -387,7 +391,10 @@ public class AddAccountDialogController {
         ConnectionTestResult.Type failureType = result == null
                 ? ConnectionTestResult.Type.UNKNOWN_FAILED
                 : result.type();
-        showConnectionTestFailure(account, failureType, result == null ? null : result.cause());
+        ConnectionTestResult.Step failureStep = result == null
+                ? ConnectionTestResult.Step.UNKNOWN
+                : result.step();
+        showConnectionTestFailure(account, failureType, failureStep, result == null ? null : result.cause());
     }
 
     private void handleSaveCompleted(Account savedAccount, Throwable throwable) {
@@ -518,20 +525,42 @@ public class AddAccountDialogController {
         connectionValidated = false;
         setRetestRequired(true);
         saveButton.setDisable(true);
-        showConnectionTestFailure(account, ConnectionTestResult.Type.UNKNOWN_FAILED, cause);
+        showConnectionTestFailure(account, ConnectionTestResult.Type.UNKNOWN_FAILED, ConnectionTestResult.Step.UNKNOWN, cause);
     }
 
     private void showConnectionTestFailure(
             Account account,
             ConnectionTestResult.Type type,
+            ConnectionTestResult.Step step,
             Throwable cause
     ) {
         LOGGER.warn(
-                "Mail-server test failed for username={}. type={}.",
+                "Mail-server test failed for username={}. type={}, step={}.",
                 LogHelper.maskEmail(account.getUsername()),
                 type,
+                step,
                 cause
         );
+
+        if (type == ConnectionTestResult.Type.AUTH_FAILED) {
+            statusLabel.setText(connectionFailureStatus(step, "xác thực thất bại"));
+            AlertUtil.showError(
+                    "Authentication Error",
+                    connectionFailureMessage(step, "Xác thực thất bại.")
+                            + " Vui lòng kiểm tra lại địa chỉ Email và Mật khẩu ứng dụng."
+            );
+            return;
+        }
+
+        if (type == ConnectionTestResult.Type.TIMEOUT) {
+            statusLabel.setText(connectionFailureStatus(step, "không thể kết nối tới máy chủ"));
+            AlertUtil.showError(
+                    "Connection Error",
+                    connectionFailureMessage(step, "Không thể kết nối tới máy chủ.")
+                            + " Vui lòng kiểm tra lại đường truyền Internet, host và port."
+            );
+            return;
+        }
 
         switch (type) {
             case AUTH_FAILED -> {
@@ -570,6 +599,33 @@ public class AddAccountDialogController {
                 );
             }
         }
+    }
+
+    private void updateConnectionTestProgress(ConnectionTestProgress progress) {
+        Platform.runLater(() -> {
+            switch (progress) {
+                case SMTP_TESTING -> statusLabel.setText("Đang kiểm tra SMTP...");
+                case SMTP_SUCCEEDED -> statusLabel.setText("SMTP thành công. Đang chuẩn bị kiểm tra IMAP...");
+                case IMAP_TESTING -> statusLabel.setText("Đang kiểm tra IMAP...");
+                case IMAP_SUCCEEDED -> statusLabel.setText("IMAP thành công. Đang hoàn tất kiểm tra...");
+            }
+        });
+    }
+
+    private String connectionFailureStatus(ConnectionTestResult.Step step, String detail) {
+        return switch (step) {
+            case SMTP -> "SMTP " + detail + ".";
+            case IMAP -> "IMAP " + detail + ".";
+            default -> "Kiểm tra kết nối " + detail + ".";
+        };
+    }
+
+    private String connectionFailureMessage(ConnectionTestResult.Step step, String fallbackMessage) {
+        return switch (step) {
+            case SMTP -> "Lỗi ở bước kiểm tra SMTP.";
+            case IMAP -> "Lỗi ở bước kiểm tra IMAP.";
+            default -> fallbackMessage;
+        };
     }
 
     private String currentFingerprint() {

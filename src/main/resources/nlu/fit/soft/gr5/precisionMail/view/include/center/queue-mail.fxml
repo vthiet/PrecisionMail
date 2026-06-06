@@ -55,6 +55,10 @@
             <Button text="Chỉnh sửa" onAction="#handleEditTask"/>
             <Button text="Hủy gửi" onAction="#handleCancelTask"/>
             <Button text="Xóa" onAction="#handleDeleteTask"/>
+            <Button fx:id="btnToggleQueue"
+                    text="⏸ Tạm dừng hàng đợi"
+                    onAction="#handleToggleQueue"
+                    style="-fx-base: #3b82f6; -fx-text-fill: white;" />
         </items>
     </ToolBar>
 

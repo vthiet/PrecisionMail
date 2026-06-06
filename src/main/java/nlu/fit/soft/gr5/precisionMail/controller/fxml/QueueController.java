@@ -4,18 +4,10 @@ import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -26,7 +18,9 @@ import nlu.fit.soft.gr5.precisionMail.model.EmailStatus;
 import nlu.fit.soft.gr5.precisionMail.model.ScheduledEmail;
 import nlu.fit.soft.gr5.precisionMail.service.QueueSearchCriteria;
 import nlu.fit.soft.gr5.precisionMail.service.QueueService;
+import nlu.fit.soft.gr5.precisionMail.service.ScheduledEmailService;
 import nlu.fit.soft.gr5.precisionMail.service.impl.QueueServiceImpl;
+import nlu.fit.soft.gr5.precisionMail.service.impl.ScheduledEmailServiceImpl;
 import nlu.fit.soft.gr5.precisionMail.util.AlertUtil;
 import nlu.fit.soft.gr5.precisionMail.util.EmailUtil;
 import nlu.fit.soft.gr5.precisionMail.util.LogHelper;
@@ -75,6 +69,8 @@ public class QueueController {
 
     private final QueueService queueService = new QueueServiceImpl();
     private final ObservableList<ScheduledEmail> queuedEmails = FXCollections.observableArrayList();
+    public Button btnToggleQueue;
+    private final ScheduledEmailService service = ScheduledEmailServiceImpl.getInstance();
 
     @FXML
     private TextField txtKeyword;
@@ -381,6 +377,9 @@ public class QueueController {
     }
 
     private boolean ensureCanModify(ScheduledEmail scheduledEmail) {
+        if (service.isQueuePaused()) {
+            return true;
+        }
         if (Duration.between(LocalDateTime.now(), scheduledEmail.scheduledAt).getSeconds() < MINIMUM_LEAD_TIME_SECONDS) {
             AlertUtil.showError(
                     "Không thể thay đổi",
@@ -467,7 +466,7 @@ public class QueueController {
                 form.datePicker.getValue(),
                 LocalTime.of(form.hourBox.getValue(), form.minuteBox.getValue())
         );
-        if (scheduledAt.isBefore(LocalDateTime.now().plusSeconds(MINIMUM_LEAD_TIME_SECONDS))) {
+        if (!service.isQueuePaused() && scheduledAt.isBefore(LocalDateTime.now().plusSeconds(MINIMUM_LEAD_TIME_SECONDS))) {
             AlertUtil.showError("Dữ liệu không hợp lệ", "Thời gian gửi mới phải cách hiện tại tối thiểu 60 giây.");
             return false;
         }
@@ -697,5 +696,18 @@ public class QueueController {
             } catch (Exception ignored) {
             }
         });
+    }
+
+    @FXML
+    public void handleToggleQueue(ActionEvent event) {
+        if (service.isQueuePaused()) {
+            service.resumeQueue();
+            btnToggleQueue.setText("⏸ Tạm dừng hàng đợi");
+            btnToggleQueue.setStyle("-fx-background-color: #3b82f6;");
+        } else {
+            service.pauseQueue();
+            btnToggleQueue.setText("▶ Tiếp tục hàng đợi");
+            btnToggleQueue.setStyle("-fx-background-color: #ef4444;");
+        }
     }
 }

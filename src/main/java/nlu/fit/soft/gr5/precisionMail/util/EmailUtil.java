@@ -3,6 +3,7 @@ package nlu.fit.soft.gr5.precisionMail.util;
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
+import nlu.fit.soft.gr5.precisionMail.model.ConnectionTestResult;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
 import nlu.fit.soft.gr5.precisionMail.model.MailServerConfig;
 import org.slf4j.Logger;
@@ -10,6 +11,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.NoRouteToHostException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashSet;
@@ -95,7 +100,7 @@ public class EmailUtil {
         });
     }
 
-    public static void validateConnection(Account account) throws MessagingException {
+    public static ConnectionTestResult validateConnection(Account account) {
         MailServerConfig config = account.getMailServerConfig();
         Properties props = MailConnectionPropertiesBuilder.validationProperties(config);
         Session session = Session.getInstance(props);
@@ -108,6 +113,8 @@ public class EmailUtil {
                     account.getUsername(),
                     account.getPassword()
             );
+        } catch (MessagingException ex) {
+            return connectionFailure(ConnectionTestResult.Type.SMTP_FAILED, "SMTP connection test failed.", ex);
         }
 
         try (Store store = session.getStore("imap")) {
@@ -117,7 +124,43 @@ public class EmailUtil {
                     account.getUsername(),
                     account.getPassword()
             );
+        } catch (MessagingException ex) {
+            return connectionFailure(ConnectionTestResult.Type.IMAP_FAILED, "IMAP connection test failed.", ex);
         }
+
+        return ConnectionTestResult.success();
+    }
+
+    private static ConnectionTestResult connectionFailure(
+            ConnectionTestResult.Type protocolFailureType,
+            String message,
+            MessagingException ex
+    ) {
+        if (hasCause(ex, AuthenticationFailedException.class)) {
+            return ConnectionTestResult.failure(ConnectionTestResult.Type.AUTH_FAILED, "Mail server authentication failed.", ex);
+        }
+        if (hasCause(ex, SocketTimeoutException.class)
+                || hasCause(ex, ConnectException.class)
+                || hasCause(ex, UnknownHostException.class)
+                || hasCause(ex, NoRouteToHostException.class)) {
+            return ConnectionTestResult.failure(ConnectionTestResult.Type.TIMEOUT, "Mail server connection timed out or failed.", ex);
+        }
+        return ConnectionTestResult.failure(protocolFailureType, message, ex);
+    }
+
+    private static boolean hasCause(Throwable throwable, Class<? extends Throwable> expectedType) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (expectedType.isInstance(current)) {
+                return true;
+            }
+            if (current instanceof MessagingException messagingException && messagingException.getNextException() != null) {
+                current = messagingException.getNextException();
+            } else {
+                current = current.getCause();
+            }
+        }
+        return false;
     }
 
     public static void send(Account account, Email email) throws MessagingException, IOException {

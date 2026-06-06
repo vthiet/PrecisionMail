@@ -2,6 +2,7 @@ package nlu.fit.soft.gr5.precisionMail.service;
 
 import jakarta.mail.MessagingException;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
+import nlu.fit.soft.gr5.precisionMail.model.ConnectionTestResult;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
 
 import java.io.IOException;
@@ -14,7 +15,7 @@ public interface EmailService {
 
     CompletableFuture<SendResult> sendAsync(Account account, Email email);
 
-    void validateConnection(Account account) throws MessagingException;
+    ConnectionTestResult validateConnection(Account account);
 
     List<Email> findAll() throws IOException;
 

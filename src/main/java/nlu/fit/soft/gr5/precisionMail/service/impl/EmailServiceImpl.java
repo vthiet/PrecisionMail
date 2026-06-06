@@ -5,6 +5,7 @@ import nlu.fit.soft.gr5.precisionMail.dao.EmailDao;
 import nlu.fit.soft.gr5.precisionMail.dao.impl.EmailDaoImpl;
 import nlu.fit.soft.gr5.precisionMail.infrastructure.async.AppExecutors;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
+import nlu.fit.soft.gr5.precisionMail.model.ConnectionTestResult;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
 import nlu.fit.soft.gr5.precisionMail.model.EmailStatus;
 import nlu.fit.soft.gr5.precisionMail.service.EmailService;
@@ -73,9 +74,19 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    public void validateConnection(Account account) throws MessagingException {
-        EmailUtil.validateConnection(account);
-        LOGGER.info("Mail server connection validated for sender={}.", LogHelper.maskEmail(account.getUsername()));
+    public ConnectionTestResult validateConnection(Account account) {
+        ConnectionTestResult result = EmailUtil.validateConnection(account);
+        if (result.isSuccess()) {
+            LOGGER.info("Mail server connection validated for sender={}.", LogHelper.maskEmail(account.getUsername()));
+        } else {
+            LOGGER.warn(
+                    "Mail server connection test failed. sender={}, type={}.",
+                    LogHelper.maskEmail(account.getUsername()),
+                    result.type(),
+                    result.cause()
+            );
+        }
+        return result;
     }
 
     @Override

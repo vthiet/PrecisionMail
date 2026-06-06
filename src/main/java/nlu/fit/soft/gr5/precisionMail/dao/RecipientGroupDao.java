@@ -10,6 +10,7 @@ import nlu.fit.soft.gr5.precisionMail.model.RecipientGroup;
  * DAO Interface for RecipientGroup operations
  */
 public interface RecipientGroupDao {
+
     /**
      * Save new recipient group
      */

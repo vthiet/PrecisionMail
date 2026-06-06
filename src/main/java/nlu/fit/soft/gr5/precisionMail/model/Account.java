@@ -6,6 +6,9 @@ public class Account {
     private Long id;
     private String username;
     private String password;
+    private String displayName;
+    private boolean primary;
+    private boolean passwordDecryptionFailed;
     private MailServerConfig mailServerConfig;
     private LocalDateTime createdAt;
 
@@ -14,6 +17,7 @@ public class Account {
     public Account(String username, String password, LocalDateTime createdAt){
         this.username = username;
         this.password = password;
+        this.displayName = username;
         this.mailServerConfig = new MailServerConfig();
         this.createdAt = createdAt;
     }
@@ -24,6 +28,21 @@ public class Account {
 
     public String getPassword(){
         return this.password;
+    }
+
+    public String getDisplayName() {
+        if (displayName == null || displayName.isBlank()) {
+            return username;
+        }
+        return displayName;
+    }
+
+    public boolean isPrimary() {
+        return primary;
+    }
+
+    public boolean isPasswordDecryptionFailed() {
+        return passwordDecryptionFailed;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -51,6 +70,18 @@ public class Account {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public void setPrimary(boolean primary) {
+        this.primary = primary;
+    }
+
+    public void setPasswordDecryptionFailed(boolean passwordDecryptionFailed) {
+        this.passwordDecryptionFailed = passwordDecryptionFailed;
     }
 
     public void setCreatedAt(LocalDateTime createdAt) {

@@ -22,6 +22,8 @@ public class AccountServiceImpl implements AccountService {
     public Account save(String username, String password) {
         LOGGER.info("Account save requested for username={}.", LogHelper.maskEmail(username));
         Account account = new Account(username, CryptoUtil.encrypt(password), LocalDateTime.now());
+        account.setDisplayName(username);
+        account.setPrimary(true);
         return accountDao.save(account);
     }
 
@@ -34,9 +36,8 @@ public class AccountServiceImpl implements AccountService {
                 account.getCreatedAt() == null ? LocalDateTime.now() : account.getCreatedAt()
         );
         encrypted.setMailServerConfig(account.getMailServerConfig());
-        if (account.getId() != null) {
-            encrypted.setId(account.getId());
-        }
+        copyAccountMetadata(account, encrypted);
+        encrypted.setPasswordDecryptionFailed(false);
         return accountDao.save(encrypted);
     }
 
@@ -45,18 +46,7 @@ public class AccountServiceImpl implements AccountService {
         LOGGER.debug("Account list load requested.");
         List<Account> savedAccounts = accountDao.findAll();
         return savedAccounts.stream()
-                .map(account -> {
-                    Account decrypted = new Account(
-                            account.getUsername(),
-                            decryptPassword(account.getPassword()),
-                            account.getCreatedAt()
-                    );
-                    if (account.getId() != null) {
-                        decrypted.setId(account.getId());
-                    }
-                    decrypted.setMailServerConfig(account.getMailServerConfig());
-                    return decrypted;
-                })
+                .map(this::toDecryptedAccount)
                 .collect(Collectors.toList());
     }
 
@@ -71,18 +61,7 @@ public class AccountServiceImpl implements AccountService {
             return null;
         }
         return accountDao.findByEmail(emailAddress)
-                .map(account -> {
-                    Account decrypted = new Account(
-                            account.getUsername(),
-                            decryptPassword(account.getPassword()),
-                            account.getCreatedAt()
-                    );
-                    if (account.getId() != null) {
-                        decrypted.setId(account.getId());
-                    }
-                    decrypted.setMailServerConfig(account.getMailServerConfig());
-                    return decrypted;
-                })
+                .map(this::toDecryptedAccount)
                 .orElse(null);
     }
 
@@ -98,9 +77,8 @@ public class AccountServiceImpl implements AccountService {
                 account.getCreatedAt() == null ? LocalDateTime.now() : account.getCreatedAt()
         );
         encrypted.setMailServerConfig(account.getMailServerConfig());
-        if (account.getId() != null) {
-            encrypted.setId(account.getId());
-        }
+        copyAccountMetadata(account, encrypted);
+        encrypted.setPasswordDecryptionFailed(false);
         accountDao.update(encrypted);
     }
 
@@ -113,12 +91,40 @@ public class AccountServiceImpl implements AccountService {
         accountDao.deleteByEmail(emailAddress);
     }
 
-    private String decryptPassword(String encryptedPassword) {
+    private Account toDecryptedAccount(Account account) {
+        PasswordDecodeResult password = decryptPassword(account);
+        Account decrypted = new Account(
+                account.getUsername(),
+                password.value(),
+                account.getCreatedAt()
+        );
+        decrypted.setMailServerConfig(account.getMailServerConfig());
+        copyAccountMetadata(account, decrypted);
+        decrypted.setPasswordDecryptionFailed(password.failed());
+        return decrypted;
+    }
+
+    private PasswordDecodeResult decryptPassword(Account account) {
         try {
-            return CryptoUtil.decrypt(encryptedPassword);
+            return new PasswordDecodeResult(CryptoUtil.decrypt(account.getPassword()), false);
         } catch (RuntimeException | ExceptionInInitializerError ex) {
-            LOGGER.warn("Stored password could not be decrypted, falling back to raw value for compatibility.");
-            return encryptedPassword;
+            LOGGER.warn(
+                    "Stored app password could not be decrypted for username={}. User must re-enter it.",
+                    LogHelper.maskEmail(account.getUsername())
+            );
+            return new PasswordDecodeResult("", true);
         }
+    }
+
+    private void copyAccountMetadata(Account source, Account target) {
+        if (source.getId() != null) {
+            target.setId(source.getId());
+        }
+        target.setDisplayName(source.getDisplayName());
+        target.setPrimary(source.isPrimary());
+        target.setPasswordDecryptionFailed(source.isPasswordDecryptionFailed());
+    }
+
+    private record PasswordDecodeResult(String value, boolean failed) {
     }
 }

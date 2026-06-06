@@ -10,7 +10,9 @@ import nlu.fit.soft.gr5.precisionMail.model.Account;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
 import nlu.fit.soft.gr5.precisionMail.model.EmailStatus;
 import nlu.fit.soft.gr5.precisionMail.model.ScheduledEmail;
+import nlu.fit.soft.gr5.precisionMail.service.AccountRateLimiter;
 import nlu.fit.soft.gr5.precisionMail.service.AccountService;
+import nlu.fit.soft.gr5.precisionMail.service.QueueSearchCriteria;
 import nlu.fit.soft.gr5.precisionMail.service.ScheduledEmailService;
 import nlu.fit.soft.gr5.precisionMail.util.EmailUtil;
 import nlu.fit.soft.gr5.precisionMail.util.LogHelper;
@@ -38,6 +40,10 @@ public class ScheduledEmailServiceImpl implements ScheduledEmailService {
     private final ScheduledEmailDao scheduledEmailDao = new ScheduledEmailDaoImpl();
     private final AccountService accountService = new AccountServiceImpl();
     private final Map<Long, ScheduledFuture<?>> activeTasks = new ConcurrentHashMap<>();
+
+    private final AccountRateLimiter rateLimiter = new AccountRateLimiter(60, Duration.ofMinutes(1));
+
+    private volatile boolean isQueuePaused = false;
 
     public static ScheduledEmailServiceImpl getInstance() {
         return INSTANCE;
@@ -124,6 +130,9 @@ public class ScheduledEmailServiceImpl implements ScheduledEmailService {
 
     @Override
     public void updateQueuedEmail(Long scheduledEmailId, Email email, LocalDateTime newScheduledAt) {
+        if (!isQueuePaused) {
+            validateLeadTime(newScheduledAt);
+        }
         validateLeadTime(newScheduledAt);
         try {
             ScheduledEmail previous = scheduledEmailDao.findById(scheduledEmailId).orElse(null);
@@ -229,6 +238,11 @@ public class ScheduledEmailServiceImpl implements ScheduledEmailService {
             if (scheduledEmail == null || scheduledEmail.status == EmailStatus.CANCELLED) {
                 return;
             }
+            if (isQueuePaused) {
+                LOGGER.info("Tác vụ gửi taskId={} bị hoãn lại vì hàng đợi đang tạm dừng toàn cục.", scheduledEmailId);
+                return;
+            }
+
             if (scheduledEmail.status != EmailStatus.SCHEDULED && scheduledEmail.status != EmailStatus.RETRY_PENDING) {
                 LOGGER.info("Scheduled email ignored because status is no longer runnable. taskId={}, status={}.",
                         scheduledEmailId, scheduledEmail.status);
@@ -240,6 +254,18 @@ public class ScheduledEmailServiceImpl implements ScheduledEmailService {
                 scheduledEmailDao.updateStatus(scheduledEmailId, EmailStatus.FAILED, "Configured sender account was not found.");
                 LOGGER.warn("Scheduled email failed because sender account is missing. taskId={}.", scheduledEmailId);
                 return;
+            }
+
+            if (account.getId() != null) {
+                if (!rateLimiter.tryAcquire(account.getId())) {
+                    Duration waitDuration = rateLimiter.estimateWait(account.getId());
+                    long delaySeconds = Math.max(1, waitDuration.toSeconds() + 1);
+
+                    LOGGER.warn("[RATE LIMIT] Tài khoản ID {} vượt quá tần suất! Tính toán thời gian chờ: {} giây.",
+                            account.getId(), delaySeconds);
+
+                    throw new MessagingException("Rate limit triggered. Need to backoff for " + delaySeconds + " seconds.");
+                }
             }
 
             LOGGER.info(
@@ -306,6 +332,7 @@ public class ScheduledEmailServiceImpl implements ScheduledEmailService {
     }
 
     private void validateCanModify(ScheduledEmail scheduledEmail) {
+        if (isQueuePaused) return;
         if (scheduledEmail.scheduledAt.isBefore(LocalDateTime.now().plusSeconds(MINIMUM_LEAD_TIME_SECONDS))) {
             throw new IllegalArgumentException("Scheduled email can only be changed or cancelled at least 60 seconds before send time.");
         }
@@ -330,5 +357,50 @@ public class ScheduledEmailServiceImpl implements ScheduledEmailService {
             cause = cause.getCause();
         }
         return false;
+    }
+
+    public List<ScheduledEmail> search(
+            QueueSearchCriteria criteria)
+            throws IOException {
+
+        return scheduledEmailDao.search(criteria);
+    }
+
+    @Override
+    public void pauseQueue() {
+        this.isQueuePaused = true;
+        LOGGER.info("Hàng đợi gửi email toàn cục ĐÃ ĐƯỢC TẠM DỪNG.");
+    }
+
+    @Override
+    public void resumeQueue() {
+        if (!isQueuePaused) return;
+
+        this.isQueuePaused = false;
+        LOGGER.info("Hàng đợi gửi email toàn cục ĐÃ TIẾP TỤC HOẠT ĐỘNG. Đang xử lý các tác vụ tồn đọng...");
+
+        AppExecutors.io().execute(() -> {
+            try {
+                // Lấy lại danh sách các email đang chờ gửi
+                List<ScheduledEmail> pendingEmails = scheduledEmailDao.findByStatuses(
+                        List.of(EmailStatus.SCHEDULED, EmailStatus.RETRY_PENDING)
+                );
+                LocalDateTime now = LocalDateTime.now();
+
+                for (ScheduledEmail scheduledEmail : pendingEmails) {
+                    // Nếu thời gian dự kiến gửi đã qua hoặc bằng thời gian hiện tại, kích hoạt gửi ngay lập tức
+                    if (scheduledEmail.scheduledAt.isBefore(now) || scheduledEmail.scheduledAt.isEqual(now)) {
+                        register(scheduledEmail, Duration.ZERO);
+                    }
+                }
+            } catch (IOException e) {
+                LOGGER.error("Gặp lỗi khi quét lại hàng đợi sau khi tiếp tục hoạt động.", e);
+            }
+        });
+    }
+
+    @Override
+    public boolean isQueuePaused() {
+        return this.isQueuePaused;
     }
 }

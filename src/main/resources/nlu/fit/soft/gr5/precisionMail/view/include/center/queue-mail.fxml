@@ -10,6 +10,8 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.TextField?>
 <VBox spacing="10"
       xmlns="http://javafx.com/javafx/25"
       xmlns:fx="http://javafx.com/fxml/1"
@@ -23,6 +25,28 @@
                style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
         <Pane HBox.hgrow="ALWAYS"/>
         <Button text="Làm mới" onAction="#handleRefresh"/>
+
+        <TextField fx:id="txtKeyword"
+                   promptText="Search subject, sender..." />
+
+        <ComboBox fx:id="cbStatus"
+                  promptText="Status"/>
+
+        <ComboBox fx:id="cbSortBy"
+                  promptText="Sort By"
+                  prefWidth="130"/>
+
+        <ComboBox fx:id="cbSortDirection"
+                  promptText="Order"
+                  prefWidth="90"/>
+
+        <Button text="Search"
+                onAction="#handleSearch"/>
+
+        <Button text="Reset"
+                onAction="#handleReset"/>
+        <Button text="Export Excel"
+                onAction="#handleExportExcel"/>
     </HBox>
 
     <ToolBar>
@@ -30,8 +54,20 @@
             <Button text="Xem chi tiết" onAction="#handleViewDetail"/>
             <Button text="Chỉnh sửa" onAction="#handleEditTask"/>
             <Button text="Hủy gửi" onAction="#handleCancelTask"/>
+            <Button text="Xóa" onAction="#handleDeleteTask"/>
+            <Button fx:id="btnToggleQueue"
+                    text="⏸ Tạm dừng hàng đợi"
+                    onAction="#handleToggleQueue"
+                    style="-fx-base: #3b82f6; -fx-text-fill: white;" />
         </items>
     </ToolBar>
+
+    <HBox spacing="20">
+        <Label fx:id="lblScheduled"/>
+        <Label fx:id="lblSent"/>
+        <Label fx:id="lblFailed"/>
+        <Label fx:id="lblCancelled"/>
+    </HBox>
 
     <TableView fx:id="queueTable" VBox.vgrow="ALWAYS">
         <columns>

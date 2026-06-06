@@ -3,19 +3,25 @@ package nlu.fit.soft.gr5.precisionMail.util;
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
+import nlu.fit.soft.gr5.precisionMail.model.ConnectionTestProgress;
+import nlu.fit.soft.gr5.precisionMail.model.ConnectionTestResult;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
 import nlu.fit.soft.gr5.precisionMail.model.MailServerConfig;
-import nlu.fit.soft.gr5.precisionMail.model.SecurityMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.NoRouteToHostException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -85,19 +91,7 @@ public class EmailUtil {
     }
 
     public static Session getSession(Account account) {
-        Properties props = new Properties();
-        MailServerConfig config = account.getMailServerConfig();
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.host", config.getSmtpHost());
-        props.put("mail.smtp.port", String.valueOf(config.getSmtpPort()));
-        props.put("mail.smtp.connectiontimeout", "10000");
-        props.put("mail.smtp.timeout", "10000");
-        props.put("mail.smtp.writetimeout", "10000");
-        if (config.getSecurityMode() == SecurityMode.SSL) {
-            props.put("mail.smtp.ssl.enable", "true");
-        } else {
-            props.put("mail.smtp.starttls.enable", "true");
-        }
+        Properties props = MailConnectionPropertiesBuilder.smtpProperties(account.getMailServerConfig());
 
         LOGGER.debug("Creating SMTP session for sender={}.", LogHelper.maskEmail(account.getUsername()));
 
@@ -108,36 +102,20 @@ public class EmailUtil {
         });
     }
 
-    public static void validateConnection(Account account) throws MessagingException {
+    public static ConnectionTestResult validateConnection(Account account) {
+        return validateConnection(account, null);
+    }
+
+    public static ConnectionTestResult validateConnection(
+            Account account,
+            Consumer<ConnectionTestProgress> progressListener
+    ) {
         MailServerConfig config = account.getMailServerConfig();
-        Properties props = new Properties();
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.host", config.getSmtpHost());
-        props.put("mail.smtp.port", String.valueOf(config.getSmtpPort()));
-        props.put("mail.smtp.connectiontimeout", "10000");
-        props.put("mail.smtp.timeout", "10000");
-        props.put("mail.smtp.writetimeout", "10000");
-
-        props.put("mail.imap.host", config.getImapHost());
-        props.put("mail.imap.port", String.valueOf(config.getImapPort()));
-        props.put("mail.imap.connectiontimeout", "10000");
-        props.put("mail.imap.timeout", "10000");
-        props.put("mail.imap.writetimeout", "10000");
-
-        if (config.getSecurityMode() == SecurityMode.SSL) {
-            props.put("mail.smtp.ssl.enable", "true");
-            props.put("mail.imap.ssl.enable", "true");
-        } else {
-            props.put("mail.smtp.starttls.enable", "true");
-            props.put("mail.imap.starttls.enable", "true");
-            if (config.getImapPort() == 993) {
-                props.put("mail.imap.ssl.enable", "true");
-            }
-        }
-
+        Properties props = MailConnectionPropertiesBuilder.validationProperties(config);
         Session session = Session.getInstance(props);
         LOGGER.info("Testing mail server connection for sender={}.", LogHelper.maskEmail(account.getUsername()));
 
+        notifyProgress(progressListener, ConnectionTestProgress.SMTP_TESTING);
         try (Transport transport = session.getTransport("smtp")) {
             transport.connect(
                     config.getSmtpHost(),
@@ -145,8 +123,17 @@ public class EmailUtil {
                     account.getUsername(),
                     account.getPassword()
             );
+        } catch (MessagingException ex) {
+            return connectionFailure(
+                    ConnectionTestResult.Type.SMTP_FAILED,
+                    ConnectionTestResult.Step.SMTP,
+                    "SMTP connection test failed.",
+                    ex
+            );
         }
 
+        notifyProgress(progressListener, ConnectionTestProgress.SMTP_SUCCEEDED);
+        notifyProgress(progressListener, ConnectionTestProgress.IMAP_TESTING);
         try (Store store = session.getStore("imap")) {
             store.connect(
                     config.getImapHost(),
@@ -154,7 +141,69 @@ public class EmailUtil {
                     account.getUsername(),
                     account.getPassword()
             );
+        } catch (MessagingException ex) {
+            return connectionFailure(
+                    ConnectionTestResult.Type.IMAP_FAILED,
+                    ConnectionTestResult.Step.IMAP,
+                    "IMAP connection test failed.",
+                    ex
+            );
         }
+
+        notifyProgress(progressListener, ConnectionTestProgress.IMAP_SUCCEEDED);
+        return ConnectionTestResult.success();
+    }
+
+    private static ConnectionTestResult connectionFailure(
+            ConnectionTestResult.Type protocolFailureType,
+            ConnectionTestResult.Step step,
+            String message,
+            MessagingException ex
+    ) {
+        if (hasCause(ex, AuthenticationFailedException.class)) {
+            return ConnectionTestResult.failure(
+                    ConnectionTestResult.Type.AUTH_FAILED,
+                    step,
+                    "Mail server authentication failed.",
+                    ex
+            );
+        }
+        if (hasCause(ex, SocketTimeoutException.class)
+                || hasCause(ex, ConnectException.class)
+                || hasCause(ex, UnknownHostException.class)
+                || hasCause(ex, NoRouteToHostException.class)) {
+            return ConnectionTestResult.failure(
+                    ConnectionTestResult.Type.TIMEOUT,
+                    step,
+                    "Mail server connection timed out or failed.",
+                    ex
+            );
+        }
+        return ConnectionTestResult.failure(protocolFailureType, step, message, ex);
+    }
+
+    private static void notifyProgress(
+            Consumer<ConnectionTestProgress> progressListener,
+            ConnectionTestProgress progress
+    ) {
+        if (progressListener != null) {
+            progressListener.accept(progress);
+        }
+    }
+
+    private static boolean hasCause(Throwable throwable, Class<? extends Throwable> expectedType) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (expectedType.isInstance(current)) {
+                return true;
+            }
+            if (current instanceof MessagingException messagingException && messagingException.getNextException() != null) {
+                current = messagingException.getNextException();
+            } else {
+                current = current.getCause();
+            }
+        }
+        return false;
     }
 
     public static void send(Account account, Email email) throws MessagingException, IOException {

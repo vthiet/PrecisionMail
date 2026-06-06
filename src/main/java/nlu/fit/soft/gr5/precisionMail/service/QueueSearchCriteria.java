@@ -10,6 +10,24 @@ public class QueueSearchCriteria {
     private EmailStatus status;
     private LocalDateTime fromDate;
     private LocalDateTime toDate;
+    private String sortBy;
+    private String sortDirection;
+
+    public String getSortBy() {
+        return sortBy;
+    }
+
+    public void setSortBy(String sortBy) {
+        this.sortBy = sortBy;
+    }
+
+    public String getSortDirection() {
+        return sortDirection;
+    }
+
+    public void setSortDirection(String sortDirection) {
+        this.sortDirection = sortDirection;
+    }
 
     public String getKeyword() {
         return keyword;

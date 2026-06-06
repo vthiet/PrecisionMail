@@ -1,11 +1,13 @@
 package nlu.fit.soft.gr5.precisionMail.service;
 
 import nlu.fit.soft.gr5.precisionMail.model.Email;
+import nlu.fit.soft.gr5.precisionMail.model.EmailStatus;
 import nlu.fit.soft.gr5.precisionMail.model.ScheduledEmail;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 public interface QueueService {
     List<ScheduledEmail> findScheduled() throws IOException;
@@ -17,4 +19,11 @@ public interface QueueService {
     void updateQueuedEmail(Long scheduledEmailId, Email email, LocalDateTime scheduledAt) throws IOException;
 
     void markRetryPending(Long scheduledEmailId, String reason) throws IOException;
+
+    List<ScheduledEmail> search(QueueSearchCriteria criteria)
+            throws IOException;
+
+    void delete(Long scheduledEmailId)
+            throws IOException;
+    Map<EmailStatus, Integer> getStatistics() throws IOException;
 }

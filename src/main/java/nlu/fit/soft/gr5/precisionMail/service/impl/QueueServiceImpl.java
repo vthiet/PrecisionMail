@@ -5,11 +5,13 @@ import nlu.fit.soft.gr5.precisionMail.dao.impl.ScheduledEmailDaoImpl;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
 import nlu.fit.soft.gr5.precisionMail.model.EmailStatus;
 import nlu.fit.soft.gr5.precisionMail.model.ScheduledEmail;
+import nlu.fit.soft.gr5.precisionMail.service.QueueSearchCriteria;
 import nlu.fit.soft.gr5.precisionMail.service.QueueService;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 public class QueueServiceImpl implements QueueService {
     private final ScheduledEmailDao scheduledEmailDao = new ScheduledEmailDaoImpl();
@@ -50,5 +52,93 @@ public class QueueServiceImpl implements QueueService {
     @Override
     public void markRetryPending(Long scheduledEmailId, String reason) throws IOException {
         scheduledEmailDao.updateStatus(scheduledEmailId, EmailStatus.RETRY_PENDING, reason);
+    }
+    @Override
+    public List<ScheduledEmail> search(QueueSearchCriteria criteria) throws IOException {
+
+        List<ScheduledEmail> emails =
+                scheduledEmailDao.findScheduled();
+
+        return emails.stream()
+
+                .filter(email -> {
+
+                    if (criteria.getKeyword() == null
+                            || criteria.getKeyword().isBlank()) {
+                        return true;
+                    }
+
+                    String keyword =
+                            criteria.getKeyword().toLowerCase();
+
+                    return (email.email.subject != null
+                            && email.email.subject.toLowerCase().contains(keyword))
+
+                            || (email.email.from != null
+                            && email.email.from.toLowerCase().contains(keyword))
+
+                            || email.email.toLst.stream()
+                            .anyMatch(to ->
+                                    to.toLowerCase().contains(keyword));
+                })
+
+                .filter(email -> {
+
+                    if (criteria.getStatus() == null) {
+                        return true;
+                    }
+
+                    return email.status == criteria.getStatus();
+                })
+
+                .sorted((e1, e2) -> {
+
+                    String sortBy = criteria.getSortBy();
+                    String direction = criteria.getSortDirection();
+
+                    int result = 0;
+
+                    if ("ID".equals(sortBy)) {
+                        result = Long.compare(e1.id, e2.id);
+                    }
+
+                    else if ("Subject".equals(sortBy)) {
+                        result = e1.email.subject.compareToIgnoreCase(
+                                e2.email.subject
+                        );
+                    }
+
+                    else if ("Status".equals(sortBy)) {
+                        result = e1.status.name().compareTo(
+                                e2.status.name()
+                        );
+                    }
+
+                    else {
+                        result = e1.scheduledAt.compareTo(
+                                e2.scheduledAt
+                        );
+                    }
+
+                    return "DESC".equals(direction)
+                            ? -result
+                            : result;
+                })
+
+                .toList();
+    }
+
+    @Override
+    public void delete(Long scheduledEmailId)
+            throws IOException {
+
+        scheduledEmailDao.delete(
+                scheduledEmailId
+        );
+    }
+
+    @Override
+    public Map<EmailStatus, Integer> getStatistics() throws IOException {
+        return scheduledEmailDao.getStatistics();
     }
 }

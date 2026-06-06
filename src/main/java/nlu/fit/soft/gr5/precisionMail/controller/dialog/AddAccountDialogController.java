@@ -1,13 +1,12 @@
 package nlu.fit.soft.gr5.precisionMail.controller.dialog;
 
-import jakarta.mail.AuthenticationFailedException;
-import jakarta.mail.MessagingException;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
@@ -18,7 +17,10 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import nlu.fit.soft.gr5.precisionMail.infrastructure.async.AppExecutors;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
+import nlu.fit.soft.gr5.precisionMail.model.ConnectionTestProgress;
+import nlu.fit.soft.gr5.precisionMail.model.ConnectionTestResult;
 import nlu.fit.soft.gr5.precisionMail.model.MailServerConfig;
+import nlu.fit.soft.gr5.precisionMail.model.MailProviderPreset;
 import nlu.fit.soft.gr5.precisionMail.model.SecurityMode;
 import nlu.fit.soft.gr5.precisionMail.service.AccountRefreshService;
 import nlu.fit.soft.gr5.precisionMail.service.AccountService;
@@ -32,8 +34,6 @@ import nlu.fit.soft.gr5.precisionMail.util.MailServerConfigValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.ConnectException;
-import java.net.SocketTimeoutException;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -43,6 +43,10 @@ public class AddAccountDialogController {
     private static final Logger LOGGER = LoggerFactory.getLogger(AddAccountDialogController.class);
     private static final String INVALID_STYLE = "-fx-border-color: #dc2626; -fx-border-width: 1.2;";
 
+    @FXML
+    public ComboBox<MailProviderPreset> providerComboBox;
+    @FXML
+    public TextField displayNameField;
     @FXML
     public TextField usernameField;
     @FXML
@@ -56,7 +60,9 @@ public class AddAccountDialogController {
     @FXML
     public TextField imapPortField;
     @FXML
-    public ComboBox<SecurityMode> securityModeComboBox;
+    public ComboBox<SecurityMode> smtpSecurityModeComboBox;
+    @FXML
+    public ComboBox<SecurityMode> imapSecurityModeComboBox;
     @FXML
     public Button testConnectionButton;
     @FXML
@@ -64,7 +70,11 @@ public class AddAccountDialogController {
     @FXML
     public Button cancelButton;
     @FXML
+    public CheckBox primaryCheckBox;
+    @FXML
     public ProgressIndicator progressIndicator;
+    @FXML
+    public Label retestRequiredLabel;
     @FXML
     public Label statusLabel;
 
@@ -76,16 +86,41 @@ public class AddAccountDialogController {
     private boolean connectionValidated;
     private boolean closingAfterSave;
     private boolean loadingConfiguration;
+    private boolean applyingProviderPreset;
+    private boolean editingExistingAccount;
+    private boolean retestRequired;
+    private boolean passwordDecryptionFailed;
 
     @FXML
     public void initialize() {
-        securityModeComboBox.getItems().setAll(SecurityMode.values());
-        securityModeComboBox.setValue(SecurityMode.TLS);
-        securityModeComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+        providerComboBox.getItems().setAll(MailProviderPreset.values());
+        providerComboBox.setValue(MailProviderPreset.GMAIL);
+        providerComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
             if (loadingConfiguration) {
                 return;
             }
-            applySuggestedPorts(newValue);
+            applyProviderPreset(newValue);
+        });
+
+        smtpSecurityModeComboBox.getItems().setAll(SecurityMode.values());
+        smtpSecurityModeComboBox.setValue(SecurityMode.TLS);
+        smtpSecurityModeComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (loadingConfiguration || applyingProviderPreset) {
+                return;
+            }
+            applySuggestedSmtpPort(newValue);
+            markProviderAsCustomForManualEdit();
+            markConnectionDirty();
+        });
+
+        imapSecurityModeComboBox.getItems().setAll(SecurityMode.values());
+        imapSecurityModeComboBox.setValue(SecurityMode.SSL);
+        imapSecurityModeComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (loadingConfiguration || applyingProviderPreset) {
+                return;
+            }
+            applySuggestedImapPort(newValue);
+            markProviderAsCustomForManualEdit();
             markConnectionDirty();
         });
 
@@ -98,6 +133,54 @@ public class AddAccountDialogController {
     public void setStage(Stage stage) {
         this.stage = stage;
         this.stage.setOnCloseRequest(this::handleCloseRequest);
+    }
+
+    public void prepareNewAccount() {
+        loadingConfiguration = true;
+        try {
+            loadedAccount = null;
+            editingExistingAccount = false;
+            MailServerConfig defaults = new MailServerConfig();
+            displayNameField.clear();
+            usernameField.clear();
+            passwordField.clear();
+            primaryCheckBox.setSelected(true);
+            smtpHostField.setText(defaults.getSmtpHost());
+            smtpPortField.setText(String.valueOf(defaults.getSmtpPort()));
+            imapHostField.setText(defaults.getImapHost());
+            imapPortField.setText(String.valueOf(defaults.getImapPort()));
+            smtpSecurityModeComboBox.setValue(defaults.getSmtpSecurityMode());
+            imapSecurityModeComboBox.setValue(defaults.getImapSecurityMode());
+            providerComboBox.setValue(MailProviderPreset.inferFrom(defaults));
+            statusLabel.setText("Nhập thông tin tài khoản mail mới.");
+            connectionValidated = false;
+            passwordDecryptionFailed = false;
+            setRetestRequired(false);
+            initialFingerprint = currentFingerprint();
+            setTesting(false);
+        } finally {
+            loadingConfiguration = false;
+        }
+    }
+
+    public void prepareEditAccount(Account account) {
+        if (account == null) {
+            prepareNewAccount();
+            return;
+        }
+
+        loadingConfiguration = true;
+        try {
+            loadedAccount = account;
+            editingExistingAccount = true;
+            populateAccountForm(account);
+            applyPasswordDecryptionState(account);
+            connectionValidated = false;
+            initialFingerprint = currentFingerprint();
+            setTesting(false);
+        } finally {
+            loadingConfiguration = false;
+        }
     }
 
     public void handleCancel(ActionEvent actionEvent) {
@@ -114,17 +197,15 @@ public class AddAccountDialogController {
 
         LOGGER.info("Mail-server test requested for username={}.", LogHelper.maskEmail(account.getUsername()));
         setTesting(true);
-        statusLabel.setText("Đang kiểm tra kết nối...");
+        setRetestRequired(false);
+        statusLabel.setText("Đang kiểm tra SMTP...");
 
         CompletableFuture
-                .runAsync(() -> {
-                    try {
-                        emailService.validateConnection(account);
-                    } catch (MessagingException ex) {
-                        throw new CompletionException(ex);
-                    }
-                }, AppExecutors.io())
-                .whenComplete((unused, throwable) -> Platform.runLater(() -> handleTestCompleted(account, throwable)));
+                .supplyAsync(
+                        () -> emailService.validateConnection(account, this::updateConnectionTestProgress),
+                        AppExecutors.io()
+                )
+                .whenComplete((result, throwable) -> Platform.runLater(() -> handleTestCompleted(account, result, throwable)));
     }
 
     public void handleSave(ActionEvent actionEvent) {
@@ -151,24 +232,24 @@ public class AddAccountDialogController {
             loadedAccount = accountService.findPrimaryConfiguration();
             if (loadedAccount == null) {
                 MailServerConfig defaults = new MailServerConfig();
+                primaryCheckBox.setSelected(true);
                 smtpHostField.setText(defaults.getSmtpHost());
                 smtpPortField.setText(String.valueOf(defaults.getSmtpPort()));
                 imapHostField.setText(defaults.getImapHost());
                 imapPortField.setText(String.valueOf(defaults.getImapPort()));
-                securityModeComboBox.setValue(defaults.getSecurityMode());
+                smtpSecurityModeComboBox.setValue(defaults.getSmtpSecurityMode());
+                imapSecurityModeComboBox.setValue(defaults.getImapSecurityMode());
+                providerComboBox.setValue(MailProviderPreset.inferFrom(defaults));
                 statusLabel.setText("Chưa có cấu hình. Vui lòng nhập thông tin mail server.");
             } else {
-                MailServerConfig config = loadedAccount.getMailServerConfig();
-                usernameField.setText(loadedAccount.getUsername());
-                passwordField.setText(loadedAccount.getPassword());
-                smtpHostField.setText(config.getSmtpHost());
-                smtpPortField.setText(String.valueOf(config.getSmtpPort()));
-                imapHostField.setText(config.getImapHost());
-                imapPortField.setText(String.valueOf(config.getImapPort()));
-                securityModeComboBox.setValue(config.getSecurityMode());
-                statusLabel.setText("Đã tải cấu hình hiện có.");
+                editingExistingAccount = true;
+                populateAccountForm(loadedAccount);
+                applyPasswordDecryptionState(loadedAccount);
             }
             initialFingerprint = currentFingerprint();
+            if (loadedAccount == null || !loadedAccount.isPasswordDecryptionFailed()) {
+                setRetestRequired(false);
+            }
         } catch (RuntimeException ex) {
             LOGGER.error("Failed to load existing mail-server configuration.", ex);
             statusLabel.setText("Không thể tải cấu hình hiện có.");
@@ -178,18 +259,46 @@ public class AddAccountDialogController {
     }
 
     private void bindDirtyTracking() {
+        displayNameField.textProperty().addListener((observable, oldValue, newValue) -> markConnectionDirty());
         usernameField.textProperty().addListener((observable, oldValue, newValue) -> markConnectionDirty());
         passwordField.textProperty().addListener((observable, oldValue, newValue) -> markConnectionDirty());
-        smtpHostField.textProperty().addListener((observable, oldValue, newValue) -> markConnectionDirty());
-        smtpPortField.textProperty().addListener((observable, oldValue, newValue) -> markConnectionDirty());
-        imapHostField.textProperty().addListener((observable, oldValue, newValue) -> markConnectionDirty());
-        imapPortField.textProperty().addListener((observable, oldValue, newValue) -> markConnectionDirty());
+        primaryCheckBox.selectedProperty().addListener((observable, oldValue, newValue) -> markConnectionDirty());
+        smtpHostField.textProperty().addListener((observable, oldValue, newValue) -> handleManualServerConfigurationChange());
+        smtpPortField.textProperty().addListener((observable, oldValue, newValue) -> handleManualServerConfigurationChange());
+        imapHostField.textProperty().addListener((observable, oldValue, newValue) -> handleManualServerConfigurationChange());
+        imapPortField.textProperty().addListener((observable, oldValue, newValue) -> handleManualServerConfigurationChange());
     }
 
     private void markConnectionDirty() {
+        if (loadingConfiguration) {
+            return;
+        }
+
+        passwordDecryptionFailed = false;
+        boolean wasValidated = connectionValidated;
         connectionValidated = false;
         if (saveButton != null) {
             saveButton.setDisable(true);
+        }
+        setRetestRequired(true);
+        if (statusLabel != null) {
+            statusLabel.setText(wasValidated
+                    ? "Cấu hình đã thay đổi. Vui lòng kiểm tra kết nối lại trước khi lưu."
+                    : "Cần kiểm tra kết nối trước khi lưu cấu hình.");
+        }
+    }
+
+    private void handleManualServerConfigurationChange() {
+        markProviderAsCustomForManualEdit();
+        markConnectionDirty();
+    }
+
+    private void markProviderAsCustomForManualEdit() {
+        if (loadingConfiguration || applyingProviderPreset || providerComboBox == null) {
+            return;
+        }
+        if (providerComboBox.getValue() != MailProviderPreset.CUSTOM) {
+            providerComboBox.setValue(MailProviderPreset.CUSTOM);
         }
     }
 
@@ -202,12 +311,15 @@ public class AddAccountDialogController {
         if (loadedAccount != null && loadedAccount.getId() != null) {
             account.setId(loadedAccount.getId());
         }
+        account.setDisplayName(displayNameFromForm(account.getUsername()));
+        account.setPrimary(primaryCheckBox.isSelected());
         account.setMailServerConfig(new MailServerConfig(
                 textOf(smtpHostField),
                 MailServerConfigValidator.parsePort(textOf(smtpPortField)),
                 textOf(imapHostField),
                 MailServerConfigValidator.parsePort(textOf(imapPortField)),
-                securityModeComboBox.getValue() == null ? SecurityMode.TLS : securityModeComboBox.getValue()
+                smtpSecurityModeComboBox.getValue() == null ? SecurityMode.TLS : smtpSecurityModeComboBox.getValue(),
+                imapSecurityModeComboBox.getValue() == null ? SecurityMode.SSL : imapSecurityModeComboBox.getValue()
         ));
         return account;
     }
@@ -222,6 +334,14 @@ public class AddAccountDialogController {
         }
         if (account.getPassword().isBlank()) {
             markInvalid(passwordField, "Mật khẩu ứng dụng không được để trống.");
+            valid = false;
+        }
+        if (passwordDecryptionFailed) {
+            markInvalid(passwordField, "Không thể giải mã App Password đã lưu. Vui lòng nhập lại App Password.");
+            valid = false;
+        }
+        if (account.getDisplayName().isBlank()) {
+            markInvalid(displayNameField, "Display name is required.");
             valid = false;
         }
         if (account.getMailServerConfig().getSmtpHost().isBlank()) {
@@ -248,10 +368,16 @@ public class AddAccountDialogController {
         return valid;
     }
 
-    private void handleTestCompleted(Account account, Throwable throwable) {
+    private void handleTestCompleted(Account account, ConnectionTestResult result, Throwable throwable) {
         setTesting(false);
-        if (throwable == null) {
+        if (throwable != null) {
+            handleUnexpectedTestFailure(account, throwable);
+            return;
+        }
+
+        if (result != null && result.isSuccess()) {
             connectionValidated = true;
+            setRetestRequired(false);
             saveButton.setDisable(false);
             statusLabel.setText("Kiểm tra kết nối thành công.");
             AlertUtil.showInfo("Success", "Kiểm tra kết nối thành công!");
@@ -260,21 +386,15 @@ public class AddAccountDialogController {
         }
 
         connectionValidated = false;
+        setRetestRequired(true);
         saveButton.setDisable(true);
-        Throwable cause = unwrap(throwable);
-        if (cause instanceof AuthenticationFailedException) {
-            LOGGER.warn("Mail-server authentication failed for username={}.", LogHelper.maskEmail(account.getUsername()));
-            statusLabel.setText("Xác thực thất bại.");
-            AlertUtil.showError("Authentication Error", "Xác thực thất bại. Vui lòng kiểm tra lại địa chỉ Email và Mật khẩu ứng dụng.");
-        } else if (isConnectionFailure(cause)) {
-            LOGGER.warn("Mail-server connection timed out or failed for username={}.", LogHelper.maskEmail(account.getUsername()), cause);
-            statusLabel.setText("Không thể kết nối tới máy chủ.");
-            AlertUtil.showError("Connection Error", "Không thể kết nối tới máy chủ. Vui lòng kiểm tra lại đường truyền Internet và thông số Port.");
-        } else {
-            LOGGER.warn("Mail-server test failed for username={}.", LogHelper.maskEmail(account.getUsername()), cause);
-            statusLabel.setText("Kiểm tra kết nối thất bại.");
-            AlertUtil.showError("Connection Error", "Kiểm tra kết nối thất bại. Vui lòng kiểm tra lại cấu hình mail server.");
-        }
+        ConnectionTestResult.Type failureType = result == null
+                ? ConnectionTestResult.Type.UNKNOWN_FAILED
+                : result.type();
+        ConnectionTestResult.Step failureStep = result == null
+                ? ConnectionTestResult.Step.UNKNOWN
+                : result.step();
+        showConnectionTestFailure(account, failureType, failureStep, result == null ? null : result.cause());
     }
 
     private void handleSaveCompleted(Account savedAccount, Throwable throwable) {
@@ -288,6 +408,7 @@ public class AddAccountDialogController {
 
         loadedAccount = savedAccount;
         initialFingerprint = currentFingerprint();
+        setRetestRequired(false);
         AccountRefreshService.publishAccountsChanged();
         LOGGER.info("Mail-server configuration saved successfully for username={}.", LogHelper.maskEmail(savedAccount.getUsername()));
         AlertUtil.showInfo("Success", "Lưu cấu hình thành công!");
@@ -325,40 +446,70 @@ public class AddAccountDialogController {
         return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
     }
 
-    private void applySuggestedPorts(SecurityMode mode) {
+    private void applySuggestedSmtpPort(SecurityMode mode) {
         if (mode == SecurityMode.SSL) {
             smtpPortField.setText("465");
-            imapPortField.setText("993");
         } else {
             smtpPortField.setText("587");
-            if (imapPortField.getText() == null || imapPortField.getText().isBlank()) {
-                imapPortField.setText("993");
-            }
         }
     }
 
+    private void applySuggestedImapPort(SecurityMode mode) {
+        if (mode == SecurityMode.SSL) {
+            imapPortField.setText("993");
+        } else {
+            imapPortField.setText("143");
+        }
+    }
+
+    private void applyProviderPreset(MailProviderPreset preset) {
+        if (preset == null || !preset.hasConfig()) {
+            markConnectionDirty();
+            return;
+        }
+
+        applyingProviderPreset = true;
+        try {
+            MailServerConfig config = preset.getConfig();
+            smtpHostField.setText(config.getSmtpHost());
+            smtpPortField.setText(String.valueOf(config.getSmtpPort()));
+            imapHostField.setText(config.getImapHost());
+            imapPortField.setText(String.valueOf(config.getImapPort()));
+            smtpSecurityModeComboBox.setValue(config.getSmtpSecurityMode());
+            imapSecurityModeComboBox.setValue(config.getImapSecurityMode());
+        } finally {
+            applyingProviderPreset = false;
+        }
+        markConnectionDirty();
+    }
+
     private void setTesting(boolean testing) {
-        usernameField.setDisable(testing);
+        providerComboBox.setDisable(testing);
+        displayNameField.setDisable(testing);
+        usernameField.setDisable(testing || editingExistingAccount);
         passwordField.setDisable(testing);
         smtpHostField.setDisable(testing);
         smtpPortField.setDisable(testing);
         imapHostField.setDisable(testing);
         imapPortField.setDisable(testing);
-        securityModeComboBox.setDisable(testing);
+        smtpSecurityModeComboBox.setDisable(testing);
+        imapSecurityModeComboBox.setDisable(testing);
         testConnectionButton.setDisable(testing);
         cancelButton.setDisable(testing);
         saveButton.setDisable(testing || !connectionValidated);
+        primaryCheckBox.setDisable(testing);
         progressIndicator.setVisible(testing);
     }
 
-    private boolean isConnectionFailure(Throwable cause) {
-        while (cause != null) {
-            if (cause instanceof ConnectException || cause instanceof SocketTimeoutException) {
-                return true;
-            }
-            cause = cause.getCause();
+    private void setRetestRequired(boolean required) {
+        if (retestRequired == required && retestRequiredLabel != null) {
+            return;
         }
-        return false;
+        retestRequired = required;
+        if (retestRequiredLabel != null) {
+            retestRequiredLabel.setVisible(required);
+            retestRequiredLabel.setManaged(required);
+        }
     }
 
     private Throwable unwrap(Throwable throwable) {
@@ -369,19 +520,132 @@ public class AddAccountDialogController {
         return current;
     }
 
+    private void handleUnexpectedTestFailure(Account account, Throwable throwable) {
+        Throwable cause = unwrap(throwable);
+        connectionValidated = false;
+        setRetestRequired(true);
+        saveButton.setDisable(true);
+        showConnectionTestFailure(account, ConnectionTestResult.Type.UNKNOWN_FAILED, ConnectionTestResult.Step.UNKNOWN, cause);
+    }
+
+    private void showConnectionTestFailure(
+            Account account,
+            ConnectionTestResult.Type type,
+            ConnectionTestResult.Step step,
+            Throwable cause
+    ) {
+        LOGGER.warn(
+                "Mail-server test failed for username={}. type={}, step={}.",
+                LogHelper.maskEmail(account.getUsername()),
+                type,
+                step,
+                cause
+        );
+
+        if (type == ConnectionTestResult.Type.AUTH_FAILED) {
+            statusLabel.setText(connectionFailureStatus(step, "xác thực thất bại"));
+            AlertUtil.showError(
+                    "Authentication Error",
+                    connectionFailureMessage(step, "Xác thực thất bại.")
+                            + " Vui lòng kiểm tra lại địa chỉ Email và Mật khẩu ứng dụng."
+            );
+            return;
+        }
+
+        if (type == ConnectionTestResult.Type.TIMEOUT) {
+            statusLabel.setText(connectionFailureStatus(step, "không thể kết nối tới máy chủ"));
+            AlertUtil.showError(
+                    "Connection Error",
+                    connectionFailureMessage(step, "Không thể kết nối tới máy chủ.")
+                            + " Vui lòng kiểm tra lại đường truyền Internet, host và port."
+            );
+            return;
+        }
+
+        switch (type) {
+            case AUTH_FAILED -> {
+                statusLabel.setText("Xác thực thất bại.");
+                AlertUtil.showError(
+                        "Authentication Error",
+                        "Xác thực thất bại. Vui lòng kiểm tra lại địa chỉ Email và Mật khẩu ứng dụng."
+                );
+            }
+            case TIMEOUT -> {
+                statusLabel.setText("Không thể kết nối tới máy chủ.");
+                AlertUtil.showError(
+                        "Connection Error",
+                        "Không thể kết nối tới máy chủ. Vui lòng kiểm tra lại đường truyền Internet, host và port."
+                );
+            }
+            case SMTP_FAILED -> {
+                statusLabel.setText("Kiểm tra SMTP thất bại.");
+                AlertUtil.showError(
+                        "SMTP Error",
+                        "Không thể kết nối hoặc xác thực SMTP. Vui lòng kiểm tra SMTP host, port và security mode."
+                );
+            }
+            case IMAP_FAILED -> {
+                statusLabel.setText("Kiểm tra IMAP thất bại.");
+                AlertUtil.showError(
+                        "IMAP Error",
+                        "Không thể kết nối hoặc xác thực IMAP. Vui lòng kiểm tra IMAP host, port và security mode."
+                );
+            }
+            default -> {
+                statusLabel.setText("Kiểm tra kết nối thất bại.");
+                AlertUtil.showError(
+                        "Connection Error",
+                        "Kiểm tra kết nối thất bại. Vui lòng kiểm tra lại cấu hình mail server."
+                );
+            }
+        }
+    }
+
+    private void updateConnectionTestProgress(ConnectionTestProgress progress) {
+        Platform.runLater(() -> {
+            switch (progress) {
+                case SMTP_TESTING -> statusLabel.setText("Đang kiểm tra SMTP...");
+                case SMTP_SUCCEEDED -> statusLabel.setText("SMTP thành công. Đang chuẩn bị kiểm tra IMAP...");
+                case IMAP_TESTING -> statusLabel.setText("Đang kiểm tra IMAP...");
+                case IMAP_SUCCEEDED -> statusLabel.setText("IMAP thành công. Đang hoàn tất kiểm tra...");
+            }
+        });
+    }
+
+    private String connectionFailureStatus(ConnectionTestResult.Step step, String detail) {
+        return switch (step) {
+            case SMTP -> "SMTP " + detail + ".";
+            case IMAP -> "IMAP " + detail + ".";
+            default -> "Kiểm tra kết nối " + detail + ".";
+        };
+    }
+
+    private String connectionFailureMessage(ConnectionTestResult.Step step, String fallbackMessage) {
+        return switch (step) {
+            case SMTP -> "Lỗi ở bước kiểm tra SMTP.";
+            case IMAP -> "Lỗi ở bước kiểm tra IMAP.";
+            default -> fallbackMessage;
+        };
+    }
+
     private String currentFingerprint() {
         return String.join("|",
+                textOf(displayNameField),
                 textOf(usernameField),
                 passwordField.getText() == null ? "" : passwordField.getText(),
+                String.valueOf(primaryCheckBox.isSelected()),
                 textOf(smtpHostField),
                 textOf(smtpPortField),
                 textOf(imapHostField),
                 textOf(imapPortField),
-                String.valueOf(securityModeComboBox.getValue())
+                String.valueOf(providerComboBox.getValue()),
+                String.valueOf(smtpSecurityModeComboBox.getValue()),
+                String.valueOf(imapSecurityModeComboBox.getValue())
         );
     }
 
     private void clearValidation() {
+        clearInvalid(displayNameField);
         clearInvalid(usernameField);
         clearInvalid(passwordField);
         clearInvalid(smtpHostField);
@@ -402,5 +666,39 @@ public class AddAccountDialogController {
 
     private String textOf(TextField field) {
         return field.getText() == null ? "" : field.getText().trim();
+    }
+
+    private String displayNameFromForm(String username) {
+        String displayName = textOf(displayNameField);
+        return displayName.isBlank() ? username : displayName;
+    }
+
+    private void populateAccountForm(Account account) {
+        MailServerConfig config = account.getMailServerConfig();
+        displayNameField.setText(account.getDisplayName());
+        usernameField.setText(account.getUsername());
+        passwordField.setText(account.isPasswordDecryptionFailed() ? "" : account.getPassword());
+        primaryCheckBox.setSelected(account.isPrimary());
+        smtpHostField.setText(config.getSmtpHost());
+        smtpPortField.setText(String.valueOf(config.getSmtpPort()));
+        imapHostField.setText(config.getImapHost());
+        imapPortField.setText(String.valueOf(config.getImapPort()));
+        smtpSecurityModeComboBox.setValue(config.getSmtpSecurityMode());
+        imapSecurityModeComboBox.setValue(config.getImapSecurityMode());
+        providerComboBox.setValue(MailProviderPreset.inferFrom(config));
+    }
+
+    private void applyPasswordDecryptionState(Account account) {
+        passwordDecryptionFailed = account.isPasswordDecryptionFailed();
+        if (passwordDecryptionFailed) {
+            connectionValidated = false;
+            saveButton.setDisable(true);
+            markInvalid(passwordField, "Không thể giải mã App Password đã lưu. Vui lòng nhập lại App Password.");
+            statusLabel.setText("Không thể giải mã App Password đã lưu. Vui lòng nhập lại mật khẩu và kiểm tra kết nối.");
+            setRetestRequired(true);
+            return;
+        }
+        setRetestRequired(false);
+        statusLabel.setText(editingExistingAccount ? "Đã tải cấu hình hiện có." : "Nhập thông tin tài khoản mail mới.");
     }
 }

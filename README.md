@@ -1,6 +1,6 @@
 # PrecisionMail
 
-PrecisionMail is a JavaFX desktop email client for configuring mail accounts, composing email, scheduling delivery, tracking the send queue, browsing sent history, and monitoring application logs. The project is implemented as a Maven application using Java 21, JavaFX, Jakarta Mail, SQLite, SLF4J, and Logback.
+PrecisionMail is a JavaFX desktop email client for configuring mail accounts, composing email, scheduling delivery, tracking the send queue, browsing sent history, and monitoring application logs. The project is implemented as a Maven application using Java 25, JavaFX, Jakarta Mail, SQLite, SLF4J, and Logback.
 
 ## Features
 
@@ -19,7 +19,7 @@ PrecisionMail is a JavaFX desktop email client for configuring mail accounts, co
 
 | Area | Technology |
 | --- | --- |
-| Language | Java 21 |
+| Language | Java 25 |
 | UI | JavaFX 25 |
 | Build | Maven Wrapper |
 | Mail | Jakarta Mail / Eclipse Angus |
@@ -30,7 +30,7 @@ PrecisionMail is a JavaFX desktop email client for configuring mail accounts, co
 
 ## Requirements
 
-- JDK 21 or newer.
+- JDK 25.
 - Internet access for live SMTP/IMAP connection tests and email sending.
 - A mail account with an application password enabled, for example Gmail App Password.
 - Linux, Windows, or another desktop OS supported by JavaFX.

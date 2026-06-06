@@ -17,12 +17,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ScheduledEmailDaoImpl implements ScheduledEmailDao {
@@ -479,7 +474,27 @@ public class ScheduledEmailDaoImpl implements ScheduledEmailDao {
             params.add(criteria.getToDate().toString());
         }
 
-        sql.append(" ORDER BY scheduled_at DESC ");
+        String sortColumn = "scheduled_at";
+
+        if ("ID".equals(criteria.getSortBy())) {
+            sortColumn = "id";
+        }
+        else if ("Subject".equals(criteria.getSortBy())) {
+            sortColumn = "subject";
+        }
+        else if ("Status".equals(criteria.getSortBy())) {
+            sortColumn = "status";
+        }
+
+        String direction =
+                "ASC".equalsIgnoreCase(criteria.getSortDirection())
+                        ? "ASC"
+                        : "DESC";
+
+        sql.append(" ORDER BY ")
+                .append(sortColumn)
+                .append(" ")
+                .append(direction);
 
         try (Connection connection = DbUtil.getConnect();
              PreparedStatement ps =
@@ -502,5 +517,87 @@ public class ScheduledEmailDaoImpl implements ScheduledEmailDao {
         } catch (SQLException e) {
             throw new IOException(e);
         }
+    }
+
+    @Override
+    public List<ScheduledEmail> findScheduled() throws IOException {
+        return findByStatus(EmailStatus.SCHEDULED);
+    }
+
+    @Override
+    public void delete(Long id) throws IOException {
+
+        String sql = """
+        DELETE FROM scheduled_emails
+        WHERE id = ?
+    """;
+
+        try (Connection connection = DbUtil.getConnect();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setLong(1, id);
+
+            ps.executeUpdate();
+
+        } catch (SQLException e) {
+
+            throw new IOException(
+                    "Failed to delete scheduled email.",
+                    e
+            );
+        }
+    }
+
+    @Override
+    public Map<EmailStatus, Integer> getStatistics() throws IOException {
+
+        String sql = """
+        SELECT status, COUNT(*) total
+        FROM scheduled_emails
+        GROUP BY status
+    """;
+
+        Map<EmailStatus, Integer> statistics = new EnumMap<>(EmailStatus.class);
+
+        try (Connection connection = DbUtil.getConnect();
+             PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+
+                EmailStatus status =
+                        EmailStatus.valueOf(rs.getString("status"));
+
+                int total = rs.getInt("total");
+
+                statistics.put(status, total);
+            }
+
+            return statistics;
+
+        } catch (SQLException e) {
+            throw new IOException("Failed to load statistics", e);
+        }
+    }
+
+    @Override
+    public Map<EmailStatus, Long> countByStatus() {
+        String sql = "SELECT status, COUNT(*) as total FROM scheduled_emails GROUP BY status";
+        Map<EmailStatus, Long> result = new java.util.HashMap<>();
+
+        try (Connection connection = DbUtil.getConnect();
+             PreparedStatement ps = connection.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                EmailStatus status = EmailStatus.valueOf(rs.getString("status"));
+                long count = rs.getLong("total");
+                result.put(status, count);
+            }
+            return result;
+        } catch (SQLException e) {
+            LOGGER.error("Failed to aggregate email statistics.", e);
+        }
+        return result;
     }
 }

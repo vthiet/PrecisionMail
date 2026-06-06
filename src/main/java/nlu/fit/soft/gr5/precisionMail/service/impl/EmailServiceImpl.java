@@ -5,6 +5,8 @@ import nlu.fit.soft.gr5.precisionMail.dao.EmailDao;
 import nlu.fit.soft.gr5.precisionMail.dao.impl.EmailDaoImpl;
 import nlu.fit.soft.gr5.precisionMail.infrastructure.async.AppExecutors;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
+import nlu.fit.soft.gr5.precisionMail.model.ConnectionTestProgress;
+import nlu.fit.soft.gr5.precisionMail.model.ConnectionTestResult;
 import nlu.fit.soft.gr5.precisionMail.model.Email;
 import nlu.fit.soft.gr5.precisionMail.model.EmailStatus;
 import nlu.fit.soft.gr5.precisionMail.service.EmailService;
@@ -16,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 public class EmailServiceImpl implements EmailService {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmailServiceImpl.class);
@@ -73,9 +76,25 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    public void validateConnection(Account account) throws MessagingException {
-        EmailUtil.validateConnection(account);
-        LOGGER.info("Mail server connection validated for sender={}.", LogHelper.maskEmail(account.getUsername()));
+    public ConnectionTestResult validateConnection(Account account) {
+        return validateConnection(account, null);
+    }
+
+    @Override
+    public ConnectionTestResult validateConnection(Account account, Consumer<ConnectionTestProgress> progressListener) {
+        ConnectionTestResult result = EmailUtil.validateConnection(account, progressListener);
+        if (result.isSuccess()) {
+            LOGGER.info("Mail server connection validated for sender={}.", LogHelper.maskEmail(account.getUsername()));
+        } else {
+            LOGGER.warn(
+                    "Mail server connection test failed. sender={}, type={}, step={}.",
+                    LogHelper.maskEmail(account.getUsername()),
+                    result.type(),
+                    result.step(),
+                    result.cause()
+            );
+        }
+        return result;
     }
 
     @Override

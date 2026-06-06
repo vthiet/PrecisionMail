@@ -28,6 +28,16 @@
 
             <Button fx:id="cancelComposeBtn" text="Hủy soạn" onAction="#handleCancelCompose" styleClass="borderRadius"/>
 
+            <Button fx:id="previewBtn" text="Preview" onAction="#handlePreviewEmail" styleClass="borderRadius">
+                <graphic>
+                    <ImageView fitHeight="20.0" fitWidth="20.0" pickOnBounds="true" preserveRatio="true">
+                        <image>
+                            <Image url="@../../../icons/send.png"/>
+                        </image>
+                    </ImageView>
+                </graphic>
+            </Button>
+
             <Button text="Encrypt" styleClass="borderRadius"/>
 
             <MenuButton text="Spelling" mnemonicParsing="true"

@@ -44,3 +44,6 @@ application.properties
 ### SQLite ###
 precisionmail.db
 emails.json
+
+### Logs ###
+logs/

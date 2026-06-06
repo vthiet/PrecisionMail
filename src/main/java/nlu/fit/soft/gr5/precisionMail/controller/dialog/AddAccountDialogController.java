@@ -1,7 +1,5 @@
 package nlu.fit.soft.gr5.precisionMail.controller.dialog;
 
-import jakarta.mail.AuthenticationFailedException;
-import jakarta.mail.MessagingException;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -19,6 +17,7 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import nlu.fit.soft.gr5.precisionMail.infrastructure.async.AppExecutors;
 import nlu.fit.soft.gr5.precisionMail.model.Account;
+import nlu.fit.soft.gr5.precisionMail.model.ConnectionTestResult;
 import nlu.fit.soft.gr5.precisionMail.model.MailServerConfig;
 import nlu.fit.soft.gr5.precisionMail.model.MailProviderPreset;
 import nlu.fit.soft.gr5.precisionMail.model.SecurityMode;
@@ -34,8 +33,6 @@ import nlu.fit.soft.gr5.precisionMail.util.MailServerConfigValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.ConnectException;
-import java.net.SocketTimeoutException;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -203,14 +200,8 @@ public class AddAccountDialogController {
         statusLabel.setText("Đang kiểm tra kết nối...");
 
         CompletableFuture
-                .runAsync(() -> {
-                    try {
-                        emailService.validateConnection(account);
-                    } catch (MessagingException ex) {
-                        throw new CompletionException(ex);
-                    }
-                }, AppExecutors.io())
-                .whenComplete((unused, throwable) -> Platform.runLater(() -> handleTestCompleted(account, throwable)));
+                .supplyAsync(() -> emailService.validateConnection(account), AppExecutors.io())
+                .whenComplete((result, throwable) -> Platform.runLater(() -> handleTestCompleted(account, result, throwable)));
     }
 
     public void handleSave(ActionEvent actionEvent) {
@@ -373,9 +364,14 @@ public class AddAccountDialogController {
         return valid;
     }
 
-    private void handleTestCompleted(Account account, Throwable throwable) {
+    private void handleTestCompleted(Account account, ConnectionTestResult result, Throwable throwable) {
         setTesting(false);
-        if (throwable == null) {
+        if (throwable != null) {
+            handleUnexpectedTestFailure(account, throwable);
+            return;
+        }
+
+        if (result != null && result.isSuccess()) {
             connectionValidated = true;
             setRetestRequired(false);
             saveButton.setDisable(false);
@@ -388,20 +384,10 @@ public class AddAccountDialogController {
         connectionValidated = false;
         setRetestRequired(true);
         saveButton.setDisable(true);
-        Throwable cause = unwrap(throwable);
-        if (cause instanceof AuthenticationFailedException) {
-            LOGGER.warn("Mail-server authentication failed for username={}.", LogHelper.maskEmail(account.getUsername()));
-            statusLabel.setText("Xác thực thất bại.");
-            AlertUtil.showError("Authentication Error", "Xác thực thất bại. Vui lòng kiểm tra lại địa chỉ Email và Mật khẩu ứng dụng.");
-        } else if (isConnectionFailure(cause)) {
-            LOGGER.warn("Mail-server connection timed out or failed for username={}.", LogHelper.maskEmail(account.getUsername()), cause);
-            statusLabel.setText("Không thể kết nối tới máy chủ.");
-            AlertUtil.showError("Connection Error", "Không thể kết nối tới máy chủ. Vui lòng kiểm tra lại đường truyền Internet và thông số Port.");
-        } else {
-            LOGGER.warn("Mail-server test failed for username={}.", LogHelper.maskEmail(account.getUsername()), cause);
-            statusLabel.setText("Kiểm tra kết nối thất bại.");
-            AlertUtil.showError("Connection Error", "Kiểm tra kết nối thất bại. Vui lòng kiểm tra lại cấu hình mail server.");
-        }
+        ConnectionTestResult.Type failureType = result == null
+                ? ConnectionTestResult.Type.UNKNOWN_FAILED
+                : result.type();
+        showConnectionTestFailure(account, failureType, result == null ? null : result.cause());
     }
 
     private void handleSaveCompleted(Account savedAccount, Throwable throwable) {
@@ -519,22 +505,71 @@ public class AddAccountDialogController {
         }
     }
 
-    private boolean isConnectionFailure(Throwable cause) {
-        while (cause != null) {
-            if (cause instanceof ConnectException || cause instanceof SocketTimeoutException) {
-                return true;
-            }
-            cause = cause.getCause();
-        }
-        return false;
-    }
-
     private Throwable unwrap(Throwable throwable) {
         Throwable current = throwable;
         while ((current instanceof CompletionException || current instanceof RuntimeException) && current.getCause() != null) {
             current = current.getCause();
         }
         return current;
+    }
+
+    private void handleUnexpectedTestFailure(Account account, Throwable throwable) {
+        Throwable cause = unwrap(throwable);
+        connectionValidated = false;
+        setRetestRequired(true);
+        saveButton.setDisable(true);
+        showConnectionTestFailure(account, ConnectionTestResult.Type.UNKNOWN_FAILED, cause);
+    }
+
+    private void showConnectionTestFailure(
+            Account account,
+            ConnectionTestResult.Type type,
+            Throwable cause
+    ) {
+        LOGGER.warn(
+                "Mail-server test failed for username={}. type={}.",
+                LogHelper.maskEmail(account.getUsername()),
+                type,
+                cause
+        );
+
+        switch (type) {
+            case AUTH_FAILED -> {
+                statusLabel.setText("Xác thực thất bại.");
+                AlertUtil.showError(
+                        "Authentication Error",
+                        "Xác thực thất bại. Vui lòng kiểm tra lại địa chỉ Email và Mật khẩu ứng dụng."
+                );
+            }
+            case TIMEOUT -> {
+                statusLabel.setText("Không thể kết nối tới máy chủ.");
+                AlertUtil.showError(
+                        "Connection Error",
+                        "Không thể kết nối tới máy chủ. Vui lòng kiểm tra lại đường truyền Internet, host và port."
+                );
+            }
+            case SMTP_FAILED -> {
+                statusLabel.setText("Kiểm tra SMTP thất bại.");
+                AlertUtil.showError(
+                        "SMTP Error",
+                        "Không thể kết nối hoặc xác thực SMTP. Vui lòng kiểm tra SMTP host, port và security mode."
+                );
+            }
+            case IMAP_FAILED -> {
+                statusLabel.setText("Kiểm tra IMAP thất bại.");
+                AlertUtil.showError(
+                        "IMAP Error",
+                        "Không thể kết nối hoặc xác thực IMAP. Vui lòng kiểm tra IMAP host, port và security mode."
+                );
+            }
+            default -> {
+                statusLabel.setText("Kiểm tra kết nối thất bại.");
+                AlertUtil.showError(
+                        "Connection Error",
+                        "Kiểm tra kết nối thất bại. Vui lòng kiểm tra lại cấu hình mail server."
+                );
+            }
+        }
     }
 
     private String currentFingerprint() {

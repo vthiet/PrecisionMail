@@ -1,9 +1,12 @@
 package nlu.fit.soft.gr5.precisionMail.controller.fxml;
 
+import atlantafx.base.controls.ToggleSwitch;
+import atlantafx.base.theme.Styles;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import nlu.fit.soft.gr5.precisionMail.service.NavigationService;
+import nlu.fit.soft.gr5.precisionMail.service.ThemeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,12 +35,22 @@ public class SideBarController {
     public Button btnStats;
     @FXML
     public Button btnSettings;
+    @FXML
+    public ToggleSwitch themeToggle;
 
     @FXML
     public void initialize() {
+        configureAtlantaFxStyles();
+        themeToggle.selectedProperty().bindBidirectional(ThemeService.darkModeProperty());
+
         NavigationService navigationService = NavigationService.getInstance();
         navigationService.addNavigationObserver(this::updateActiveButton);
         updateActiveButton(navigationService.getCurrentView());
+    }
+
+    private void configureAtlantaFxStyles() {
+        Styles.addStyleClass(composeButton, Styles.ACCENT);
+        Styles.addStyleClass(themeToggle, Styles.TEXT_SMALL);
     }
 
     @FXML

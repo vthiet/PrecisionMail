@@ -1,7 +1,5 @@
 package nlu.fit.soft.gr5.precisionMail;
 
-import atlantafx.base.theme.CupertinoDark;
-import atlantafx.base.theme.CupertinoLight;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -10,6 +8,7 @@ import javafx.stage.Stage;
 import nlu.fit.soft.gr5.precisionMail.infrastructure.async.AppExecutors;
 import nlu.fit.soft.gr5.precisionMail.infrastructure.db.DatabaseInitializer;
 import nlu.fit.soft.gr5.precisionMail.service.ApplicationStateService;
+import nlu.fit.soft.gr5.precisionMail.service.ThemeService;
 import nlu.fit.soft.gr5.precisionMail.service.impl.ScheduledEmailServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +22,7 @@ public class Launcher extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-        Application.setUserAgentStylesheet(new CupertinoLight().getUserAgentStylesheet());
+        ThemeService.initialize();
         Locale.setDefault(Locale.ENGLISH);
 
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) ->

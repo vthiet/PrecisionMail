@@ -13,4 +13,10 @@ public interface ScheduledEmailService {
     void updateQueuedEmail(Long scheduledEmailId, nlu.fit.soft.gr5.precisionMail.model.Email email, java.time.LocalDateTime newScheduledAt);
 
     void bootstrapPendingSchedules();
+
+    void pauseQueue();
+
+    void resumeQueue();
+
+    boolean isQueuePaused();
 }

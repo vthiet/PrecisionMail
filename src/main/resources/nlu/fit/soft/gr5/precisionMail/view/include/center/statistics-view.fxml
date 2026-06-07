@@ -5,7 +5,7 @@
            fx:controller="nlu.fit.soft.gr5.precisionMail.controller.fxml.StatisticsController">
     <!-- Biểu đồ -->
     <PieChart fx:id="statusChart"
-              title="Thống kê trạng thái Email"
+              title="Thống kê trạng thái Email đang ở hàng đợi"
               prefWidth="500"
               prefHeight="500"
               maxWidth="500"

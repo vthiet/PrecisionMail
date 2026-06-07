@@ -134,6 +134,7 @@ public class QueueController {
 
         refreshQueue();
         loadStatistics();
+        syncToggleButtonUI();
     }
 
     @FXML
@@ -708,6 +709,17 @@ public class QueueController {
             service.pauseQueue();
             btnToggleQueue.setText("▶ Tiếp tục hàng đợi");
             btnToggleQueue.setStyle("-fx-background-color: #ef4444;");
+        }
+        syncToggleButtonUI();
+    }
+
+    private void syncToggleButtonUI() {
+        if (service.isQueuePaused()) {
+            btnToggleQueue.setText("▶ Tiếp tục hàng đợi");
+            btnToggleQueue.setStyle("-fx-background-color: #ef4444; -fx-text-fill: white;");
+        } else {
+            btnToggleQueue.setText("⏸ Tạm dừng hàng đợi");
+            btnToggleQueue.setStyle("-fx-background-color: #3b82f6; -fx-text-fill: white;");
         }
     }
 }

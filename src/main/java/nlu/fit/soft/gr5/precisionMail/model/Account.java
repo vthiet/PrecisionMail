@@ -8,6 +8,10 @@ public class Account {
     private String password;
     private String displayName;
     private boolean primary;
+    /**
+     * Commit UC-01 #16 - Anh Han: đánh dấu App Password đã lưu không thể giải mã.
+     * UI sẽ yêu cầu nhập lại password thay vì fallback im lặng sang dữ liệu thô.
+     */
     private boolean passwordDecryptionFailed;
     private MailServerConfig mailServerConfig;
     private LocalDateTime createdAt;

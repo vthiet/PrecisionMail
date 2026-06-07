@@ -31,6 +31,14 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Optional;
 
+/**
+ * Controller quản lý danh sách tài khoản email của UC-01.
+ *
+ * <p>Commit UC-01 #13-#14 - Anh Han: bổ sung màn hình danh sách tài khoản,
+ * sửa, xóa có xác nhận và đặt tài khoản mặc định.</p>
+ *
+ * @author Anh Han
+ */
 public class AccountManagementController {
     private static final Logger LOGGER = LoggerFactory.getLogger(AccountManagementController.class);
     private static final ButtonType DELETE_BUTTON = new ButtonType("Xóa", ButtonType.OK.getButtonData());
@@ -106,6 +114,12 @@ public class AccountManagementController {
     }
 
     @FXML
+    /**
+     * Xóa tài khoản đang chọn sau khi người dùng xác nhận.
+     *
+     * <p>Commit UC-01 #14 - Anh Han: nối UI với service/DAO xóa tài khoản và
+     * cập nhật lại danh sách sau thao tác.</p>
+     */
     public void handleDeleteAccount() {
         Account selected = selectedAccount();
         if (selected == null) {
@@ -131,6 +145,12 @@ public class AccountManagementController {
     }
 
     @FXML
+    /**
+     * Đặt tài khoản đang chọn làm tài khoản mặc định.
+     *
+     * <p>Commit UC-01 #12-#13 - Anh Han: hỗ trợ nhiều tài khoản và chọn tài
+     * khoản chính dùng cho luồng gửi/nhận mail.</p>
+     */
     public void handleMakePrimary() {
         Account selected = selectedAccount();
         if (selected == null || selected.isPrimary()) {
@@ -149,6 +169,9 @@ public class AccountManagementController {
         }
     }
 
+    /**
+     * Tải lại danh sách tài khoản đã lưu và cập nhật bảng quản lý.
+     */
     private void loadAccounts() {
         try {
             accounts.setAll(accountService.findAll());
@@ -198,6 +221,12 @@ public class AccountManagementController {
         }
     }
 
+    /**
+     * Hiển thị hộp thoại xác nhận trước khi xóa tài khoản.
+     *
+     * @param account tài khoản chuẩn bị xóa
+     * @return true nếu người dùng xác nhận xóa
+     */
     private boolean confirmDelete(Account account) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Xóa tài khoản");
@@ -208,6 +237,12 @@ public class AccountManagementController {
         return result.orElse(ButtonType.CANCEL) == DELETE_BUTTON;
     }
 
+    /**
+     * Tạo nội dung cảnh báo xóa tài khoản theo trạng thái hiện tại.
+     *
+     * @param account tài khoản chuẩn bị xóa
+     * @return nội dung xác nhận hiển thị cho người dùng
+     */
     private String deleteConfirmationMessage(Account account) {
         StringBuilder message = new StringBuilder()
                 .append("Email: ")

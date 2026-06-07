@@ -9,6 +9,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Kiểm thử helper validate email và port cho UC-01.
+ *
+ * <p>Commit UC-01 #3 - Anh Han: bao phủ email hợp lệ/sai định dạng và port
+ * biên 1, 65535, ngoài miền, null và non-number.</p>
+ *
+ * @author Anh Han
+ */
 class Uc01ValidationHelperTest {
 
     @Test

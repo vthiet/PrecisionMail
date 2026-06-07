@@ -41,6 +41,14 @@ public class AccountServiceImpl implements AccountService {
         return accountDao.save(encrypted);
     }
 
+    /**
+     * Tải danh sách tài khoản và giải mã App Password trước khi đưa lên UI.
+     *
+     * <p>Commit UC-01 #12/#16 - Anh Han: hỗ trợ nhiều tài khoản, metadata
+     * hiển thị và trạng thái lỗi giải mã password.</p>
+     *
+     * @return danh sách tài khoản đã xử lý cho tầng giao diện
+     */
     @Override
     public List<Account> findAll() {
         LOGGER.debug("Account list load requested.");
@@ -82,6 +90,14 @@ public class AccountServiceImpl implements AccountService {
         accountDao.update(encrypted);
     }
 
+    /**
+     * Xóa tài khoản theo email và ghi log bằng email đã mask.
+     *
+     * <p>Commit UC-01 #14 - Anh Han: phục vụ thao tác xóa tài khoản từ màn hình
+     * quản lý tài khoản.</p>
+     *
+     * @param emailAddress email của tài khoản cần xóa
+     */
     @Override
     public void deleteByEmailAddress(String emailAddress) {
         if (emailAddress == null || emailAddress.isBlank()) {
@@ -91,6 +107,15 @@ public class AccountServiceImpl implements AccountService {
         accountDao.deleteByEmail(emailAddress);
     }
 
+    /**
+     * Chuyển account lưu trong DB sang account dùng cho UI.
+     *
+     * <p>Commit UC-01 #16 - Anh Han: nếu giải mã App Password thất bại,
+     * account được đánh dấu để UI yêu cầu nhập lại.</p>
+     *
+     * @param account account đọc từ DAO
+     * @return account đã giải mã password hoặc đánh dấu lỗi giải mã
+     */
     private Account toDecryptedAccount(Account account) {
         PasswordDecodeResult password = decryptPassword(account);
         Account decrypted = new Account(
@@ -104,6 +129,12 @@ public class AccountServiceImpl implements AccountService {
         return decrypted;
     }
 
+    /**
+     * Giải mã App Password đã lưu và trả trạng thái lỗi rõ ràng nếu thất bại.
+     *
+     * @param account tài khoản chứa password đã mã hóa
+     * @return kết quả giải mã gồm giá trị password và cờ lỗi
+     */
     private PasswordDecodeResult decryptPassword(Account account) {
         try {
             return new PasswordDecodeResult(CryptoUtil.decrypt(account.getPassword()), false);

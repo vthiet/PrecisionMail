@@ -329,6 +329,12 @@ public class AccountDaoImpl implements AccountDao {
         }
     }
 
+    /**
+     * Bỏ cờ mặc định của các tài khoản khác khi tài khoản hiện tại được chọn làm primary.
+     *
+     * <p>Commit UC-01 #12 - Anh Han: đảm bảo mỗi thời điểm chỉ có một tài khoản
+     * mặc định trong bảng accounts.</p>
+     */
     private void unsetOtherPrimaryAccounts(Connection connection, Account account) throws SQLException {
         if (!account.isPrimary()) {
             return;
@@ -344,6 +350,12 @@ public class AccountDaoImpl implements AccountDao {
         }
     }
 
+    /**
+     * Đảm bảo luôn có một tài khoản mặc định nếu bảng accounts còn dữ liệu.
+     *
+     * <p>Commit UC-01 #12/#14 - Anh Han: sau khi lưu, cập nhật hoặc xóa tài
+     * khoản, hệ thống tự chọn tài khoản cũ nhất làm mặc định nếu chưa có.</p>
+     */
     private void ensurePrimaryAccount(Connection connection) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement("""
                 update accounts

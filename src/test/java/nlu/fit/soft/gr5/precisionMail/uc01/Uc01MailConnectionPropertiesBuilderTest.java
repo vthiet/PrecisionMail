@@ -11,6 +11,14 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+/**
+ * Kiểm thử properties SMTP/IMAP cho UC-01.
+ *
+ * <p>Commit UC-01 #6-#7 - Anh Han: xác nhận host, port, timeout và cờ SSL/TLS
+ * được build đúng cho kết nối gửi/nhận mail.</p>
+ *
+ * @author Anh Han
+ */
 class Uc01MailConnectionPropertiesBuilderTest {
     private static final String TIMEOUT = "10000";
 

@@ -115,6 +115,13 @@ public final class DatabaseInitializer {
         st.execute("create index if not exists idx_scheduled_emails_scheduled_at on scheduled_emails(scheduled_at)");
     }
 
+    /**
+     * Migration bảng accounts sang schema hiện tại của UC-01.
+     *
+     * <p>Commit UC-01 #11-#12 - Anh Han: bổ sung display_name, is_primary,
+     * smtp_security_mode và imap_security_mode nhưng vẫn giữ tương thích với
+     * dữ liệu cũ chỉ có một cột security_mode.</p>
+     */
     private static void migrateAccountsTableIfNeeded(Connection connection) throws SQLException {
         Set<String> columns = getTableColumns(connection, "accounts");
         if (columns.containsAll(Set.of(
@@ -208,6 +215,9 @@ public final class DatabaseInitializer {
         LOGGER.info("Migrated accounts table to current schema.");
     }
 
+    /**
+     * Chọn tài khoản mặc định nếu dữ liệu sau migration chưa có primary account.
+     */
     private static void ensurePrimaryAccount(Connection connection) throws SQLException {
         try (Statement st = connection.createStatement()) {
             st.execute("""

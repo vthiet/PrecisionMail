@@ -6,6 +6,14 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * Kiểm thử quy tắc che email trong log cho UC-01.
+ *
+ * <p>Commit UC-01 #5 - Anh Han: kiểm tra email bình thường, local-part ngắn,
+ * null và blank để log không lộ đầy đủ địa chỉ email.</p>
+ *
+ * @author Anh Han
+ */
 class Uc01LogHelperTest {
 
     @Test

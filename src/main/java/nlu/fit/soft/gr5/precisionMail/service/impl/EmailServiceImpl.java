@@ -80,6 +80,16 @@ public class EmailServiceImpl implements EmailService {
         return validateConnection(account, null);
     }
 
+    /**
+     * Kiểm tra kết nối mail server và ghi log kết quả ở tầng service.
+     *
+     * <p>Commit UC-01 #17-#18 - Anh Han: trả về {@link ConnectionTestResult}
+     * thay vì đẩy exception thô lên UI, đồng thời hỗ trợ callback tiến trình.</p>
+     *
+     * @param account tài khoản cần kiểm tra SMTP/IMAP
+     * @param progressListener callback cập nhật tiến trình kiểm tra cho UI
+     * @return kết quả kiểm tra kết nối
+     */
     @Override
     public ConnectionTestResult validateConnection(Account account, Consumer<ConnectionTestProgress> progressListener) {
         ConnectionTestResult result = EmailUtil.validateConnection(account, progressListener);

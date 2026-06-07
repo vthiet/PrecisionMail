@@ -25,8 +25,21 @@ import java.util.zip.ZipOutputStream;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
+/**
+ * Triển khai {@link LogMonitoringService} bằng Java NIO.
+ *
+ * <p>Lớp này đọc file log {@code system.log}, giới hạn số dòng hiển thị để bảo vệ UI,
+ * lọc log theo level/từ khóa, export log sang ZIP và theo dõi thay đổi file log
+ * bằng {@link java.nio.file.WatchService}.</p>
+ *
+ * <p>Mọi dòng log trả về cho UI đều đi qua {@link LogSanitizer} để giảm rủi ro
+ * lộ email, password, token hoặc secret.</p>
+ */
 public class LogMonitoringServiceImpl implements LogMonitoringService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LogMonitoringServiceImpl.class);
+    /**
+     * Ngưỡng tối đa cho phép UI tải log trực tiếp, hiện là 10MB.
+     */
     private static final long SAFE_UI_LOG_SIZE_BYTES = 10L * 1024L * 1024L;
     private static final Path ACTIVE_LOG = Path.of(
             System.getProperty("user.home"),
@@ -137,11 +150,24 @@ public class LogMonitoringServiceImpl implements LogMonitoringService {
         return ACTIVE_LOG.getParent();
     }
 
+    /**
+     * Kiểm tra file log hiện tại có vượt ngưỡng tải an toàn của UI hay không.
+     *
+     * @return true nếu file log tồn tại và lớn hơn ngưỡng an toàn
+     * @throws IOException nếu không thể đọc kích thước file
+     */
     @Override
     public boolean isActiveLogOversized() throws IOException {
         return Files.exists(ACTIVE_LOG) && Files.size(ACTIVE_LOG) > SAFE_UI_LOG_SIZE_BYTES;
     }
 
+    /**
+     * Vòng lặp nền theo dõi thay đổi file log.
+     *
+     * @param watchService service nhận sự kiện thay đổi file/thư mục
+     * @param running cờ điều khiển vòng lặp watcher
+     * @param newLinesConsumer callback nhận các dòng log mới
+     */
     private void watchLoop(WatchService watchService, AtomicBoolean running, Consumer<List<String>> newLinesConsumer) {
         long lastPosition = initialPosition();
         while (running.get()) {
@@ -172,6 +198,14 @@ public class LogMonitoringServiceImpl implements LogMonitoringService {
         }
     }
 
+    /**
+     * Lấy vị trí đọc ban đầu trong file log.
+     *
+     * <p>Watcher bắt đầu từ cuối file để chỉ nhận các dòng log phát sinh sau khi
+     * màn hình log được mở.</p>
+     *
+     * @return kích thước hiện tại của file log, hoặc 0 nếu file chưa tồn tại
+     */
     private long initialPosition() {
         try {
             return Files.exists(ACTIVE_LOG) ? Files.size(ACTIVE_LOG) : 0L;
@@ -180,6 +214,13 @@ public class LogMonitoringServiceImpl implements LogMonitoringService {
         }
     }
 
+    /**
+     * Đọc phần log mới phát sinh từ vị trí byte đã biết.
+     *
+     * @param position vị trí byte lần đọc trước
+     * @return vị trí mới và danh sách dòng log mới
+     * @throws IOException nếu không thể đọc file log
+     */
     private ReadTailResult readFrom(long position) throws IOException {
         if (!Files.exists(ACTIVE_LOG)) {
             return new ReadTailResult(position, List.of());

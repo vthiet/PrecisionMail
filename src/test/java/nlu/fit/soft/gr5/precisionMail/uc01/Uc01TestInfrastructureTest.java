@@ -6,6 +6,14 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * Kiểm tra cấu trúc JUnit ban đầu cho UC-01.
+ *
+ * <p>Commit UC-01 #2 - Anh Han: xác nhận test có thể load class production
+ * và chạy trong module Maven hiện tại.</p>
+ *
+ * @author Anh Han
+ */
 class Uc01TestInfrastructureTest {
 
     @Test

@@ -14,6 +14,14 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Kiểm thử migration database liên quan UC-01.
+ *
+ * <p>Commit UC-01 #11 - Anh Han: đảm bảo bảng accounts cũ được migrate sang
+ * schema có security mode riêng cho SMTP/IMAP và metadata tài khoản.</p>
+ *
+ * @author Anh Han
+ */
 class DatabaseInitializerTest {
 
     @Test

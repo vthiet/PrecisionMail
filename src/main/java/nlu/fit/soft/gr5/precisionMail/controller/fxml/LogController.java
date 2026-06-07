@@ -29,7 +29,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
-
+/**
+ * Controller cho màn hình UC-07 - Ghi log và giám sát log hệ thống.
+ *
+ * <p>Lớp này chịu trách nhiệm hiển thị log từ file {@code system.log},
+ * lọc log theo cấp độ/từ khóa, xuất file log, mở thư mục log và cập nhật
+ * log mới theo thời gian thực.</p>
+ *
+ * <p>Controller chỉ xử lý điều phối giao diện. Logic đọc file, lọc, export
+ * và theo dõi file log được ủy quyền cho {@link LogMonitoringService}.</p>
+ */
 public class LogController {
     private static final Logger LOGGER = LoggerFactory.getLogger(LogController.class);
     private static final int MAX_DISPLAY_LINES = 1000;
@@ -60,6 +69,12 @@ public class LogController {
     private final ObservableList<LogEntry> visibleEntries = FXCollections.observableArrayList();
     private LogMonitoringService.LogWatchRegistration watchRegistration;
 
+    /**
+     * Khởi tạo màn hình log sau khi FXML được load.
+     *
+     * <p>Thiết lập dữ liệu cho combobox cấp độ log, binding dữ liệu cho bảng,
+     * style từng dòng log theo level và bắt đầu tải/theo dõi file log.</p>
+     */
     @FXML
     public void initialize() {
         levelComboBox.setItems(FXCollections.observableArrayList("ALL", "ERROR", "WARN", "INFO", "DEBUG"));
@@ -90,6 +105,12 @@ public class LogController {
         startWatcher();
     }
 
+    /**
+     * Tải lại tối đa {@value #MAX_DISPLAY_LINES} dòng log mới nhất từ file log hiện tại.
+     *
+     * <p>Việc đọc file chạy trên background thread để không làm đơ JavaFX UI thread.
+     * Sau khi đọc xong, dữ liệu được đưa về UI thread bằng {@code Platform.runLater()}.</p>
+     */
     @FXML
     public void handleRefresh() {
         setStatus("Đang tải 1000 dòng log mới nhất...");
@@ -121,6 +142,12 @@ public class LogController {
         });
     }
 
+    /**
+     * Lọc log theo cấp độ được chọn và từ khóa người dùng nhập.
+     *
+     * <p>Phương thức này đọc và lọc trực tiếp từ file log để đảm bảo kết quả
+     * phản ánh dữ liệu log mới nhất, thay vì chỉ lọc dữ liệu đang hiển thị.</p>
+     */
     @FXML
     public void handleFilterLogs() {
         setStatus("Đang lọc dữ liệu log...");
@@ -143,6 +170,11 @@ public class LogController {
         });
     }
 
+    /**
+     * Mở thư mục chứa file log hệ thống bằng trình quản lý tệp của hệ điều hành.
+     *
+     * <p>Nếu thư mục log chưa tồn tại, hệ thống sẽ tạo thư mục trước khi mở.</p>
+     */
     @FXML
     public void handleOpenLogFolder() {
         Path logDir = logMonitoringService.activeLogDirectory();
@@ -162,6 +194,12 @@ public class LogController {
         });
     }
 
+    /**
+     * Xuất file log hiện tại ra file ZIP do người dùng chọn.
+     *
+     * <p>Chức năng này phục vụ việc nộp log kỹ thuật hoặc gửi log cho người phát triển
+     * khi cần chẩn đoán lỗi.</p>
+     */
     @FXML
     public void handleExportLog() {
         FileChooser chooser = new FileChooser();
@@ -190,14 +228,21 @@ public class LogController {
             }
         });
     }
-
+    /**
+     * Dừng watcher đang theo dõi file log khi màn hình log không còn sử dụng.
+     *
+     * <p>Cần gọi phương thức này để tránh thread nền tiếp tục chạy sau khi người dùng
+     * rời khỏi màn hình log.</p>
+     */
     public void shutdown() {
         if (watchRegistration != null) {
             watchRegistration.close();
             watchRegistration = null;
         }
     }
-
+    /**
+     * Bắt đầu theo dõi file log hiện tại và tự động append log mới vào bảng.
+     */
     private void startWatcher() {
         AppExecutors.io().execute(() -> {
             try {
@@ -210,6 +255,11 @@ public class LogController {
         });
     }
 
+    /**
+     * Thêm các dòng log mới nhận từ watcher vào danh sách log đang quản lý.
+     *
+     * @param lines danh sách dòng log mới đã được service đọc từ file log
+     */
     private void appendLiveEntries(List<String> lines) {
         for (String line : lines) {
             allEntries.add(LogEntry.parse(line));
@@ -220,6 +270,9 @@ public class LogController {
         applyFilter();
     }
 
+    /**
+     * Áp dụng bộ lọc hiện tại trên dữ liệu log đã tải vào bộ dữ liệu đang hiển thị.
+     */
     private void applyFilter() {
         String selectedLevel = levelComboBox.getValue();
         String keyword = keywordField.getText() == null ? "" : keywordField.getText().trim().toLowerCase(Locale.ROOT);
@@ -230,6 +283,12 @@ public class LogController {
         setStatus("Đang hiển thị " + visibleEntries.size() + "/" + allEntries.size() + " dòng log.");
     }
 
+    /**
+     * Gán CSS class cho từng dòng log theo level: ERROR, WARN, INFO hoặc DEBUG.
+     *
+     * @param row dòng trong TableView cần style
+     * @param entry dữ liệu log tương ứng với dòng
+     */
     private void styleRow(TableRow<LogEntry> row, LogEntry entry) {
         row.getStyleClass().removeAll("log-row-error", "log-row-warn", "log-row-info", "log-row-debug");
         if (entry == null) {
@@ -245,6 +304,12 @@ public class LogController {
         }
     }
 
+    /**
+     * Mở thư mục log bằng Desktop API, nếu không hỗ trợ thì fallback sang lệnh hệ điều hành.
+     *
+     * @param directory thư mục cần mở
+     * @throws IOException nếu không thể mở thư mục bằng bất kỳ cách nào
+     */
     private void openDirectory(Path directory) throws IOException {
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
             try {
@@ -271,6 +336,12 @@ public class LogController {
         throw new IOException("No supported command found for opening directory.");
     }
 
+    /**
+     * Tạo danh sách lệnh mở thư mục tương ứng với hệ điều hành hiện tại.
+     *
+     * @param directory thư mục cần mở
+     * @return danh sách command fallback theo thứ tự ưu tiên
+     */
     private List<List<String>> openDirectoryCommands(Path directory) {
         String path = directory.toAbsolutePath().toString();
         String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);

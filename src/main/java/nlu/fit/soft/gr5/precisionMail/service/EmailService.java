@@ -17,8 +17,24 @@ public interface EmailService {
 
     CompletableFuture<SendResult> sendAsync(Account account, Email email);
 
+    /**
+     * Kiểm tra kết nối SMTP và IMAP của tài khoản email.
+     *
+     * @param account tài khoản email cần kiểm tra
+     * @return kết quả kiểm tra kết nối
+     */
     ConnectionTestResult validateConnection(Account account);
 
+    /**
+     * Kiểm tra kết nối SMTP/IMAP và phát trạng thái tiến trình cho UI.
+     *
+     * <p>Commit UC-01 #18 - Anh Han: cho phép dialog cấu hình hiển thị rõ
+     * đang test SMTP hay IMAP.</p>
+     *
+     * @param account tài khoản email cần kiểm tra
+     * @param progressListener callback nhận trạng thái tiến trình, có thể null
+     * @return kết quả kiểm tra kết nối
+     */
     ConnectionTestResult validateConnection(Account account, Consumer<ConnectionTestProgress> progressListener);
 
     List<Email> findAll() throws IOException;

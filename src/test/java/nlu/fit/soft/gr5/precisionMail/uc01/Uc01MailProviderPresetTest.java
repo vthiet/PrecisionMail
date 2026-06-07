@@ -10,6 +10,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+/**
+ * Kiểm thử preset provider cho UC-01.
+ *
+ * <p>Commit UC-01 #8-#9 - Anh Han: xác nhận Gmail, Outlook, Yahoo có cấu hình
+ * chuẩn và Custom không ép cấu hình cố định.</p>
+ *
+ * @author Anh Han
+ */
 class Uc01MailProviderPresetTest {
 
     @Test

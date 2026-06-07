@@ -10,6 +10,12 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
 
+/**
+ * Utility mã hóa và giải mã App Password cho UC-01.
+ *
+ * <p>Commit UC-01 #4/#16 - Anh Han: App Password không lưu plaintext trong DB;
+ * dữ liệu mới dùng AES/GCM và dữ liệu cũ vẫn được hỗ trợ qua legacy decrypt.</p>
+ */
 public class CryptoUtil {
     private static final String SECRET_KEY_PROPERTY = "security.aes.key";
     private static final String TRANSFORMATION = "AES/GCM/NoPadding";
@@ -19,6 +25,12 @@ public class CryptoUtil {
     private static final int GCM_TAG_BITS = 128;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
+    /**
+     * Mã hóa App Password trước khi lưu cấu hình tài khoản.
+     *
+     * @param plainText App Password dạng rõ
+     * @return ciphertext có prefix phiên bản, hoặc null nếu đầu vào null
+     */
     public static String encrypt(String plainText) {
         if (plainText == null) {
             return null;
@@ -39,6 +51,12 @@ public class CryptoUtil {
         }
     }
 
+    /**
+     * Giải mã App Password đã lưu.
+     *
+     * @param cipherText ciphertext đã lưu trong DB
+     * @return App Password dạng rõ, hoặc null nếu đầu vào null
+     */
     public static String decrypt(String cipherText) {
         if (cipherText == null) {
             return null;

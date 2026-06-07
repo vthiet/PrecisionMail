@@ -187,6 +187,15 @@ public class AddAccountDialogController {
         requestClose();
     }
 
+    /**
+     * Xử lý sự kiện kiểm tra kết nối trong UC-01.
+     *
+     * <p>Commit UC-01 #17-#18 - Anh Han: chạy kiểm tra SMTP/IMAP ở background
+     * thread, nhận {@link ConnectionTestResult} an toàn và cập nhật tiến trình
+     * từng bước cho UI.</p>
+     *
+     * @param actionEvent sự kiện click từ JavaFX
+     */
     public void handleTestConnection(ActionEvent actionEvent) {
         Account account = buildAccountFromForm();
         if (!validateForm(account)) {
@@ -269,6 +278,12 @@ public class AddAccountDialogController {
         imapPortField.textProperty().addListener((observable, oldValue, newValue) -> handleManualServerConfigurationChange());
     }
 
+    /**
+     * Đánh dấu cấu hình cần kiểm tra lại sau khi người dùng thay đổi dữ liệu.
+     *
+     * <p>Commit UC-01 #15 - Anh Han: không cho lưu cấu hình SMTP/IMAP đã thay
+     * đổi nếu chưa kiểm tra kết nối lại.</p>
+     */
     private void markConnectionDirty() {
         if (loadingConfiguration) {
             return;
@@ -288,6 +303,12 @@ public class AddAccountDialogController {
         }
     }
 
+    /**
+     * Xử lý khi người dùng tự sửa host/port SMTP hoặc IMAP.
+     *
+     * <p>Commit UC-01 #9 - Anh Han: chuyển provider về Custom để giữ đúng
+     * hành vi cấu hình thủ công.</p>
+     */
     private void handleManualServerConfigurationChange() {
         markProviderAsCustomForManualEdit();
         markConnectionDirty();
@@ -302,6 +323,14 @@ public class AddAccountDialogController {
         }
     }
 
+    /**
+     * Tạo model tài khoản từ dữ liệu trên form cấu hình UC-01.
+     *
+     * <p>Commit UC-01 #10-#12 - Anh Han: lấy display name, primary flag và
+     * security mode riêng cho SMTP/IMAP.</p>
+     *
+     * @return tài khoản tạm dùng để validate, test connection hoặc lưu
+     */
     private Account buildAccountFromForm() {
         Account account = new Account(
                 textOf(usernameField),
@@ -368,6 +397,16 @@ public class AddAccountDialogController {
         return valid;
     }
 
+    /**
+     * Xử lý kết quả cuối cùng của quá trình kiểm tra SMTP/IMAP.
+     *
+     * <p>Commit UC-01 #17 - Anh Han: thành công thì mở khóa lưu cấu hình;
+     * thất bại thì khóa lưu, yêu cầu kiểm tra lại và hiển thị lỗi theo loại/bước.</p>
+     *
+     * @param account tài khoản vừa được kiểm tra
+     * @param result kết quả kiểm tra kết nối
+     * @param throwable lỗi ngoài dự kiến nếu background task thất bại
+     */
     private void handleTestCompleted(Account account, ConnectionTestResult result, Throwable throwable) {
         setTesting(false);
         if (throwable != null) {
@@ -462,6 +501,14 @@ public class AddAccountDialogController {
         }
     }
 
+    /**
+     * Áp dụng cấu hình SMTP/IMAP theo provider được chọn.
+     *
+     * <p>Commit UC-01 #8 - Anh Han: tự điền host, port và security mode cho
+     * Gmail, Outlook hoặc Yahoo.</p>
+     *
+     * @param preset provider được chọn trên ComboBox
+     */
     private void applyProviderPreset(MailProviderPreset preset) {
         if (preset == null || !preset.hasConfig()) {
             markConnectionDirty();
@@ -501,6 +548,11 @@ public class AddAccountDialogController {
         progressIndicator.setVisible(testing);
     }
 
+    /**
+     * Hiển thị hoặc ẩn trạng thái cần kiểm tra lại.
+     *
+     * @param required true nếu cấu hình hiện tại cần test lại trước khi lưu
+     */
     private void setRetestRequired(boolean required) {
         if (retestRequired == required && retestRequiredLabel != null) {
             return;
@@ -520,6 +572,12 @@ public class AddAccountDialogController {
         return current;
     }
 
+    /**
+     * Xử lý lỗi ngoài dự kiến phát sinh từ background task kiểm tra kết nối.
+     *
+     * @param account tài khoản đang được kiểm tra
+     * @param throwable exception gốc từ {@link CompletableFuture}
+     */
     private void handleUnexpectedTestFailure(Account account, Throwable throwable) {
         Throwable cause = unwrap(throwable);
         connectionValidated = false;
@@ -528,6 +586,17 @@ public class AddAccountDialogController {
         showConnectionTestFailure(account, ConnectionTestResult.Type.UNKNOWN_FAILED, ConnectionTestResult.Step.UNKNOWN, cause);
     }
 
+    /**
+     * Hiển thị lỗi kiểm tra kết nối theo loại lỗi và bước lỗi.
+     *
+     * <p>Commit UC-01 #17 - Anh Han: AUTH_FAILED và TIMEOUT có thể xảy ra ở
+     * SMTP hoặc IMAP, nên cần dùng thêm step để báo đúng vị trí lỗi.</p>
+     *
+     * @param account tài khoản đang kiểm tra
+     * @param type loại lỗi kiểm tra kết nối
+     * @param step bước xảy ra lỗi
+     * @param cause exception gốc phục vụ logging/debug
+     */
     private void showConnectionTestFailure(
             Account account,
             ConnectionTestResult.Type type,
@@ -601,6 +670,14 @@ public class AddAccountDialogController {
         }
     }
 
+    /**
+     * Cập nhật trạng thái UI theo tiến trình kiểm tra SMTP/IMAP.
+     *
+     * <p>Commit UC-01 #18 - Anh Han: đưa cập nhật label về JavaFX Application
+     * Thread để UI báo rõ đang test SMTP hay IMAP.</p>
+     *
+     * @param progress trạng thái tiến trình kiểm tra hiện tại
+     */
     private void updateConnectionTestProgress(ConnectionTestProgress progress) {
         Platform.runLater(() -> {
             switch (progress) {
@@ -612,6 +689,13 @@ public class AddAccountDialogController {
         });
     }
 
+    /**
+     * Tạo nội dung status ngắn gọn cho lỗi kiểm tra kết nối.
+     *
+     * @param step bước xảy ra lỗi
+     * @param detail mô tả lỗi ngắn
+     * @return nội dung status hiển thị trên dialog
+     */
     private String connectionFailureStatus(ConnectionTestResult.Step step, String detail) {
         return switch (step) {
             case SMTP -> "SMTP " + detail + ".";
@@ -620,6 +704,13 @@ public class AddAccountDialogController {
         };
     }
 
+    /**
+     * Tạo thông điệp lỗi chi tiết cho popup kiểm tra kết nối.
+     *
+     * @param step bước xảy ra lỗi
+     * @param fallbackMessage thông điệp mặc định nếu không xác định được bước lỗi
+     * @return thông điệp lỗi phù hợp với SMTP/IMAP
+     */
     private String connectionFailureMessage(ConnectionTestResult.Step step, String fallbackMessage) {
         return switch (step) {
             case SMTP -> "Lỗi ở bước kiểm tra SMTP.";
@@ -688,6 +779,14 @@ public class AddAccountDialogController {
         providerComboBox.setValue(MailProviderPreset.inferFrom(config));
     }
 
+    /**
+     * Áp dụng trạng thái lỗi giải mã App Password lên form cấu hình.
+     *
+     * <p>Commit UC-01 #16 - Anh Han: nếu password đã lưu không giải mã được,
+     * form yêu cầu nhập lại App Password và kiểm tra kết nối trước khi lưu.</p>
+     *
+     * @param account tài khoản đang được nạp lên form
+     */
     private void applyPasswordDecryptionState(Account account) {
         passwordDecryptionFailed = account.isPasswordDecryptionFailed();
         if (passwordDecryptionFailed) {

@@ -9,6 +9,14 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Kiểm thử mã hóa App Password cho UC-01.
+ *
+ * <p>Commit UC-01 #4 - Anh Han: đảm bảo ciphertext khác plaintext, có thể
+ * decrypt về password gốc và dùng IV ngẫu nhiên cho mỗi lần mã hóa.</p>
+ *
+ * @author Anh Han
+ */
 class Uc01CryptoUtilTest {
 
     @Test

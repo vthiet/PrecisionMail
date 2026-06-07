@@ -106,6 +106,17 @@ public class EmailUtil {
         return validateConnection(account, null);
     }
 
+    /**
+     * Kiểm tra tuần tự SMTP rồi IMAP cho UC-01.
+     *
+     * <p>Commit UC-01 #17-#18 - Anh Han: SMTP được kiểm tra trước; nếu SMTP
+     * thất bại thì trả kết quả lỗi ngay. Khi SMTP thành công, hệ thống tiếp tục
+     * kiểm tra IMAP và phát tiến trình cho UI nếu có callback.</p>
+     *
+     * @param account tài khoản email cần kiểm tra
+     * @param progressListener callback nhận tiến trình SMTP/IMAP, có thể null
+     * @return kết quả kiểm tra kết nối kèm loại lỗi và bước lỗi nếu thất bại
+     */
     public static ConnectionTestResult validateConnection(
             Account account,
             Consumer<ConnectionTestProgress> progressListener
@@ -154,6 +165,18 @@ public class EmailUtil {
         return ConnectionTestResult.success();
     }
 
+    /**
+     * Chuyển exception kỹ thuật của Jakarta Mail thành kết quả lỗi nghiệp vụ.
+     *
+     * <p>Commit UC-01 #17 - Anh Han: phân loại lỗi xác thực, lỗi timeout/mạng
+     * và lỗi riêng của SMTP/IMAP để UI hiển thị đúng nguyên nhân.</p>
+     *
+     * @param protocolFailureType loại lỗi mặc định theo giao thức SMTP hoặc IMAP
+     * @param step bước đang kiểm tra khi lỗi xảy ra
+     * @param message thông điệp lỗi mặc định
+     * @param ex exception gốc từ Jakarta Mail
+     * @return kết quả lỗi đã được phân loại
+     */
     private static ConnectionTestResult connectionFailure(
             ConnectionTestResult.Type protocolFailureType,
             ConnectionTestResult.Step step,
@@ -182,6 +205,12 @@ public class EmailUtil {
         return ConnectionTestResult.failure(protocolFailureType, step, message, ex);
     }
 
+    /**
+     * Gửi trạng thái tiến trình kiểm tra kết nối nếu caller có đăng ký callback.
+     *
+     * @param progressListener callback nhận trạng thái, có thể null
+     * @param progress trạng thái tiến trình cần gửi
+     */
     private static void notifyProgress(
             Consumer<ConnectionTestProgress> progressListener,
             ConnectionTestProgress progress
@@ -191,6 +220,16 @@ public class EmailUtil {
         }
     }
 
+    /**
+     * Kiểm tra chuỗi nguyên nhân của exception có chứa loại lỗi mong muốn không.
+     *
+     * <p>Jakarta Mail có thể bọc lỗi thật trong {@link MessagingException#getNextException()},
+     * nên cần duyệt cả next exception và cause thông thường.</p>
+     *
+     * @param throwable exception cần kiểm tra
+     * @param expectedType loại exception cần tìm
+     * @return true nếu tìm thấy exception thuộc loại cần kiểm tra
+     */
     private static boolean hasCause(Throwable throwable, Class<? extends Throwable> expectedType) {
         Throwable current = throwable;
         while (current != null) {

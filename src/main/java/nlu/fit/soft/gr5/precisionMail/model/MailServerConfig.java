@@ -1,5 +1,11 @@
 package nlu.fit.soft.gr5.precisionMail.model;
 
+/**
+ * Cấu hình SMTP/IMAP của một tài khoản email trong UC-01.
+ *
+ * <p>Commit UC-01 #10 - Anh Han: tách security mode của SMTP và IMAP để
+ * gửi mail và nhận mail có thể dùng SSL/TLS khác nhau.</p>
+ */
 public class MailServerConfig {
     private String smtpHost;
     private int smtpPort;

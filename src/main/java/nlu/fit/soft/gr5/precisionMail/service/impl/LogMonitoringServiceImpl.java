@@ -32,29 +32,38 @@ public class LogMonitoringServiceImpl implements LogMonitoringService {
     private static final Pattern LOG_RECORD_START = Pattern.compile(
             "^\\[[^]]+] \\[[^]]+] \\[[^]]+] \\[[^]]+] - .*$"
     );
-    private static final Path ACTIVE_LOG = Path.of(
+    private static final Path DEFAULT_ACTIVE_LOG = Path.of(
             System.getProperty("user.home"),
             ".precisionmail",
             "logs",
             "system.log"
     );
+    private final Path activeLog;
+
+    public LogMonitoringServiceImpl() {
+        this(DEFAULT_ACTIVE_LOG);
+    }
+
+    public LogMonitoringServiceImpl(Path activeLog) {
+        this.activeLog = activeLog;
+    }
 
     @Override
     public List<String> readRecentLines(int maxLines) throws IOException {
         validateMaxLines(maxLines);
-        if (!Files.exists(ACTIVE_LOG)) {
+        if (!Files.exists(activeLog)) {
             // AF-6.1.3-A1: an absent initial log is a valid empty state; WatchService waits for creation.
             return List.of();
         }
         if (isActiveLogOversized()) {
             LOGGER.warn("Log file size [{}] MB exceeds safe load threshold of 10MB. Loading truncated view (last [{}] lines) to prevent OutOfMemoryError.",
-                    Files.size(ACTIVE_LOG) / (1024 * 1024),
+                    Files.size(activeLog) / (1024 * 1024),
                     maxLines);
         }
 
         // BF-6.1.3-5 / EF-6.1.3-E2: retain only the latest complete records and sanitize before returning.
         ArrayDeque<String> buffer = new ArrayDeque<>(maxLines);
-        try (var lines = Files.lines(ACTIVE_LOG)) {
+        try (var lines = Files.lines(activeLog)) {
             collectLogRecords(lines::forEach, record -> addBounded(buffer, LogSanitizer.sanitize(record), maxLines));
         }
         return new ArrayList<>(buffer);
@@ -63,14 +72,14 @@ public class LogMonitoringServiceImpl implements LogMonitoringService {
     @Override
     public List<String> streamAndFilterLogs(String level, String keyword, int maxLines) throws IOException {
         validateMaxLines(maxLines);
-        if (!Files.exists(ACTIVE_LOG)) {
+        if (!Files.exists(activeLog)) {
             return List.of();
         }
 
         String normalizedLevel = normalize(level);
         String normalizedKeyword = normalize(keyword);
         ArrayDeque<String> buffer = new ArrayDeque<>(maxLines);
-        try (var lines = Files.lines(ACTIVE_LOG)) {
+        try (var lines = Files.lines(activeLog)) {
             // BF-6.1.8-9: filter complete sanitized records so a matching ERROR keeps its stacktrace.
             collectLogRecords(lines::forEach, record -> {
                 String sanitized = LogSanitizer.sanitize(record);
@@ -86,8 +95,8 @@ public class LogMonitoringServiceImpl implements LogMonitoringService {
     @Override
     public Path exportActiveLogs(Path destination) throws IOException {
         // BF-6.1.18 / EF-6.1.18-E1: export a ZIP copy and never modify or remove the active log.
-        if (!Files.exists(ACTIVE_LOG)) {
-            throw new IOException("Active log file does not exist: " + ACTIVE_LOG);
+        if (!Files.exists(activeLog)) {
+            throw new IOException("Active log file does not exist: " + activeLog);
         }
 
         Path target = destination;
@@ -105,8 +114,8 @@ public class LogMonitoringServiceImpl implements LogMonitoringService {
                 StandardOpenOption.CREATE,
                 StandardOpenOption.TRUNCATE_EXISTING,
                 StandardOpenOption.WRITE))) {
-            zip.putNextEntry(new ZipEntry(ACTIVE_LOG.getFileName().toString()));
-            Files.copy(ACTIVE_LOG, zip);
+            zip.putNextEntry(new ZipEntry(activeLog.getFileName().toString()));
+            Files.copy(activeLog, zip);
             zip.closeEntry();
         }
         return target;
@@ -133,17 +142,17 @@ public class LogMonitoringServiceImpl implements LogMonitoringService {
 
     @Override
     public Path activeLogFile() {
-        return ACTIVE_LOG;
+        return activeLog;
     }
 
     @Override
     public Path activeLogDirectory() {
-        return ACTIVE_LOG.getParent();
+        return activeLog.getParent();
     }
 
     @Override
     public boolean isActiveLogOversized() throws IOException {
-        return Files.exists(ACTIVE_LOG) && Files.size(ACTIVE_LOG) > SAFE_UI_LOG_SIZE_BYTES;
+        return Files.exists(activeLog) && Files.size(activeLog) > SAFE_UI_LOG_SIZE_BYTES;
     }
 
     private void watchLoop(WatchService watchService, AtomicBoolean running, Consumer<List<String>> newLinesConsumer) {
@@ -153,7 +162,7 @@ public class LogMonitoringServiceImpl implements LogMonitoringService {
                 WatchKey key = watchService.take();
                 boolean changed = false;
                 for (WatchEvent<?> event : key.pollEvents()) {
-                    if (ACTIVE_LOG.getFileName().equals(event.context())) {
+                    if (activeLog.getFileName().equals(event.context())) {
                         changed = true;
                     }
                 }
@@ -178,19 +187,19 @@ public class LogMonitoringServiceImpl implements LogMonitoringService {
 
     private long initialPosition() {
         try {
-            return Files.exists(ACTIVE_LOG) ? Files.size(ACTIVE_LOG) : 0L;
+            return Files.exists(activeLog) ? Files.size(activeLog) : 0L;
         } catch (IOException e) {
             return 0L;
         }
     }
 
     private ReadTailResult readFrom(long position) throws IOException {
-        if (!Files.exists(ACTIVE_LOG)) {
+        if (!Files.exists(activeLog)) {
             return new ReadTailResult(position, List.of());
         }
-        long size = Files.size(ACTIVE_LOG);
+        long size = Files.size(activeLog);
         long start = position > size ? 0L : position;
-        try (var channel = Files.newByteChannel(ACTIVE_LOG, StandardOpenOption.READ)) {
+        try (var channel = Files.newByteChannel(activeLog, StandardOpenOption.READ)) {
             channel.position(start);
             byte[] bytes = channelToBytes(channel, size - start);
             String text = new String(bytes, StandardCharsets.UTF_8);

@@ -12,9 +12,9 @@
 
 ## 2. Tổng quan hiện thực
 
-UC-06 được hiện thực bằng màn hình `system-logs.fxml` và controller `LogController`. Khi người dùng mở mục "Log hệ thống" từ sidebar hoặc menu, controller tải tối đa 1000 dòng log mới nhất từ `~/.precisionmail/logs/system.log`, phân tích từng dòng thành `LogEntry`, hiển thị lên `TableView` và tự động theo dõi thay đổi tệp log bằng `WatchService`.
+UC-06 được hiện thực bằng màn hình `system-logs.fxml` và controller `LogController`. Khi người dùng mở mục "Log hệ thống" từ sidebar hoặc menu, service tải tối đa 1000 bản ghi log mới nhất từ `~/.precisionmail/logs/system.log`, nhóm các dòng Stacktrace continuation vào bản ghi đứng trước, masking dữ liệu nhạy cảm; controller phân tích từng bản ghi thành `LogEntry`, hiển thị lên `TableView` và tự động theo dõi thay đổi tệp log bằng `WatchService`.
 
-Các thao tác đọc file, lọc file, theo dõi thay đổi, mở thư mục và xuất file ZIP đều chạy trên `AppExecutors.io()` dùng Virtual Thread của JDK 21. JavaFX Application Thread chỉ cập nhật `ObservableList`, `TableView`, `TextArea`, tooltip và alert thông qua `Platform.runLater()`.
+Các thao tác đọc file, lọc file, theo dõi thay đổi, mở thư mục và xuất file ZIP đều chạy trên `AppExecutors.io()` dùng Virtual Thread của JDK 25 theo cấu hình build hiện tại. JavaFX Application Thread chỉ cập nhật `ObservableList`, `TableView`, `TextArea`, tooltip và alert thông qua `Platform.runLater()`.
 
 ```mermaid
 flowchart LR
@@ -111,7 +111,7 @@ sequenceDiagram
     UI-->>U: Hiển thị bảng log và trạng thái tải
 ```
 
-Cơ chế đọc log không đưa toàn bộ file vào bảng UI. `LogMonitoringServiceImpl.readRecentLines()` dùng `ArrayDeque` có kích thước tối đa `maxLines`; khi vượt ngưỡng, dòng cũ nhất bị loại bỏ. Nhờ đó giao diện chỉ giữ 1000 dòng mới nhất, phù hợp EF-06-02.
+Cơ chế đọc log không đưa toàn bộ file vào bảng UI. `LogMonitoringServiceImpl.readRecentLines()` nhóm Stacktrace thành bản ghi hoàn chỉnh và dùng `ArrayDeque` có kích thước tối đa `maxLines`; khi vượt ngưỡng, bản ghi cũ nhất bị loại bỏ. Nhờ đó giao diện chỉ giữ 1000 bản ghi mới nhất, phù hợp EF-6.1.3-E2.
 
 ### 4.2 Luồng theo dõi log thời gian thực
 
@@ -178,7 +178,7 @@ sequenceDiagram
     D-->>U: Hiển thị đầy đủ dòng log đã sanitize
 ```
 
-Chi tiết log dùng `rawLine()` sau khi đã được sanitize ở tầng đọc file hoặc tầng ghi Logback, nên nội dung hiển thị không làm lộ app password, token, secret hoặc email đầy đủ.
+Chi tiết log dùng `detailText()` trên bản ghi đã được sanitize ở tầng đọc file hoặc tầng ghi Logback. Dòng ERROR có Stacktrace hiển thị toàn bộ bản ghi nhiều dòng; dòng ERROR không có Stacktrace hiển thị thông báo rõ ràng.
 
 ### 4.5 Luồng mở thư mục log
 
@@ -277,7 +277,7 @@ flowchart TD
     Mask2 --> UI[TableView/TextArea]
 ```
 
-`LogSanitizer` dùng regex để chuyển các trường `password`, `appPassword`, `pass`, `token`, `secret` thành `[PROTECTED_PASSWORD]` và làm mờ email theo dạng `abc***@domain.com`.
+`LogSanitizer` dùng regex để chuyển các trường `password`, `appPassword`, `pass`, `secret` thành `[PROTECTED_PASSWORD]`, chuyển `token`/access key/API key thành `[PROTECTED_TOKEN]` và làm mờ email theo dạng `abc***@domain.com`.
 
 ### 5.3 Ghi log bất đồng bộ và xoay vòng file bằng Logback
 
@@ -347,29 +347,36 @@ flowchart TD
 
 | Luồng ngoại lệ | Cơ chế hiện thực | Phản hồi UI |
 | --- | --- | --- |
-| EF-06-01: Không đọc được file log | `handleRefresh()` bắt `IOException` từ `readRecentLines()` | Xóa bảng và hiển thị thông báo không thể truy cập tệp nhật ký |
-| EF-06-02: File log lớn hơn 10 MB | `isActiveLogOversized()` kiểm tra `Files.size(ACTIVE_LOG) > 10MB` | Chỉ hiển thị 1000 dòng cuối và đặt tooltip cảnh báo |
-| EF-06-03: Không mở được thư mục log | `openDirectory()` thử Desktop API rồi fallback OS command; nếu đều lỗi thì ném `IOException` | Hiển thị alert "Không thể mở thư mục chứa log" |
-| Lỗi watcher | `startWatcher()` bắt `IOException` khi đăng ký `WatchService` | Cập nhật status "Không thể kích hoạt theo dõi log thời gian thực" |
-| Lỗi export ZIP | `handleExportLog()` bắt `IOException` từ `exportActiveLogs()` | Hiển thị alert lỗi xuất file log |
+| AF-6.1.3-A1: File log chưa tồn tại | `readRecentLines()` trả `List.of()`; watcher tiếp tục chờ `ENTRY_CREATE` | Hiển thị bảng rỗng và tiếp tục theo dõi |
+| EF-6.1.3-E1: Không đọc được file log tồn tại | `handleRefresh()` bắt `IOException` từ `readRecentLines()` | Xóa bảng và hiển thị thông báo không thể truy cập tệp nhật ký |
+| EF-6.1.3-E2: File log lớn hơn 10 MB | `isActiveLogOversized()` kiểm tra `Files.size(ACTIVE_LOG) > 10MB` | Chỉ hiển thị 1000 bản ghi cuối và đặt tooltip cảnh báo |
+| EF-6.1.7-E1: Không kích hoạt được watcher | `startWatcher()` bắt `IOException` khi đăng ký `WatchService` | Cập nhật status "Không thể kích hoạt theo dõi log thời gian thực" |
+| EF-6.1.18-E1: Không thể xuất ZIP | `handleExportLog()` bắt `IOException` từ `exportActiveLogs()` | Hiển thị alert lỗi xuất file log |
+| EF-6.1.13-E1: Không mở được thư mục log | `openDirectory()` thử Desktop API rồi fallback OS command; nếu đều lỗi thì ném `IOException` | Hiển thị alert "Không thể mở thư mục chứa log" |
 
 ## 8. Truy vết yêu cầu - hiện thực
 
 | Mã yêu cầu UC-06 | Nội dung | Thành phần hiện thực | Trạng thái |
 | --- | --- | --- | --- |
-| S6.1 | Người dùng mở tab/mục log hệ thống | `SideBarController.handleLogsBtn()`, `MenuBarController.handleSystemLogs()` | Đã hiện thực |
-| S6.2 | Đọc 1000 dòng log mới nhất | `LogController.handleRefresh()`, `LogMonitoringServiceImpl.readRecentLines()` | Đã hiện thực |
-| S6.3 | Parse log theo định dạng chuẩn | `LogEntry.parse()` | Đã hiện thực |
-| S6.4 | Hiển thị log lên bảng có màu theo level | `system-logs.fxml`, `LogController.styleRow()`, `log-monitor.css` | Đã hiện thực |
-| S6.5 | Theo dõi log thời gian thực | `LogMonitoringServiceImpl.watchActiveLog()`, `WatchService`, `Thread.ofVirtual()` | Đã hiện thực |
-| S6.6-S6.7 | Lọc theo level và keyword | `LogController.applyFilter()`, `handleFilterLogs()`, `streamAndFilterLogs()` | Đã hiện thực |
-| S6.8 | Xem chi tiết log được chọn | `selectedItemProperty` cập nhật `detailArea` | Đã hiện thực |
-| S6.9-S6.12 | Mở thư mục log và fallback OS | `handleOpenLogFolder()`, `openDirectory()`, `openDirectoryCommands()` | Đã hiện thực |
-| AF-06-01 | Xuất file log dạng ZIP | `handleExportLog()`, `exportActiveLogs()` | Đã hiện thực |
-| AF-06-02 | Mở thư mục bằng fallback theo hệ điều hành | `Desktop.open()` kết hợp `explorer/open/xdg-open/gio/kde-open/gnome-open` | Đã hiện thực |
-| EF-06-01 | Không tìm thấy/không đọc được file log | Trả `List.of()` nếu file chưa tồn tại; bắt `IOException` nếu lỗi đọc | Đã hiện thực |
-| EF-06-02 | Tránh tràn RAM khi file log lớn | Ngưỡng `SAFE_UI_LOG_SIZE_BYTES = 10MB`, `ArrayDeque` tối đa 1000 dòng | Đã hiện thực |
-| EF-06-03 | Không mở được thư mục log | Bắt `IOException`, ghi `WARN`, hiển thị alert lỗi | Đã hiện thực |
+| BF-6.1.0-BF-6.1.2 | Khởi động ứng dụng và mở mục log hệ thống | Bootstrap ứng dụng, `SideBarController.handleLogsBtn()`, `MenuBarController.handleSystemLogs()` | Đã hiện thực |
+| BF-6.1.3 | Đọc tối đa 1000 bản ghi log mới nhất | `LogController.handleRefresh()`, `LogMonitoringServiceImpl.readRecentLines()` | Đã hiện thực |
+| BF-6.1.4-BF-6.1.5 | Nhóm bản ghi, sanitize và parse log | `LogMonitoringServiceImpl`, `LogSanitizer.sanitize()`, `LogEntry.parse()` | Đã hiện thực |
+| BF-6.1.6 | Hiển thị bảng có màu theo level | `system-logs.fxml`, `LogController.styleRow()`, `log-monitor.css` | Đã hiện thực |
+| BF-6.1.7 | Theo dõi log thời gian thực | `watchActiveLog()`, `WatchService`, `Thread.ofVirtual()` | Đã hiện thực |
+| BF-6.1.8-BF-6.1.9 | Lọc theo level và keyword | `LogController.applyFilter()`, `handleFilterLogs()`, `streamAndFilterLogs()` | Đã hiện thực |
+| BF-6.1.10-BF-6.1.11 | Xem chi tiết và Stacktrace log được chọn | `LogEntry.detailText()`, `selectedItemProperty`, `detailArea` | Đã hiện thực |
+| BF-6.1.12-BF-6.1.14 | Mở thư mục log và cập nhật trạng thái | `handleOpenLogFolder()`, `openDirectory()` | Đã hiện thực |
+| BF-6.1.15-BF-6.1.18 | Chọn vị trí và xuất file log dạng ZIP | `handleExportLog()`, `exportActiveLogs()` | Đã hiện thực |
+| AF-6.1.3-A1 | Tệp log chưa tồn tại | `readRecentLines()` trả danh sách rỗng; `WatchService` chờ file mới | Đã hiện thực |
+| AF-6.1.13-A1 | Mở thư mục bằng fallback theo hệ điều hành | `Desktop.open()` kết hợp `explorer/open/xdg-open/gio/kde-open/gnome-open` | Đã hiện thực |
+| AF-6.1.16-A1 | Người dùng hủy xuất file | `handleExportLog()` cập nhật trạng thái và không tạo file | Đã hiện thực |
+| EF-6.1.3-E1 | Không đọc được file log tồn tại | Bắt `IOException` nếu lỗi đọc | Đã hiện thực |
+| EF-6.1.3-E2 | Tránh tràn RAM UI khi file log lớn | Ngưỡng `SAFE_UI_LOG_SIZE_BYTES = 10MB`, `ArrayDeque` tối đa 1000 bản ghi | Đã hiện thực |
+| EF-6.1.7-E1 | Không kích hoạt được watcher | Bắt `IOException` khi đăng ký `WatchService` | Đã hiện thực |
+| EF-6.1.9-E1 | Không có kết quả lọc | `setFilterStatus()` hiển thị trạng thái rỗng | Đã hiện thực |
+| EF-6.1.10-E1 | Dòng ERROR không có Stacktrace | `LogEntry.detailText()` hiển thị thông báo rõ ràng | Đã hiện thực |
+| EF-6.1.13-E1 | Không mở được thư mục log | Bắt `IOException`, ghi `WARN`, hiển thị alert lỗi | Đã hiện thực |
+| EF-6.1.18-E1 | Không thể xuất ZIP | Bắt `IOException`, ghi `ERROR`, hiển thị alert lỗi | Đã hiện thực |
 | BR-06-01 | Mask password, token, secret và email | `LogSanitizer`, `SecurePatternLayout`, sanitize khi đọc file | Đã hiện thực |
 | BR-06-02 | Log rotation 10MB/file, 200MB tổng | `logback.xml` với `SizeAndTimeBasedRollingPolicy` | Đã hiện thực |
 | NFR-06-01 | File I/O không khóa UI | `AppExecutors.io()` Virtual Thread + `Platform.runLater()` | Đã hiện thực |

@@ -41,7 +41,7 @@ import java.util.concurrent.CompletionException;
 
 public class AddAccountDialogController {
     private static final Logger LOGGER = LoggerFactory.getLogger(AddAccountDialogController.class);
-    private static final String INVALID_STYLE = "-fx-border-color: #dc2626; -fx-border-width: 1.2;";
+    private static final String INVALID_STYLE_CLASS = "field-invalid";
 
     @FXML
     public ComboBox<MailProviderPreset> providerComboBox;
@@ -655,12 +655,14 @@ public class AddAccountDialogController {
     }
 
     private void markInvalid(TextField field, String message) {
-        field.setStyle(INVALID_STYLE);
+        if (!field.getStyleClass().contains(INVALID_STYLE_CLASS)) {
+            field.getStyleClass().add(INVALID_STYLE_CLASS);
+        }
         field.setTooltip(new Tooltip(message));
     }
 
     private void clearInvalid(TextField field) {
-        field.setStyle(null);
+        field.getStyleClass().remove(INVALID_STYLE_CLASS);
         field.setTooltip(null);
     }
 

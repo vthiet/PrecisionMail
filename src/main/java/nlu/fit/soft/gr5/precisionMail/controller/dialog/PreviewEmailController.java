@@ -109,7 +109,7 @@ public class PreviewEmailController {
         if (email.content != null && !email.content.isEmpty()) {
             // Wrap content in HTML with base styling
             String htmlContent = String.format(
-                    "<html><head><meta charset='UTF-8'/><style>body { font-family: Arial, sans-serif; font-size: 14px; color: #333; margin: 10px; }</style></head><body>%s</body></html>",
+                    "<html><head><meta charset='UTF-8'/><style>body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #202124; margin: 12px; }</style></head><body>%s</body></html>",
                     email.content
             );
             contentWebView.getEngine().loadContent(htmlContent);

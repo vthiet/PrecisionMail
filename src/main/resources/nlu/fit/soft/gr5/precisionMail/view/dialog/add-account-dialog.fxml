@@ -14,6 +14,7 @@
 <?import javafx.scene.layout.VBox?>
 
 <VBox spacing="14"
+      stylesheets="@../../css/app.css"
       xmlns="http://javafx.com/javafx/25"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="nlu.fit.soft.gr5.precisionMail.controller.dialog.AddAccountDialogController">
@@ -23,7 +24,7 @@
     </padding>
 
     <Label text="Cấu hình kết nối Mail Server"
-           style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+           styleClass="dialog-title"/>
 
     <GridPane hgap="12" vgap="10">
         <columnConstraints>
@@ -107,13 +108,13 @@
                text="Cần kiểm tra lại"
                visible="false"
                managed="false"
-               style="-fx-background-color: #FEF3C7; -fx-text-fill: #92400E; -fx-padding: 3 8 3 8; -fx-background-radius: 10; -fx-font-weight: bold;"/>
-        <Label fx:id="statusLabel" text="Sẵn sàng cấu hình."/>
+               styleClass="badge,badge-warning"/>
+        <Label fx:id="statusLabel" text="Sẵn sàng cấu hình." styleClass="status-text"/>
     </HBox>
 
     <HBox spacing="10" alignment="CENTER_RIGHT">
         <Button fx:id="cancelButton" text="Hủy bỏ" onAction="#handleCancel"/>
         <Button fx:id="testConnectionButton" text="Kiểm tra kết nối" onAction="#handleTestConnection"/>
-        <Button fx:id="saveButton" text="Lưu cấu hình" onAction="#handleSave"/>
+        <Button fx:id="saveButton" text="Lưu cấu hình" onAction="#handleSave" styleClass="primary-action"/>
     </HBox>
 </VBox>

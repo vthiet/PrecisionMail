@@ -75,8 +75,9 @@ public class LogController {
 
         logTable.setItems(visibleEntries);
         logTable.setPlaceholder(new Label("Không có dữ liệu log để hiển thị."));
+        // BF-6.1.10-11 / EF-6.1.10-E1: display a grouped stacktrace or an explicit fallback detail.
         logTable.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, selected) ->
-                detailArea.setText(selected == null ? "" : selected.rawLine()));
+                detailArea.setText(selected == null ? "" : selected.detailText()));
         logTable.setRowFactory(table -> {
             TableRow<LogEntry> row = new TableRow<>();
             row.itemProperty().addListener((observable, previous, current) -> styleRow(row, current));
@@ -92,6 +93,7 @@ public class LogController {
 
     @FXML
     public void handleRefresh() {
+        // BF-6.1.3-6 / EF-6.1.3-E1-E2: read on a virtual thread, then update JavaFX state.
         setStatus("Đang tải 1000 dòng log mới nhất...");
         AppExecutors.io().execute(() -> {
             try {
@@ -134,7 +136,7 @@ public class LogController {
                         .toList();
                 Platform.runLater(() -> {
                     visibleEntries.setAll(entries);
-                    setStatus("Đang hiển thị " + visibleEntries.size() + " dòng log đã lọc.");
+                    setFilterStatus(entries.size());
                 });
             } catch (IOException e) {
                 LOGGER.error("Failed to filter active log file.", e);
@@ -145,6 +147,7 @@ public class LogController {
 
     @FXML
     public void handleOpenLogFolder() {
+        // BF-6.1.12-14 / AF-6.1.13-A1 / EF-6.1.13-E1.
         Path logDir = logMonitoringService.activeLogDirectory();
         setStatus("Đang mở thư mục log...");
         AppExecutors.io().execute(() -> {
@@ -164,12 +167,14 @@ public class LogController {
 
     @FXML
     public void handleExportLog() {
+        // BF-6.1.15-18 / AF-6.1.16-A1 / EF-6.1.18-E1.
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Xuất file Log");
         chooser.setInitialFileName("precisionmail-log.zip");
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("ZIP files", "*.zip"));
         File target = chooser.showSaveDialog(logTable.getScene().getWindow());
         if (target == null) {
+            setStatus("Đã hủy xuất tập tin nhật ký.");
             return;
         }
 
@@ -184,8 +189,9 @@ public class LogController {
             } catch (IOException e) {
                 LOGGER.error("Log export failed.", e);
                 Platform.runLater(() -> {
-                    setStatus("Xuất tập tin nhật ký thất bại.");
-                    AlertUtil.showError("Lỗi xuất file Log", "Không thể xuất tệp log. Vui lòng kiểm tra quyền ghi thư mục đã chọn.");
+                    setStatus("Không thể xuất tập tin nhật ký kỹ thuật.");
+                    AlertUtil.showError("Lỗi xuất file Log",
+                            "Không thể xuất tập tin nhật ký kỹ thuật. Vui lòng kiểm tra quyền ghi hoặc dung lượng lưu trữ.");
                 });
             }
         });
@@ -199,6 +205,7 @@ public class LogController {
     }
 
     private void startWatcher() {
+        // BF-6.1.7: register realtime monitoring outside the JavaFX Application Thread.
         AppExecutors.io().execute(() -> {
             try {
                 watchRegistration = logMonitoringService.watchActiveLog(lines ->
@@ -221,13 +228,14 @@ public class LogController {
     }
 
     private void applyFilter() {
+        // BF-6.1.8-9 / EF-6.1.9-E1: provide immediate in-memory filtering while the user types.
         String selectedLevel = levelComboBox.getValue();
         String keyword = keywordField.getText() == null ? "" : keywordField.getText().trim().toLowerCase(Locale.ROOT);
         visibleEntries.setAll(allEntries.stream()
                 .filter(entry -> selectedLevel == null || "ALL".equals(selectedLevel) || selectedLevel.equalsIgnoreCase(entry.level()))
                 .filter(entry -> keyword.isBlank() || entry.rawLine().toLowerCase(Locale.ROOT).contains(keyword))
                 .toList());
-        setStatus("Đang hiển thị " + visibleEntries.size() + "/" + allEntries.size() + " dòng log.");
+        setFilterStatus(visibleEntries.size());
     }
 
     private void styleRow(TableRow<LogEntry> row, LogEntry entry) {
@@ -290,5 +298,17 @@ public class LogController {
 
     private void setStatus(String message) {
         statusLabel.setText(message);
+    }
+
+    private void setFilterStatus(int resultCount) {
+        boolean hasCriteria = (levelComboBox.getValue() != null
+                && !"ALL".equals(levelComboBox.getValue()))
+                || (keywordField.getText() != null
+                && !keywordField.getText().isBlank());
+        if (resultCount == 0 && hasCriteria) {
+            setStatus("Không tìm thấy log phù hợp với điều kiện lọc.");
+            return;
+        }
+        setStatus("Đang hiển thị " + resultCount + "/" + allEntries.size() + " dòng log.");
     }
 }

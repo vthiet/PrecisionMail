@@ -14,6 +14,6 @@
     <!-- Thông báo rỗng -->
     <Label fx:id="emptyLabel"
            text="Chưa có email nào được lên lịch gửi.&#10;Hãy bắt đầu soạn thảo và lên lịch ngay!"
-           style="-fx-font-size: 16px; -fx-text-fill: #666;"
+           styleClass="empty-state"
            visible="false" />
 </StackPane>

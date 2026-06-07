@@ -5,6 +5,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 public final class AppExecutors {
+    // NFR-06-01: all UC-06 file I/O, grouping, filtering, watching, and ZIP export run off the JavaFX thread.
     private static final ExecutorService IO_EXECUTOR =
             Executors.newVirtualThreadPerTaskExecutor();
 

@@ -12,17 +12,13 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox spacing="10"
+<VBox styleClass="screen"
       xmlns="http://javafx.com/javafx/25"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="nlu.fit.soft.gr5.precisionMail.controller.fxml.HistoryMailController">
-    <padding>
-        <Insets top="12" right="12" bottom="12" left="12"/>
-    </padding>
-
     <HBox alignment="CENTER_LEFT" spacing="10">
         <Label text="Lịch sử gửi thư"
-               style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+               styleClass="screen-title"/>
         <Pane HBox.hgrow="ALWAYS"/>
         <Button text="Làm mới" onAction="#handleRefresh"/>
     </HBox>
@@ -56,6 +52,6 @@
         <Label fx:id="pageLabel" text="Trang 0/0"/>
         <Button fx:id="nextPageButton" text="Trang sau" onAction="#handleNextPage"/>
         <Pane HBox.hgrow="ALWAYS"/>
-        <Label fx:id="statusLabel" text="Đang tải lịch sử gửi thư..."/>
+        <Label fx:id="statusLabel" text="Đang tải lịch sử gửi thư..." styleClass="status-text"/>
     </HBox>
 </VBox>

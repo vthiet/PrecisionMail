@@ -58,7 +58,7 @@
             <Button fx:id="btnToggleQueue"
                     text="⏸ Tạm dừng hàng đợi"
                     onAction="#handleToggleQueue"
-                    style="-fx-base: #3b82f6; -fx-text-fill: white;" />
+                    style="-fx-background-color: #3b82f6; -fx-text-fill: white;" />
         </items>
     </ToolBar>
 

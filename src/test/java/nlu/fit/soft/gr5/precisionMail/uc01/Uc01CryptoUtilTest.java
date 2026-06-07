@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class Uc01CryptoUtilTest {
@@ -37,6 +39,23 @@ class Uc01CryptoUtilTest {
                 () -> assertNotEquals(firstEncrypted, secondEncrypted),
                 () -> assertEquals(appPassword, CryptoUtil.decrypt(firstEncrypted)),
                 () -> assertEquals(appPassword, CryptoUtil.decrypt(secondEncrypted))
+        );
+    }
+
+    @Test
+    void rejectsTamperedCiphertext() {
+        String encrypted = CryptoUtil.encrypt("app-password");
+        char replacement = encrypted.endsWith("A") ? 'B' : 'A';
+        String tampered = encrypted.substring(0, encrypted.length() - 1) + replacement;
+
+        assertThrows(IllegalStateException.class, () -> CryptoUtil.decrypt(tampered));
+    }
+
+    @Test
+    void preservesNullValues() {
+        assertAll(
+                () -> assertNull(CryptoUtil.encrypt(null)),
+                () -> assertNull(CryptoUtil.decrypt(null))
         );
     }
 }

@@ -16,7 +16,15 @@ import java.util.stream.Collectors;
 public class AccountServiceImpl implements AccountService {
     private static final Logger LOGGER = LoggerFactory.getLogger(AccountServiceImpl.class);
 
-    private final AccountDao accountDao = new AccountDaoImpl();
+    private final AccountDao accountDao;
+
+    public AccountServiceImpl() {
+        this(new AccountDaoImpl());
+    }
+
+    public AccountServiceImpl(AccountDao accountDao) {
+        this.accountDao = accountDao;
+    }
 
     @Override
     public Account save(String username, String password) {

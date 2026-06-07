@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -28,6 +29,9 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 public class LogMonitoringServiceImpl implements LogMonitoringService {
     private static final Logger LOGGER = LoggerFactory.getLogger(LogMonitoringServiceImpl.class);
     private static final long SAFE_UI_LOG_SIZE_BYTES = 10L * 1024L * 1024L;
+    private static final Pattern LOG_RECORD_START = Pattern.compile(
+            "^\\[[^]]+] \\[[^]]+] \\[[^]]+] \\[[^]]+] - .*$"
+    );
     private static final Path ACTIVE_LOG = Path.of(
             System.getProperty("user.home"),
             ".precisionmail",
@@ -37,7 +41,9 @@ public class LogMonitoringServiceImpl implements LogMonitoringService {
 
     @Override
     public List<String> readRecentLines(int maxLines) throws IOException {
+        validateMaxLines(maxLines);
         if (!Files.exists(ACTIVE_LOG)) {
+            // AF-6.1.3-A1: an absent initial log is a valid empty state; WatchService waits for creation.
             return List.of();
         }
         if (isActiveLogOversized()) {
@@ -46,43 +52,40 @@ public class LogMonitoringServiceImpl implements LogMonitoringService {
                     maxLines);
         }
 
-        ArrayDeque<String> buffer = new ArrayDeque<>(Math.max(1, maxLines));
+        // BF-6.1.3-5 / EF-6.1.3-E2: retain only the latest complete records and sanitize before returning.
+        ArrayDeque<String> buffer = new ArrayDeque<>(maxLines);
         try (var lines = Files.lines(ACTIVE_LOG)) {
-            lines.map(LogSanitizer::sanitize).forEach(line -> {
-                if (buffer.size() == maxLines) {
-                    buffer.removeFirst();
-                }
-                buffer.addLast(line);
-            });
+            collectLogRecords(lines::forEach, record -> addBounded(buffer, LogSanitizer.sanitize(record), maxLines));
         }
         return new ArrayList<>(buffer);
     }
 
     @Override
     public List<String> streamAndFilterLogs(String level, String keyword, int maxLines) throws IOException {
+        validateMaxLines(maxLines);
         if (!Files.exists(ACTIVE_LOG)) {
             return List.of();
         }
 
         String normalizedLevel = normalize(level);
         String normalizedKeyword = normalize(keyword);
-        ArrayDeque<String> buffer = new ArrayDeque<>(Math.max(1, maxLines));
+        ArrayDeque<String> buffer = new ArrayDeque<>(maxLines);
         try (var lines = Files.lines(ACTIVE_LOG)) {
-            lines.map(LogSanitizer::sanitize)
-                    .filter(line -> matchesLevel(line, normalizedLevel))
-                    .filter(line -> normalizedKeyword.isBlank() || normalize(line).contains(normalizedKeyword))
-                    .forEach(line -> {
-                        if (buffer.size() == maxLines) {
-                            buffer.removeFirst();
-                        }
-                        buffer.addLast(line);
-                    });
+            // BF-6.1.8-9: filter complete sanitized records so a matching ERROR keeps its stacktrace.
+            collectLogRecords(lines::forEach, record -> {
+                String sanitized = LogSanitizer.sanitize(record);
+                if (matchesLevel(sanitized, normalizedLevel)
+                        && (normalizedKeyword.isBlank() || normalize(sanitized).contains(normalizedKeyword))) {
+                    addBounded(buffer, sanitized, maxLines);
+                }
+            });
         }
         return new ArrayList<>(buffer);
     }
 
     @Override
     public Path exportActiveLogs(Path destination) throws IOException {
+        // BF-6.1.18 / EF-6.1.18-E1: export a ZIP copy and never modify or remove the active log.
         if (!Files.exists(ACTIVE_LOG)) {
             throw new IOException("Active log file does not exist: " + ACTIVE_LOG);
         }
@@ -111,6 +114,7 @@ public class LogMonitoringServiceImpl implements LogMonitoringService {
 
     @Override
     public LogWatchRegistration watchActiveLog(Consumer<List<String>> newLinesConsumer) throws IOException {
+        // BF-6.1.7: monitor create/modify events on a virtual thread without blocking JavaFX.
         Files.createDirectories(activeLogDirectory());
         WatchService watchService = activeLogDirectory().getFileSystem().newWatchService();
         activeLogDirectory().register(watchService, ENTRY_CREATE, ENTRY_MODIFY);
@@ -192,9 +196,47 @@ public class LogMonitoringServiceImpl implements LogMonitoringService {
             String text = new String(bytes, StandardCharsets.UTF_8);
             List<String> lines = text.lines()
                     .filter(line -> !line.isBlank())
+                    .toList();
+            List<String> records = groupLogRecords(lines).stream()
                     .map(LogSanitizer::sanitize)
                     .toList();
-            return new ReadTailResult(size, lines);
+            return new ReadTailResult(size, records);
+        }
+    }
+
+    private void collectLogRecords(Consumer<Consumer<String>> lineSource, Consumer<String> recordConsumer) {
+        StringBuilder current = new StringBuilder();
+        lineSource.accept(line -> {
+            if (LOG_RECORD_START.matcher(line).matches() && !current.isEmpty()) {
+                recordConsumer.accept(current.toString());
+                current.setLength(0);
+            }
+            if (!current.isEmpty()) {
+                current.append(System.lineSeparator());
+            }
+            current.append(line);
+        });
+        if (!current.isEmpty()) {
+            recordConsumer.accept(current.toString());
+        }
+    }
+
+    List<String> groupLogRecords(List<String> lines) {
+        List<String> records = new ArrayList<>();
+        collectLogRecords(lines::forEach, records::add);
+        return records;
+    }
+
+    private void addBounded(ArrayDeque<String> buffer, String record, int maxLines) {
+        if (buffer.size() == maxLines) {
+            buffer.removeFirst();
+        }
+        buffer.addLast(record);
+    }
+
+    private void validateMaxLines(int maxLines) {
+        if (maxLines < 1) {
+            throw new IllegalArgumentException("maxLines must be greater than zero.");
         }
     }
 

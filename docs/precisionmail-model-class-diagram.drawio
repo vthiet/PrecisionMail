@@ -1,0 +1,98 @@
+<mxfile host="app.diagrams.net" modified="2026-06-07T00:00:00.000Z" agent="Codex" version="24.7.17" type="device">
+  <diagram id="precisionmail-models" name="PrecisionMail - Main Models">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title" value="PrecisionMail - Class Diagram các model chính" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#1F2937;" vertex="1" parent="1">
+          <mxGeometry x="420" y="20" width="800" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend" value="Quan hệ được suy ra từ model và DAO hiện tại. LogEntry là model được LogController sử dụng trực tiếp." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1170" y="80" width="380" height="80" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="account" value="&lt;b&gt;Account&lt;/b&gt;&lt;hr&gt;- id: Long&lt;br&gt;- username: String&lt;br&gt;- password: String&lt;br&gt;- displayName: String&lt;br&gt;- primary: boolean&lt;br&gt;- passwordDecryptionFailed: boolean&lt;br&gt;- mailServerConfig: MailServerConfig&lt;br&gt;- createdAt: LocalDateTime&lt;hr&gt;+ getDisplayName(): String&lt;br&gt;+ getMailServerConfig(): MailServerConfig" style="swimlane;fontStyle=1;align=center;verticalAlign=top;startSize=30;horizontal=1;html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="100" width="300" height="270" as="geometry"/>
+        </mxCell>
+        <mxCell id="mailConfig" value="&lt;b&gt;MailServerConfig&lt;/b&gt;&lt;hr&gt;- smtpHost: String&lt;br&gt;- smtpPort: int&lt;br&gt;- imapHost: String&lt;br&gt;- imapPort: int&lt;br&gt;- smtpSecurityMode: SecurityMode&lt;br&gt;- imapSecurityMode: SecurityMode&lt;hr&gt;+ getSmtpSecurityMode(): SecurityMode&lt;br&gt;+ getImapSecurityMode(): SecurityMode" style="swimlane;fontStyle=1;align=center;verticalAlign=top;startSize=30;horizontal=1;html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="470" y="100" width="310" height="250" as="geometry"/>
+        </mxCell>
+        <mxCell id="securityMode" value="&lt;b&gt;&amp;laquo;enum&amp;raquo;&lt;br&gt;SecurityMode&lt;/b&gt;&lt;hr&gt;TLS&lt;br&gt;SSL" style="swimlane;fontStyle=1;align=center;verticalAlign=top;startSize=46;horizontal=1;html=1;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="870" y="100" width="180" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="providerPreset" value="&lt;b&gt;&amp;laquo;enum&amp;raquo;&lt;br&gt;MailProviderPreset&lt;/b&gt;&lt;hr&gt;CUSTOM&lt;br&gt;GMAIL&lt;br&gt;OUTLOOK&lt;br&gt;YAHOO&lt;hr&gt;- displayName: String&lt;br&gt;- config: MailServerConfig&lt;br&gt;+ inferFrom(config): MailProviderPreset" style="swimlane;fontStyle=1;align=center;verticalAlign=top;startSize=46;horizontal=1;html=1;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1170" y="200" width="270" height="230" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="email" value="&lt;b&gt;Email&lt;/b&gt;&lt;hr&gt;+ id: Long&lt;br&gt;+ from: String&lt;br&gt;+ toLst: Set&amp;lt;String&amp;gt;&lt;br&gt;+ cc: Set&amp;lt;String&amp;gt;&lt;br&gt;+ bcc: Set&amp;lt;String&amp;gt;&lt;br&gt;+ subject: String&lt;br&gt;+ content: String&lt;br&gt;+ attachments: List&amp;lt;String&amp;gt;&lt;br&gt;+ sentAt: LocalDateTime&lt;br&gt;+ status: EmailStatus&lt;br&gt;+ errorMessage: String&lt;hr&gt;+ getFrom(): String" style="swimlane;fontStyle=1;align=center;verticalAlign=top;startSize=30;horizontal=1;html=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="470" width="300" height="330" as="geometry"/>
+        </mxCell>
+        <mxCell id="scheduledEmail" value="&lt;b&gt;ScheduledEmail&lt;/b&gt;&lt;hr&gt;+ id: Long&lt;br&gt;+ account: Account&lt;br&gt;+ email: Email&lt;br&gt;+ scheduledAt: LocalDateTime&lt;br&gt;+ status: EmailStatus&lt;br&gt;+ errorMessage: String&lt;br&gt;+ retryCount: int&lt;br&gt;+ actualSentAt: LocalDateTime" style="swimlane;fontStyle=1;align=center;verticalAlign=top;startSize=30;horizontal=1;html=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="470" y="480" width="300" height="250" as="geometry"/>
+        </mxCell>
+        <mxCell id="emailStatus" value="&lt;b&gt;&amp;laquo;enum&amp;raquo;&lt;br&gt;EmailStatus&lt;/b&gt;&lt;hr&gt;DRAFT&lt;br&gt;QUEUED&lt;br&gt;SCHEDULED&lt;br&gt;SENDING&lt;br&gt;SENT&lt;br&gt;FAILED&lt;br&gt;CANCELLED&lt;br&gt;RETRY_PENDING&lt;br&gt;MISSED" style="swimlane;fontStyle=1;align=center;verticalAlign=top;startSize=46;horizontal=1;html=1;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="870" y="470" width="200" height="270" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="draftEmail" value="&lt;b&gt;DraftEmail&lt;/b&gt;&lt;hr&gt;+ id: Long&lt;br&gt;+ senderEmail: String&lt;br&gt;+ toRecipients: String&lt;br&gt;+ ccRecipients: String&lt;br&gt;+ bccRecipients: String&lt;br&gt;+ subject: String&lt;br&gt;+ body: String&lt;br&gt;+ attachmentPaths: String&lt;br&gt;+ lastSavedAt: LocalDateTime&lt;br&gt;+ createdAt: LocalDateTime&lt;br&gt;+ updatedAt: LocalDateTime" style="swimlane;fontStyle=1;align=center;verticalAlign=top;startSize=30;horizontal=1;html=1;whiteSpace=wrap;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="860" width="300" height="300" as="geometry"/>
+        </mxCell>
+        <mxCell id="recipientGroup" value="&lt;b&gt;RecipientGroup&lt;/b&gt;&lt;hr&gt;+ id: Long&lt;br&gt;+ name: String&lt;br&gt;+ description: String&lt;br&gt;+ emails: Set&amp;lt;String&amp;gt;&lt;br&gt;+ emailCount: Integer&lt;br&gt;+ createdAt: LocalDateTime&lt;br&gt;+ updatedAt: LocalDateTime" style="swimlane;fontStyle=1;align=center;verticalAlign=top;startSize=30;horizontal=1;html=1;whiteSpace=wrap;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="470" y="860" width="300" height="230" as="geometry"/>
+        </mxCell>
+        <mxCell id="logEntry" value="&lt;b&gt;&amp;laquo;record&amp;raquo;&lt;br&gt;LogEntry&lt;/b&gt;&lt;hr&gt;+ timestamp: String&lt;br&gt;+ level: String&lt;br&gt;+ thread: String&lt;br&gt;+ source: String&lt;br&gt;+ message: String&lt;br&gt;+ rawLine: String&lt;hr&gt;+ parse(line: String): LogEntry&lt;br&gt;+ detailText(): String" style="swimlane;fontStyle=1;align=center;verticalAlign=top;startSize=46;horizontal=1;html=1;whiteSpace=wrap;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="870" y="850" width="300" height="250" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="account-config" value="cấu hình" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=diamondThin;startFill=1;endArrow=none;strokeWidth=2;" edge="1" parent="1" source="account" target="mailConfig">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="account-config-cardinality-left" value="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="account-config">
+          <mxGeometry x="-0.85" relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="account-config-cardinality-right" value="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="account-config">
+          <mxGeometry x="0.85" relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="config-security" value="smtp / imap" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;" edge="1" parent="1" source="mailConfig" target="securityMode">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="preset-config" value="preset config" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;" edge="1" parent="1" source="providerPreset" target="mailConfig">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="scheduled-account" value="gửi bằng" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=open;endFill=0;strokeWidth=2;" edge="1" parent="1" source="scheduledEmail" target="account">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="scheduled-account-many" value="0..*" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="scheduled-account">
+          <mxGeometry x="-0.8" relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="scheduled-account-one" value="0..1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="scheduled-account">
+          <mxGeometry x="0.8" relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="scheduled-email" value="nội dung lên lịch" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=diamondThin;startFill=1;endArrow=none;strokeWidth=2;" edge="1" parent="1" source="scheduledEmail" target="email">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="scheduled-email-one-left" value="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="scheduled-email">
+          <mxGeometry x="-0.8" relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="scheduled-email-one-right" value="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="scheduled-email">
+          <mxGeometry x="0.8" relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="email-status" value="trạng thái" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;" edge="1" parent="1" source="email" target="emailStatus">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="scheduled-status" value="trạng thái lịch gửi" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=open;endFill=0;" edge="1" parent="1" source="scheduledEmail" target="emailStatus">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="draft-note" value="Bản nháp lưu người gửi bằng senderEmail; hiện không có association object trực tiếp tới Account." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="890" width="330" height="90" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -12,17 +12,13 @@
 
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.TextField?>
-<VBox spacing="10"
+<VBox styleClass="screen"
       xmlns="http://javafx.com/javafx/25"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="nlu.fit.soft.gr5.precisionMail.controller.fxml.QueueController">
-    <padding>
-        <Insets top="12" right="12" bottom="12" left="12"/>
-    </padding>
-
     <HBox alignment="CENTER_LEFT" spacing="10">
         <Label text="Hàng đợi chờ gửi"
-               style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+               styleClass="screen-title"/>
         <Pane HBox.hgrow="ALWAYS"/>
         <Button text="Làm mới" onAction="#handleRefresh"/>
 
@@ -58,7 +54,7 @@
             <Button fx:id="btnToggleQueue"
                     text="⏸ Tạm dừng hàng đợi"
                     onAction="#handleToggleQueue"
-                    style="-fx-base: #3b82f6; -fx-text-fill: white;" />
+                    styleClass="queue-running" />
         </items>
     </ToolBar>
 
@@ -81,5 +77,5 @@
     </TableView>
 
     <Label fx:id="detailLabel" wrapText="true"/>
-    <Label fx:id="statusLabel" text="Đang tải hàng đợi..."/>
+    <Label fx:id="statusLabel" text="Đang tải hàng đợi..." styleClass="status-text"/>
 </VBox>

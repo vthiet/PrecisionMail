@@ -5,19 +5,20 @@
 | Trường | Giá trị                           |
 | --- |-----------------------------------|
 | Mã tài liệu | PM-UI-SPEC-001                    |
-| Phiên bản | 1.0                               |
-| Trạng thái | Bản nháp                          |
+| Phiên bản | 1.1                               |
+| Trạng thái | Đã áp dụng                          |
 | Dự án | PrecisionMail                     |
 | Phạm vi | Giao diện ứng dụng desktop JavaFX |
 | Môi trường mục tiêu | JDK 25 / JavaFX 25                |
 | Tác giả | Nguyễn Văn Anh Hàn                |
-| Ngày cập nhật | 05/06/2026                        |
+| Ngày cập nhật | 07/06/2026                        |
 
 ## Lịch sử thay đổi
 
 | Phiên bản | Ngày | Mô tả | Người thực hiện    |
 | --- | --- | --- |--------------------|
 | 1.0 | 05/06/2026 | Tạo đặc tả giao diện theo cấu trúc IEEE-style bằng tiếng Việt | Nguyễn Văn Anh Hàn |
+| 1.1 | 07/06/2026 | Chuẩn hóa design token và áp dụng ngược vào CSS, FXML, controller | Codex |
 
 ## Mục lục
 
@@ -84,11 +85,9 @@ Tài liệu áp dụng cho toàn bộ giao diện JavaFX của PrecisionMail, ba
 | --- | --- |
 | IEEE 830 / IEEE-style SRS | Dùng làm định hướng cấu trúc tài liệu đặc tả. |
 | JavaFX 25 Documentation | Tài liệu kỹ thuật cho framework giao diện. |
-| `style.css` | CSS nền tảng của ứng dụng. |
-| `sidebar.css` | CSS cho sidebar. |
-| `compose-mail.css` | CSS cho màn hình soạn thư. |
-| `log-monitor.css` | CSS cho màn hình log hệ thống. |
+| `src/main/resources/nlu/fit/soft/gr5/precisionMail/css/app.css` | Nguồn chuẩn chứa design token và style dùng chung của ứng dụng. |
 | Các file FXML trong `src/main/resources/.../view` | Cấu trúc giao diện hiện tại của ứng dụng. |
+| `library_framework_security_license_report.md` | Báo cáo phiên bản framework, dependency, lỗ hổng và nghĩa vụ giấy phép. |
 
 ## 2. Mô tả tổng quan giao diện
 
@@ -183,6 +182,9 @@ stateDiagram-v2
 
 | Mã token | Tên | Mã màu | Mục đích sử dụng |
 | --- | --- | --- | --- |
+| UI-COL-000A | Màu chủ đạo / Primary | `#0B57D0` | Nút hành động chính, trạng thái đang chạy, nhận diện thương hiệu. |
+| UI-COL-000B | Màu thứ hai / Secondary | `#C2E7FF` | Điều hướng active, vùng nhấn nhẹ và nền hỗ trợ primary. |
+| UI-COL-000C | Primary hover | `#0842A0` | Hover của nút hành động chính. |
 | UI-COL-001 | Nền ứng dụng | `#FFFFFF` | Nền chính vùng nội dung. |
 | UI-COL-002 | Nền sidebar | `#F6F8FC` | Nền thanh điều hướng trái. |
 | UI-COL-003 | Nền phụ | `#F1F3F4` | Vùng phụ, dòng debug, empty state. |
@@ -208,13 +210,13 @@ stateDiagram-v2
 
 | Mã token | Tên | Font | Size | Weight | Mục đích |
 | --- | --- | --- | --- | --- | --- |
-| UI-TYP-001 | Font mặc định | `Segoe UI`, `Arial`, sans-serif | 13px | Regular | Control, label, nội dung bảng. |
-| UI-TYP-002 | Tiêu đề màn hình | `Segoe UI`, `Arial`, sans-serif | 20px | Bold | Tiêu đề vùng nội dung. |
-| UI-TYP-003 | Tiêu đề dialog | `Segoe UI`, `Arial`, sans-serif | 16px | Bold | Tiêu đề hộp thoại. |
-| UI-TYP-004 | Chú thích/status | `Segoe UI`, `Arial`, sans-serif | 12px | Regular | Status, helper text. |
-| UI-TYP-005 | Section sidebar | `Segoe UI`, `Arial`, sans-serif | 10px | Bold | Tiêu đề nhóm sidebar. |
-| UI-TYP-006 | Text lỗi | `Segoe UI`, `Arial`, sans-serif | 11px | Regular | Label lỗi validation. |
-| UI-TYP-007 | Monospace | `JetBrains Mono`, `Consolas`, monospace | 12px | Regular | Log, code, đường dẫn file. |
+| UI-TYP-001 | Font mặc định | `Segoe UI` (fallback hệ thống: `Arial`, sans-serif) | 13px | Regular | Control, label, nội dung bảng. |
+| UI-TYP-002 | Tiêu đề màn hình | `Segoe UI` | 20px | Bold | Tiêu đề vùng nội dung. |
+| UI-TYP-003 | Tiêu đề dialog | `Segoe UI` | 16px | Bold | Tiêu đề hộp thoại. |
+| UI-TYP-004 | Chú thích/status | `Segoe UI` | 12px | Regular | Status, helper text. |
+| UI-TYP-005 | Section sidebar | `Segoe UI` | 10px | Bold | Tiêu đề nhóm sidebar. |
+| UI-TYP-006 | Text lỗi | `Segoe UI` | 11px | Regular | Label lỗi validation. |
+| UI-TYP-007 | Monospace | `JetBrains Mono` (fallback hệ thống: `Consolas`, monospace) | 12px | Regular | Log, code, đường dẫn file. |
 
 ### 4.3 Quy chuẩn khoảng cách
 
@@ -240,6 +242,27 @@ stateDiagram-v2
 | UI-SHP-004 | 24px | Item sidebar. |
 | UI-SHP-005 | 30px | Nút gửi thư. |
 
+### 4.5 Nguồn chuẩn và ánh xạ triển khai
+
+`app.css` là nguồn chuẩn triển khai cho design system. Màu và typography dùng lại phải được khai báo bằng token `-pm-*` hoặc class ngữ nghĩa; FXML và controller không được hard-code lại giá trị.
+
+| Nhóm | Token/class triển khai |
+| --- | --- |
+| Màu chủ đạo | `-pm-primary`, `.primary-action`, `.queue-running` |
+| Màu thứ hai | `-pm-secondary`, `.sidebar-nav-item-active` |
+| Typography | `.root`, `.screen-title`, `.dialog-title`, `.caption`, `.helper-text`, `.monospace` |
+| Validation | `.field-invalid` |
+| Trạng thái | `.badge-warning`, `.badge-neutral`, `.queue-paused` |
+| Bố cục màn hình | `.screen`, `.app-surface` |
+
+### 4.6 Quy tắc áp dụng
+
+- Body/control mặc định: `Segoe UI`, fallback `Arial`, `sans-serif`, size `13px`.
+- Chỉ một hành động chính nổi bật trên mỗi vùng thao tác; dùng `.primary-action`.
+- Màu trạng thái phải đi cùng text mô tả, không truyền đạt chỉ bằng màu.
+- Controller thay đổi trạng thái bằng `styleClass`, không dùng `setStyle(...)`.
+- Dialog tạo scene riêng phải gắn `app.css` trực tiếp trên root.
+
 ## 5. Yêu cầu giao diện cụ thể
 
 ### 5.1 Yêu cầu giao diện tổng quát
@@ -257,7 +280,7 @@ stateDiagram-v2
 | Mã yêu cầu | Nội dung yêu cầu | Ưu tiên | Tiêu chí nghiệm thu |
 | --- | --- | --- | --- |
 | UI-NAV-001 | Màn hình chính phải dùng `BorderPane` gồm menu bar, sidebar và vùng nội dung trung tâm. | Cao | Menu và sidebar không biến mất khi chuyển view. |
-| UI-NAV-002 | Sidebar phải dùng nền `#F6F8FC` và viền phải `#DADCE0`. | Cao | CSS `.compose-left-sidebar` áp dụng đúng màu. |
+| UI-NAV-002 | Sidebar phải dùng nền `#F6F8FC` và viền phải `#DADCE0`. | Cao | CSS `.sidebar` áp dụng đúng màu. |
 | UI-NAV-003 | Item sidebar đang active phải dùng nền `#C2E7FF`, chữ `#001D35` và font bold. | Cao | View hiện tại được nhận biết rõ. |
 | UI-NAV-004 | Sidebar có chiều rộng ưu tiên 200px và tối thiểu 180px. | Trung bình | Sidebar vẫn đọc được ở cửa sổ 1024px. |
 | UI-NAV-005 | Nhãn điều hướng sidebar phải ngắn gọn, không bị cắt ở kích thước chuẩn. | Trung bình | Text không tràn trong sidebar. |
@@ -378,9 +401,9 @@ stateDiagram-v2
 
 | Mã kiểm tra | Nội dung kiểm tra | Phương pháp | Kết quả |
 | --- | --- | --- | --- |
-| UI-CHK-001 | Màu sắc khớp token thiết kế. | Kiểm tra CSS/FXML |  |
-| UI-CHK-002 | Font size và font weight đúng quy định. | Kiểm tra CSS/FXML |  |
-| UI-CHK-003 | Sidebar hiển thị trạng thái active rõ ràng. | Chạy app kiểm tra thủ công |  |
+| UI-CHK-001 | Màu sắc khớp token thiết kế. | Kiểm tra CSS/FXML | Đạt - màu dùng chung đã chuyển về token `-pm-*`. |
+| UI-CHK-002 | Font size và font weight đúng quy định. | Kiểm tra CSS/FXML | Đạt - typography dùng class ngữ nghĩa trong `app.css`. |
+| UI-CHK-003 | Sidebar hiển thị trạng thái active rõ ràng. | Chạy app kiểm tra thủ công | Đạt smoke test khởi động; cần nghiệm thu trực quan khi phát hành. |
 | UI-CHK-004 | Form cấu hình tài khoản hiển thị `Cần kiểm tra lại` khi sửa cấu hình. | Kiểm thử thủ công |  |
 | UI-CHK-005 | Nút Lưu bị khóa trước khi test kết nối thành công. | Kiểm thử thủ công |  |
 | UI-CHK-006 | Lỗi giải mã password không hiển thị raw password. | Kiểm thử dữ liệu lỗi |  |
@@ -395,18 +418,17 @@ stateDiagram-v2
 
 | CSS class | Mục đích |
 | --- | --- |
-| `.compose-left-sidebar` | Container sidebar trái. |
+| `.app-surface`, `.screen` | Nền ứng dụng và bố cục màn hình trung tâm. |
+| `.screen-title`, `.dialog-title` | Tiêu đề màn hình và dialog. |
+| `.caption`, `.helper-text`, `.status-text`, `.monospace` | Thang typography dùng chung. |
+| `.primary-action` | Hành động chính dùng màu primary. |
+| `.field-invalid` | Viền field validation lỗi. |
+| `.badge-warning`, `.badge-neutral` | Badge trạng thái. |
 | `.compose-button` | Nút soạn thư mới. |
-| `.compose-button-active` | Trạng thái active của nút soạn thư. |
 | `.sidebar-section-title` | Tiêu đề nhóm trong sidebar. |
 | `.sidebar-nav-item` | Item điều hướng sidebar. |
 | `.sidebar-nav-item-active` | Item điều hướng đang active. |
 | `.sidebar-footer-item` | Item cuối sidebar như Tài khoản/Cài đặt. |
-| `.underline-field` | Input dạng gạch dưới. |
-| `.noline-field` | Input không viền. |
-| `.send-btn` | Nút gửi thư. |
-| `.error-label` | Label lỗi nhỏ. |
-| `.error` | Viền lỗi chung. |
 | `.log-row-error` | Dòng log mức error. |
 | `.log-row-warn` | Dòng log mức warning. |
 | `.log-row-info` | Dòng log mức info. |

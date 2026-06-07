@@ -10,17 +10,13 @@
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox spacing="10"
+<VBox styleClass="screen"
       xmlns="http://javafx.com/javafx/25"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="nlu.fit.soft.gr5.precisionMail.controller.fxml.AccountManagementController">
-    <padding>
-        <Insets top="12" right="12" bottom="12" left="12"/>
-    </padding>
-
     <HBox alignment="CENTER_LEFT" spacing="10">
         <Label text="Quản lý tài khoản mail"
-               style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+               styleClass="screen-title"/>
         <Pane HBox.hgrow="ALWAYS"/>
         <Button text="Làm mới" onAction="#handleRefresh"/>
     </HBox>
@@ -46,6 +42,6 @@
     </TableView>
 
     <HBox alignment="CENTER_LEFT" spacing="8">
-        <Label fx:id="statusLabel" text="Đang tải danh sách tài khoản..."/>
+        <Label fx:id="statusLabel" text="Đang tải danh sách tài khoản..." styleClass="status-text"/>
     </HBox>
 </VBox>

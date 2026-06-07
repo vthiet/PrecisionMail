@@ -70,7 +70,7 @@ import java.util.stream.Collectors;
 
 public class ComposeController {
     private static final Logger LOGGER = LoggerFactory.getLogger(ComposeController.class);
-    private static final String INVALID_STYLE = "-fx-border-color: #dc2626; -fx-border-width: 1.2;";
+    private static final String INVALID_STYLE_CLASS = "field-invalid";
     private static final String EMPTY_EDITOR_HTML =
             "<html dir=\"ltr\"><head></head><body contenteditable=\"true\"></body></html>";
 
@@ -179,17 +179,17 @@ public class ComposeController {
 
                 HBox hbox = new HBox(10);
                 hbox.setPadding(new Insets(5));
-                hbox.setStyle("-fx-alignment: CENTER_LEFT;");
+                hbox.getStyleClass().add("attachment-row");
 
                 Label fileLabel = new Label(file.getName());
-                fileLabel.setStyle("-fx-text-fill: #333333;");
+                fileLabel.getStyleClass().add("attachment-file-name");
 
                 Pane spacer = new Pane();
                 HBox.setHgrow(spacer, Priority.ALWAYS);
 
                 Button deleteBtn = new Button("x");
                 deleteBtn.setPrefSize(25, 25);
-                deleteBtn.setStyle("-fx-font-size: 16; -fx-padding: 0; -fx-text-fill: #d9534f;");
+                deleteBtn.getStyleClass().add("attachment-delete");
                 deleteBtn.setOnAction(e -> deleteAttachment(file));
 
                 hbox.getChildren().addAll(fileLabel, spacer, deleteBtn);
@@ -837,14 +837,16 @@ public class ComposeController {
     }
 
     private void markInvalid(TextInputControl field, String invalidEmail) {
-        field.setStyle(INVALID_STYLE);
+        if (!field.getStyleClass().contains(INVALID_STYLE_CLASS)) {
+            field.getStyleClass().add(INVALID_STYLE_CLASS);
+        }
         field.setTooltip(new Tooltip("Địa chỉ email [" + invalidEmail + "] không hợp lệ."));
     }
 
     private void clearRecipientValidation() {
-        toField.setStyle(null);
-        ccField.setStyle(null);
-        bccField.setStyle(null);
+        toField.getStyleClass().remove(INVALID_STYLE_CLASS);
+        ccField.getStyleClass().remove(INVALID_STYLE_CLASS);
+        bccField.getStyleClass().remove(INVALID_STYLE_CLASS);
         toField.setTooltip(null);
         ccField.setTooltip(null);
         bccField.setTooltip(null);

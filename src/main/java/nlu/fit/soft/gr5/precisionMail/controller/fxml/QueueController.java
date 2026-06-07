@@ -703,11 +703,17 @@ public class QueueController {
         if (service.isQueuePaused()) {
             service.resumeQueue();
             btnToggleQueue.setText("⏸ Tạm dừng hàng đợi");
-            btnToggleQueue.setStyle("-fx-background-color: #3b82f6;");
+            btnToggleQueue.getStyleClass().remove("queue-paused");
+            if (!btnToggleQueue.getStyleClass().contains("queue-running")) {
+                btnToggleQueue.getStyleClass().add("queue-running");
+            }
         } else {
             service.pauseQueue();
             btnToggleQueue.setText("▶ Tiếp tục hàng đợi");
-            btnToggleQueue.setStyle("-fx-background-color: #ef4444;");
+            btnToggleQueue.getStyleClass().remove("queue-running");
+            if (!btnToggleQueue.getStyleClass().contains("queue-paused")) {
+                btnToggleQueue.getStyleClass().add("queue-paused");
+            }
         }
     }
 }

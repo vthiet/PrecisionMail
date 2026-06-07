@@ -6,6 +6,7 @@
             prefHeight="620.0" prefWidth="980.0"
             fx:controller="nlu.fit.soft.gr5.precisionMail.controller.fxml.MainScreenController"
             fx:id="mainBorderPane"
+            styleClass="app-surface"
             stylesheets="@../css/app.css">
 
     <top>

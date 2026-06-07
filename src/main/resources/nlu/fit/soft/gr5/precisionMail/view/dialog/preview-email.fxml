@@ -6,72 +6,73 @@
 
 <DialogPane xmlns="http://javafx.com/javafx/21.0.2" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="nlu.fit.soft.gr5.precisionMail.controller.dialog.PreviewEmailController"
+            stylesheets="@../../css/app.css"
             prefWidth="700" prefHeight="600">
 
     <headerText>Email Preview - Review Before Sending</headerText>
 
     <content>
-        <VBox spacing="15" style="-fx-padding: 15;">
+        <VBox spacing="15" styleClass="preview-content">
 
             <!-- From Section -->
-            <HBox spacing="10" style="-fx-border-color: #e5e7eb; -fx-border-width: 0 0 1 0; -fx-padding: 0 0 10 0;">
-                <Label text="From:" style="-fx-font-weight: bold; -fx-font-size: 12;" prefWidth="80"/>
+            <HBox spacing="10" styleClass="preview-section">
+                <Label text="From:" styleClass="preview-label" prefWidth="80"/>
                 <Label fx:id="fromLabel" text="sender@example.com"
-                       style="-fx-text-fill: #374151; -fx-font-size: 12;" HBox.hgrow="ALWAYS"/>
+                       styleClass="preview-value" HBox.hgrow="ALWAYS"/>
             </HBox>
 
             <!-- To Section -->
-            <VBox spacing="5" style="-fx-border-color: #e5e7eb; -fx-border-width: 0 0 1 0; -fx-padding: 0 0 10 0;">
+            <VBox spacing="5" styleClass="preview-section">
                 <HBox spacing="10">
-                    <Label text="To:" style="-fx-font-weight: bold; -fx-font-size: 12;" prefWidth="80"/>
+                    <Label text="To:" styleClass="preview-label" prefWidth="80"/>
                     <Label fx:id="toLabel" text="recipient@example.com"
-                           style="-fx-text-fill: #374151; -fx-font-size: 12;" HBox.hgrow="ALWAYS" wrapText="true"/>
+                           styleClass="preview-value" HBox.hgrow="ALWAYS" wrapText="true"/>
                 </HBox>
             </VBox>
 
             <!-- CC Section (if present) -->
-            <VBox fx:id="ccSection" spacing="5" style="-fx-border-color: #e5e7eb; -fx-border-width: 0 0 1 0; -fx-padding: 0 0 10 0;">
+            <VBox fx:id="ccSection" spacing="5" styleClass="preview-section">
                 <HBox spacing="10">
-                    <Label text="Cc:" style="-fx-font-weight: bold; -fx-font-size: 12;" prefWidth="80"/>
-                    <Label fx:id="ccLabel" text="" style="-fx-text-fill: #374151; -fx-font-size: 12;" HBox.hgrow="ALWAYS" wrapText="true"/>
+                    <Label text="Cc:" styleClass="preview-label" prefWidth="80"/>
+                    <Label fx:id="ccLabel" text="" styleClass="preview-value" HBox.hgrow="ALWAYS" wrapText="true"/>
                 </HBox>
             </VBox>
 
             <!-- BCC Section (if present) -->
-            <VBox fx:id="bccSection" spacing="5" style="-fx-border-color: #e5e7eb; -fx-border-width: 0 0 1 0; -fx-padding: 0 0 10 0;">
+            <VBox fx:id="bccSection" spacing="5" styleClass="preview-section">
                 <HBox spacing="10">
-                    <Label text="Bcc:" style="-fx-font-weight: bold; -fx-font-size: 12;" prefWidth="80"/>
-                    <Label fx:id="bccLabel" text="" style="-fx-text-fill: #374151; -fx-font-size: 12;" HBox.hgrow="ALWAYS" wrapText="true"/>
+                    <Label text="Bcc:" styleClass="preview-label" prefWidth="80"/>
+                    <Label fx:id="bccLabel" text="" styleClass="preview-value" HBox.hgrow="ALWAYS" wrapText="true"/>
                 </HBox>
             </VBox>
 
             <!-- Subject Section -->
-            <HBox spacing="10" style="-fx-border-color: #e5e7eb; -fx-border-width: 0 0 1 0; -fx-padding: 0 0 10 0;">
-                <Label text="Subject:" style="-fx-font-weight: bold; -fx-font-size: 12;" prefWidth="80"/>
+            <HBox spacing="10" styleClass="preview-section">
+                <Label text="Subject:" styleClass="preview-label" prefWidth="80"/>
                 <Label fx:id="subjectLabel" text="[No Subject]"
-                       style="-fx-text-fill: #374151; -fx-font-size: 12;" HBox.hgrow="ALWAYS" wrapText="true"/>
+                       styleClass="preview-value" HBox.hgrow="ALWAYS" wrapText="true"/>
             </HBox>
 
             <!-- Content Preview (HTML) -->
             <VBox spacing="5" VBox.vgrow="ALWAYS">
-                <Label text="Message Preview:" style="-fx-font-weight: bold; -fx-font-size: 12;"/>
-                <WebView fx:id="contentWebView" prefHeight="250" style="-fx-border-color: #d1d5db; -fx-border-width: 1;"/>
+                <Label text="Message Preview:" styleClass="preview-label"/>
+                <WebView fx:id="contentWebView" prefHeight="250" styleClass="preview-bordered"/>
             </VBox>
 
             <!-- Attachments Section -->
             <VBox fx:id="attachmentSection" spacing="5">
-                <Label text="Attachments:" style="-fx-font-weight: bold; -fx-font-size: 12;"/>
-                <ListView fx:id="attachmentListView" prefHeight="100" style="-fx-border-color: #d1d5db; -fx-border-width: 1;"/>
+                <Label text="Attachments:" styleClass="preview-label"/>
+                <ListView fx:id="attachmentListView" prefHeight="100" styleClass="preview-bordered"/>
                 <Label fx:id="attachmentInfoLabel" text="0 Attachments"
-                       style="-fx-text-fill: #6b7280; -fx-font-size: 11;"/>
+                       styleClass="helper-text"/>
             </VBox>
 
         </VBox>
     </content>
 
     <buttons>
-        <Button text="Send" fx:id="sendButton" style="-fx-padding: 8 20; -fx-font-size: 12; -fx-cursor: hand;"/>
-        <Button text="Cancel" fx:id="cancelButton" style="-fx-padding: 8 20; -fx-font-size: 12; -fx-cursor: hand;"/>
+        <Button text="Send" fx:id="sendButton" styleClass="dialog-action,primary-action"/>
+        <Button text="Cancel" fx:id="cancelButton" styleClass="dialog-action"/>
     </buttons>
 
 </DialogPane>

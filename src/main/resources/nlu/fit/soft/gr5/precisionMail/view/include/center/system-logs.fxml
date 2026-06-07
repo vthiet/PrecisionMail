@@ -14,17 +14,13 @@
 <?import javafx.scene.layout.Priority?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox spacing="10"
+<VBox styleClass="screen"
       xmlns="http://javafx.com/javafx/25"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="nlu.fit.soft.gr5.precisionMail.controller.fxml.LogController">
-    <padding>
-        <Insets top="12" right="12" bottom="12" left="12"/>
-    </padding>
-
     <HBox alignment="CENTER_LEFT" spacing="10">
         <Label text="Log hệ thống"
-               style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+               styleClass="screen-title"/>
         <Pane HBox.hgrow="ALWAYS"/>
         <Button text="Làm mới" onAction="#handleRefresh"/>
     </HBox>
@@ -54,13 +50,14 @@
 
     <Label text="Chi tiết"/>
     <TextArea fx:id="detailArea"
+              styleClass="monospace"
               editable="false"
               wrapText="false"
               prefRowCount="5"
               VBox.vgrow="NEVER"/>
 
     <HBox alignment="CENTER_LEFT" spacing="8">
-        <Label fx:id="statusLabel" text="Đang tải log hệ thống..."/>
+        <Label fx:id="statusLabel" text="Đang tải log hệ thống..." styleClass="status-text"/>
         <Pane HBox.hgrow="ALWAYS"/>
         <Label text="Realtime"/>
     </HBox>

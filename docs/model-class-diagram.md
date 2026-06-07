@@ -139,3 +139,36 @@ classDiagram
   chúng không có tham chiếu object hoặc khóa ngoại trực tiếp đến model khác.
 - Các model hỗ trợ như `ConnectionTestResult`, `ConnectionTestProgress` và `LogEntry`
   không nằm trong phạm vi sơ đồ model nghiệp vụ chính.
+
+
+Các file liên quan đến hiện thực **UC-06 – Theo dõi log hệ thống**:
+
+**Hiện thực chính**
+- [LogController.java](/home/vthiet/develop/java/PrecisionMail/src/main/java/nlu/fit/soft/gr5/precisionMail/controller/fxml/LogController.java): Điều khiển UI, tải/lọc log, xem stacktrace, mở thư mục và xuất ZIP.
+- [LogMonitoringService.java](/home/vthiet/develop/java/PrecisionMail/src/main/java/nlu/fit/soft/gr5/precisionMail/service/LogMonitoringService.java): Khai báo API giám sát log.
+- [LogMonitoringServiceImpl.java](/home/vthiet/develop/java/PrecisionMail/src/main/java/nlu/fit/soft/gr5/precisionMail/service/impl/LogMonitoringServiceImpl.java): Đọc, nhóm, lọc, theo dõi thời gian thực và xuất log.
+- [LogEntry.java](/home/vthiet/develop/java/PrecisionMail/src/main/java/nlu/fit/soft/gr5/precisionMail/model/LogEntry.java): Parse bản ghi log và xử lý nội dung chi tiết/stacktrace.
+- [LogSanitizer.java](/home/vthiet/develop/java/PrecisionMail/src/main/java/nlu/fit/soft/gr5/precisionMail/util/LogSanitizer.java): Che mật khẩu, token và email.
+- [SecurePatternLayout.java](/home/vthiet/develop/java/PrecisionMail/src/main/java/nlu/fit/soft/gr5/precisionMail/util/SecurePatternLayout.java): Masking dữ liệu trước khi Logback ghi xuống file.
+- [system-logs.fxml](/home/vthiet/develop/java/PrecisionMail/src/main/resources/nlu/fit/soft/gr5/precisionMail/view/include/center/system-logs.fxml): Giao diện màn hình log.
+- [logback.xml](/home/vthiet/develop/java/PrecisionMail/src/main/resources/logback.xml): Cấu hình `system.log`, AsyncAppender, xoay vòng 10 MB và giới hạn 200 MB.
+
+**Tích hợp và hỗ trợ**
+- [AppExecutors.java](/home/vthiet/develop/java/PrecisionMail/src/main/java/nlu/fit/soft/gr5/precisionMail/infrastructure/async/AppExecutors.java): Thực thi I/O UC-06 bằng Virtual Thread.
+- [SideBarController.java](/home/vthiet/develop/java/PrecisionMail/src/main/java/nlu/fit/soft/gr5/precisionMail/controller/fxml/SideBarController.java): Điều hướng tới màn hình log.
+- [sidebar.fxml](/home/vthiet/develop/java/PrecisionMail/src/main/resources/nlu/fit/soft/gr5/precisionMail/view/include/sidebar.fxml): Nút “Log hệ thống”.
+- [MainScreenController.java](/home/vthiet/develop/java/PrecisionMail/src/main/java/nlu/fit/soft/gr5/precisionMail/controller/fxml/MainScreenController.java): Đóng watcher khi rời màn hình log.
+- [NavigationService.java](/home/vthiet/develop/java/PrecisionMail/src/main/java/nlu/fit/soft/gr5/precisionMail/service/NavigationService.java): Hỗ trợ chuyển màn hình.
+- [AlertUtil.java](/home/vthiet/develop/java/PrecisionMail/src/main/java/nlu/fit/soft/gr5/precisionMail/util/AlertUtil.java): Hiển thị thông báo xuất log và lỗi.
+- [module-info.java](/home/vthiet/develop/java/PrecisionMail/src/main/java/module-info.java): Khai báo JavaFX, Desktop, SLF4J và Logback.
+- [pom.xml](/home/vthiet/develop/java/PrecisionMail/pom.xml): Dependency JavaFX, SLF4J, Logback và JUnit.
+
+**Kiểm thử UC-06**
+- [LogMonitoringServiceImplTest.java](/home/vthiet/develop/java/PrecisionMail/src/test/java/nlu/fit/soft/gr5/precisionMail/service/impl/LogMonitoringServiceImplTest.java)
+- [LogEntryTest.java](/home/vthiet/develop/java/PrecisionMail/src/test/java/nlu/fit/soft/gr5/precisionMail/uc06/LogEntryTest.java)
+- [LogSanitizerTest.java](/home/vthiet/develop/java/PrecisionMail/src/test/java/nlu/fit/soft/gr5/precisionMail/uc06/LogSanitizerTest.java)
+
+**Tài liệu liên quan**
+- [UC-SPEC-06-ieee-revised.md](/home/vthiet/develop/java/PrecisionMail/docs/UC-SPEC-06-ieee-revised.md)
+- [UC_06.md](/home/vthiet/develop/java/PrecisionMail/docs/UC_06.md)
+- [UC_06_Implementation.md](/home/vthiet/develop/java/PrecisionMail/docs/UC_06_Implementation.md)
